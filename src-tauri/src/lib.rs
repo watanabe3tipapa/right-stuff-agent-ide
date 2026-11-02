@@ -11,8 +11,36 @@ use tauri::{Emitter, Manager};
 /// explicit title), so match the prefix rather than the exact word.
 #[cfg(target_os = "macos")]
 fn is_quit_item_text(text: &str) -> bool {
-    let text = text.trim().to_lowercase();
+    let text = text.replace('&', "").trim().to_lowercase();
     text == "quit" || text.starts_with("quit ") || text == "exit" || text == "終了"
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod tests {
+    use super::is_quit_item_text;
+
+    #[test]
+    fn detects_the_native_quit_item_title() {
+        // muda titles the item `Quit <AppName>`; a bare "quit" comparison
+        // silently skipped the guard before this was handled.
+        assert!(is_quit_item_text("Quit right-stuff-agent-ide"));
+        assert!(is_quit_item_text("Quit"));
+    }
+
+    #[test]
+    fn ignores_case_padding_and_mnemonics() {
+        assert!(is_quit_item_text("  QUIT App "));
+        assert!(is_quit_item_text("&Quit App"));
+        assert!(is_quit_item_text("Exit"));
+        assert!(is_quit_item_text("終了"));
+    }
+
+    #[test]
+    fn ignores_unrelated_menu_items() {
+        assert!(!is_quit_item_text(""));
+        assert!(!is_quit_item_text("Hide Others"));
+        assert!(!is_quit_item_text("Show All"));
+    }
 }
 
 /// Replace the native macOS Quit menu item with one that notifies the WebView
@@ -33,7 +61,7 @@ fn install_quit_menu_guard(app: &tauri::App) -> tauri::Result<()> {
             let Some(predefined) = child.as_predefined_menuitem() else {
                 continue;
             };
-            let text = predefined.text().unwrap_or_default().replace('&', "");
+            let text = predefined.text().unwrap_or_default();
             if is_quit_item_text(&text) {
                 target = Some((submenu.clone(), index));
                 break 'outer;

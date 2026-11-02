@@ -47,6 +47,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const refreshStatus = useAgentStore((state) => state.refreshStatus);
   const clearMessages = useAgentStore((state) => state.clearMessages);
   const openSettings = useAgentStore((state) => state.openSettings);
+  const setPanelTab = useAgentStore((state) => state.setPanelTab);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -162,6 +163,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       icon: "play",
       keywords: "agent status detect",
       run: () => void refreshStatus(),
+    },
+    {
+      id: "agent:plan",
+      label: "計画を立案",
+      hint: "LLM に実行計画を作らせる",
+      icon: "sparkles",
+      keywords: "plan planning steps approve 計画 承認",
+      run: () => setPanelTab("plan"),
     },
     {
       id: "agent:settings",

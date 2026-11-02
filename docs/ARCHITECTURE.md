@@ -36,7 +36,7 @@
 | `AppState.db` | SQLite 接続 (履歴・設定) |
 | `workspaceStore` | ツリー、選択、展開状態 |
 | `editorStore` | 開いているタブ、未保存内容、履歴モーダル |
-| `agentStore` | モード、Agent Desktop の検出状態、チャット |
+| `agentStore` | モード、Agent Desktop の検出状態、チャット、計画と実行状態 |
 
 `localStorage` に保存するのはエージェントモードのみ。それ以外の永続データは
 SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
@@ -97,21 +97,46 @@ Quit 項目を `app:quit` に置き換えて `app://quit-requested` を送る。
 API キーは Rust プロセス内でのみ扱い、WebView・SQLite・ログ・エラー文字列へは渡さない。
 CSP の `connect-src` に外部オリジンを追加しないため、LLM への HTTP 通信は必ず Rust 側で行う。
 
-## エージェント操作フロー (計画立案は Phase 1 後半)
+## 計画立案と承認フロー
+
+```
+ユーザー意図 (/plan or Plan タブ)
+  → buildPlanMessages (許可アクションと JSON スキーマをシステムプロンプトに含める)
+  → api.llmChat (既存のストリーミング経路)
+  → parsePlan
+      → JSON 抽出 (コードフェンス許容)
+      → 許可アクション・引数個数・長さ・NUL・アプリ名の検証
+      → 読み取り / 変更リスクをアクションから決定
+  → agentStore.plan (draft)
+  → ユーザーが計画を承認 / 却下
+      → Assistive: 承認済みの手順を 1 つずつ実行
+      → Autonomous: 承認済みの手順を順に実行し、失敗で停止
+  → agent_run (Rust 側で再検証 + 変更操作はネイティブ承認)
+  → 手順ごとに stdout / stderr / 終了コードを保存
+```
+
+モデルが返した計画は信頼しない。`src/lib/plan.ts` が Rust の `agent_run` と
+同じ許可リスト・引数規則で事前検証し、不正な手順を含む計画は表示しない。
+計画の承認は実行可否を決める UI 上の状態であり、Rust の検証とネイティブ承認を
+置き換えない。計画と実行結果はメモリ上にのみ保持する。
+
+## エージェント操作フロー
 
 ```
 ユーザー意図
-  → LLM 推論 (実装済み: チャット応答まで)
-  → スキル選択 (.agents/skills/*.json) (Phase 1 後半)
+  → 計画立案 (実装済み: Agent Desktop の許可アクションのみ)
+  → 計画単位の承認 (実装済み)
   → agent_run (許可リスト + 引数検証 + 変更操作の承認)
   → Agent Desktop が OS を操作
   → agent_snapshot で状態を再取得
-  → 結果を検証して UI に返す
+  → 結果を検証して UI に返す (検証ループは今後)
 ```
 
-現時点では `agent_status` / `agent_snapshot` / `agent_run` のブリッジ、
-引数検証、ネイティブ承認ダイアログ、UI からの `/status`・`/snapshot` 実行、
-OpenAI 互換 API のチャット（ストリーミング・停止・接続テスト）までを実装している。
+`agent_status` / `agent_snapshot` / `agent_run` のブリッジ、引数検証、
+ネイティブ承認ダイアログ、UI からの `/status`・`/snapshot` 実行、
+OpenAI 互換 API のチャット（ストリーミング・停止・接続テスト）、
+計画の生成・承認・実行までを実装している。スキル定義
+(`.agents/skills/*.json`) の実行と検証ループは未実装。
 
 ## ディレクトリ
 
@@ -120,8 +145,8 @@ OpenAI 互換 API のチャット（ストリーミング・停止・接続テ�
 
 ```
 src/
-├── components/ (AgentPanel, SettingsDialog, ...)
-├── lib/{api,demo,llm,monaco}.ts
+├── components/ (AgentPanel, PlanPanel, SettingsDialog, ...)
+├── lib/{api,demo,llm,plan,monaco}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent}Store.ts
 src-tauri/src/

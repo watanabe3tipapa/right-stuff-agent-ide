@@ -104,6 +104,45 @@ session, trace, --version, --help
 
 出力は 200,000 文字で打ち切る。
 
+## 計画立案
+
+計画立案は専用の Tauri コマンドを持たない。フロントエンドが既存の `llm_chat`
+へ計画用システムプロンプトと意図を送り、ストリーミング応答を `src/lib/plan.ts`
+で解析・検証する。承認後の手順は `agent_run` にそのまま渡す。
+
+```ts
+interface AgentPlanStep {
+  id: string;
+  title: string;
+  command: string[];      // 先頭要素は許可アクション
+  action: string;
+  risk: "read" | "write"; // 許可リストから決定 (モデルの自己申告は使わない)
+  rationale?: string;
+  status: "pending" | "approved" | "running" | "done" | "failed" | "skipped";
+  output?: string;
+  error?: string;
+}
+
+interface AgentPlan {
+  id: string;
+  goal: string;
+  steps: AgentPlanStep[];
+  createdAt: number;
+  status: "draft" | "approved" | "running" | "completed" | "failed" | "cancelled";
+}
+```
+
+- モデルには JSON オブジェクトだけを返すよう指示し、コードフェンスや前置きが
+  付いた場合は JSON 部分を抽出する。
+- 手順は最大 12。`command` は 1 個以上 12 個以下、1 引数 16,384 文字、
+  合計 32,768 文字まで。NUL 文字は拒否する。
+- 先頭要素は「許可アクション」のいずれかでなければならない。`launch` /
+  `close-app` など `agent_run` と同じ引数規則を適用する。
+- 読み取り専用アクション以外は `risk: "write"` とし、実行時に `agent_run` の
+  ネイティブ承認ダイアログを通す。
+- 計画は `draft` → `approved` → `running` → `completed` / `failed` と遷移する。
+  `cancelled` は却下・中止を表す。計画自体は永続化しない。
+
 ## 設定
 
 | コマンド | 引数 | 戻り値 |

@@ -68,6 +68,47 @@ export interface AppInfo {
 
 export type AgentMode = "passive" | "assistive" | "autonomous";
 
+export type AgentPanelTab = "chat" | "plan" | "runtime";
+
+export type PlanStepRisk = "read" | "write";
+
+export type PlanStepStatus =
+  | "pending"
+  | "approved"
+  | "running"
+  | "done"
+  | "failed"
+  | "skipped";
+
+export type AgentPlanStatus =
+  | "draft"
+  | "approved"
+  | "running"
+  | "completed"
+  | "failed"
+  | "cancelled";
+
+export interface AgentPlanStep {
+  id: string;
+  title: string;
+  /** Full CLI arguments, starting with the allowlisted action. */
+  command: string[];
+  action: string;
+  risk: PlanStepRisk;
+  rationale?: string;
+  status: PlanStepStatus;
+  output?: string;
+  error?: string;
+}
+
+export interface AgentPlan {
+  id: string;
+  goal: string;
+  steps: AgentPlanStep[];
+  createdAt: number;
+  status: AgentPlanStatus;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "agent" | "system";

@@ -37,6 +37,7 @@ Right-Stuff Editor の執筆体験と Agent Desktop の OS レベル操作能力
 - [x] バージョン履歴 (SQLite)
 - [x] Agent Desktop ブリッジ
 - [x] OpenAI 互換 LLM チャット (Tauri 版のみ)
+- [x] 計画立案と計画単位の承認 (Tauri 版のみ)
 
 ## 開発
 

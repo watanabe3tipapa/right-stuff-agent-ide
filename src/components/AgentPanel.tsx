@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AgentMode, ChatMessage } from "../shared/types";
 import { useAgentStore } from "../stores/agentStore";
 import { Icon } from "./Icon";
+import { PlanPanel } from "./PlanPanel";
 
 const modeCopy: Record<AgentMode, { label: string; description: string }> = {
   passive: {
@@ -15,7 +16,7 @@ const modeCopy: Record<AgentMode, { label: string; description: string }> = {
   },
   autonomous: {
     label: "Autonomous",
-    description: "許可された操作のみ実行します。変更操作はネイティブ承認ダイアログを経由します。計画の自動実行は未実装です。",
+    description: "承認した計画を連続実行します。変更操作はネイティブ承認ダイアログを経由します。",
   },
 };
 
@@ -91,6 +92,8 @@ function ChatView() {
   const messages = useAgentStore((state) => state.messages);
   const busy = useAgentStore((state) => state.busy);
   const streaming = useAgentStore((state) => state.streaming);
+  const planLoading = useAgentStore((state) => state.planLoading);
+  const executingStepId = useAgentStore((state) => state.executingStepId);
   const send = useAgentStore((state) => state.send);
   const stopStreaming = useAgentStore((state) => state.stopStreaming);
   const mode = useAgentStore((state) => state.mode);
@@ -99,6 +102,7 @@ function ChatView() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastTextLength =
     messages.length > 0 ? messages[messages.length - 1].text.length : 0;
+  const blocked = busy || planLoading || executingStepId !== null;
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -109,7 +113,7 @@ function ChatView() {
 
   const submit = async () => {
     const value = draft.trim();
-    if (!value || busy || streaming) return;
+    if (!value || blocked || streaming) return;
     setDraft("");
     await send(value);
   };
@@ -149,7 +153,11 @@ function ChatView() {
               ? "Passive モードではチャットできません"
               : streaming
                 ? "応答を生成中… 停止してから次のメッセージを送信できます"
-                : "エージェントに指示する… (Enter で送信)"
+                : planLoading
+                  ? "計画を生成中… Plan タブで停止できます"
+                  : executingStepId
+                    ? "計画の手順を実行中… 完了までお待ちください"
+                    : "エージェントに指示する… (Enter で送信)"
           }
           disabled={mode === "passive"}
           onChange={(event) => setDraft(event.target.value)}
@@ -178,6 +186,14 @@ function ChatView() {
             >
               /snapshot
             </button>
+            <button
+              type="button"
+              className="chip"
+              onClick={() => setDraft("/plan ")}
+              disabled={mode === "passive"}
+            >
+              /plan
+            </button>
           </div>
           <span className={`composer-model${llm?.configured ? "" : " unset"}`}>
             {llm?.configured ? llm.model : "LLM 未設定"}
@@ -196,7 +212,7 @@ function ChatView() {
             <button
               type="submit"
               className="send-btn"
-              disabled={!draft.trim() || busy || mode === "passive"}
+              disabled={!draft.trim() || busy || planLoading || executingStepId !== null || mode === "passive"}
               aria-label="送信"
             >
               <Icon name="send" size={15} />
@@ -286,9 +302,11 @@ function RuntimeView() {
 }
 
 export function AgentPanel() {
-  const [tab, setTab] = useState<"chat" | "runtime">("chat");
+  const tab = useAgentStore((state) => state.panelTab);
+  const setTab = useAgentStore((state) => state.setPanelTab);
   const mode = useAgentStore((state) => state.mode);
   const status = useAgentStore((state) => state.status);
+  const plan = useAgentStore((state) => state.plan);
   const openSettings = useAgentStore((state) => state.openSettings);
 
   return (
@@ -310,6 +328,15 @@ export function AgentPanel() {
                 onClick={() => setTab("chat")}
               >
                 Chat
+              </button>
+              <button
+                type="button"
+                className={`${tab === "plan" ? "active" : ""}${
+                  plan?.status === "draft" ? " has-plan" : ""
+                }`}
+                onClick={() => setTab("plan")}
+              >
+                Plan
               </button>
               <button
                 type="button"
@@ -337,7 +364,13 @@ export function AgentPanel() {
         </div>
       </div>
 
-      {tab === "chat" ? <ChatView /> : <RuntimeView />}
+      {tab === "chat" ? (
+        <ChatView />
+      ) : tab === "plan" ? (
+        <PlanPanel />
+      ) : (
+        <RuntimeView />
+      )}
     </aside>
   );
 }

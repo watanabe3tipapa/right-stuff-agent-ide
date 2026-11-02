@@ -35,7 +35,7 @@ v0.1.1 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 PR1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットを追加しました。LLM による計画立案と、計画単位の承認フローは Phase 1 の後半で追加します。
+Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フローを追加しました。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -44,7 +44,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 | 残す | ワークスペースへ直接保存、SQLite にバージョン履歴 |
 | 守る | atomic write、パス検証、ゴミ箱へのソフトデリート |
 | つなぐ | Agent Desktop CLI の検出、スナップショット、許可アクションの実行 |
-| 任せる | LLM チャット（OpenAI 互換）、計画単位の承認フローは Phase 1 後半 |
+| 任せる | LLM チャット（OpenAI 互換）、計画立案と計画単位の承認 |
 | 広げる | ターミナル、Git、LSP / DAP（Phase 2 以降） |
 
 ### 設計方針
@@ -64,13 +64,14 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **Markdown プレビュー** — `react-markdown` + `remark-gfm` による GFM プレビューを分割表示
 - **バージョン履歴** — 保存のたびに SQLite (WAL) へ記録。ファイルあたり最新 100 版を保持し、任意の版をプレビューしてエディタへ復元
 - **ファイル操作** — 新規作成、名前変更、削除。削除は `.right-stuff/trash/<timestamp>/` へ移動するソフトデリート
-- **エージェントパネル** — Chat / Runtime の 2 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot` コマンド
+- **エージェントパネル** — Chat / Plan / Runtime の 3 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan` コマンド
 - **LLM チャット** — OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続。ストリーミング表示、生成停止、接続テストに対応。API キーは OS キーチェーンに保存
+- **計画立案と承認** — 意図を入力すると LLM が Agent Desktop の許可アクションだけを使った実行計画を生成。手順ごとの引数検証、計画単位の承認、Assistive での個別実行、Autonomous での連続実行に対応。モデルが生成した不正なアクションや引数は実行前に拒否
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェントの操作を検索して実行
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
 - **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリのデモワークスペースを操作可能。Vercel では Tauri 版が公開できるまでのサンプルとして公開
-- **スキル定義** — `.agents/skills/*.json` にエージェント向けの操作定義を配置（実行は Phase 1）
+- **スキル定義** — `.agents/skills/*.json` にエージェント向けの操作定義を配置（スキル実行は未実装）
 - **テーマ** — ダークテーマ、Overlay タイトルバー、macOS ネイティブウィンドウ
 
 ### アーキテクチャ
@@ -237,6 +238,14 @@ vercel --prod          # 本番環境へデプロイ
 
 ## 既知の制約とロードマップ
 
+### 未リリース
+
+- [x] LLM による実行計画の生成（Plan タブ、`/plan <意図>`）
+- [x] 許可アクション・引数のクライアント側検証とリスク表示
+- [x] 計画単位の承認・却下、Assistive での手順別実行
+- [x] Autonomous での承認済み計画の連続実行（失敗時は停止）
+- [x] 実行結果（stdout / stderr / 終了コード）の手順ごとの表示
+
 ### v0.1.1
 
 - [x] OpenAI 互換 LLM 接続（OpenAI / Ollama / LM Studio / OpenRouter / カスタム）
@@ -266,7 +275,6 @@ vercel --prod          # 本番環境へデプロイ
 
 ### 次の候補
 
-- [ ] 計画立案と計画単位の承認フロー
 - [ ] 承認履歴の監査ログとポリシー設定 UI
 - [ ] スキル実行と検証ループ
 - [ ] ターミナル (PTY)、Git、LSP / DAP
@@ -278,7 +286,9 @@ vercel --prod          # 本番環境へデプロイ
 
 - 動作確認は macOS（Apple Silicon）のみです。Intel 実機での起動確認は未実施です。公証は未対応で、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
-- LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API、計画立案、計画単位の承認は未実装です
+- LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
+- 計画の実行対象は Agent Desktop の許可アクションに限られます。エディタ・Git・ターミナルのスキル実行は未実装です
+- 計画と実行結果はメモリ上にのみ保持され、再起動すると失われます。変更操作は計画承認後も、実行時に OS のネイティブ承認ダイアログで確認します
 - スナップショットはメモリ上にのみ保持され、再起動すると失われます
 - ブラウザデモの変更は永続化されません
 - 同期・共同編集は提供していません
@@ -292,7 +302,8 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / タブ / Markdown 分割プレビュー
 │   ├── FileTree.tsx                # ワークスペースツリーとファイル操作
-│   ├── AgentPanel.tsx              # Chat / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Runtime
+│   ├── PlanPanel.tsx               # 計画の生成・承認・実行
 │   ├── CommandPalette.tsx          # ⌘K コマンドパレット
 │   ├── HistoryDialog.tsx           # バージョン履歴
 │   ├── UnsavedChangesDialog.tsx    # 未保存変更の保存 / 破棄 / キャンセル
@@ -300,6 +311,8 @@ src/
 ├── lib/
 │   ├── api.ts                      # Tauri invoke ラッパー
 │   ├── demo.ts                     # ブラウザ用インメモリワークスペース
+│   ├── llm.ts                      # LLM プロンプト・リクエスト変換
+│   ├── plan.ts                     # 計画プロンプト・JSON 解析・引数検証
 │   └── monaco.ts                   # Monaco テーマ・ワーカー設定
 ├── shared/types.ts                 # フロントエンド / バックエンド共有型
 └── stores/                         # Zustand (workspace / editor / agent)

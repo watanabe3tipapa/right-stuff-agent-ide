@@ -48,7 +48,7 @@ export function Welcome() {
           <article className="welcome-card">
             <div className="welcome-card-icon green"><Icon name="sparkles" size={16} /></div>
             <h2>エージェント操作</h2>
-            <p>snapshot → action → verify のループで、操作を検証しながら進める。</p>
+            <p>LLM が計画を立て、承認した手順を Agent Desktop で実行。結果をその場で確認。</p>
             <span className="welcome-tag">Phase 1</span>
           </article>
           <article className="welcome-card">

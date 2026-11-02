@@ -35,7 +35,7 @@ v0.1.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3ti
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 PR1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, and streaming chat. LLM planning and plan-level approval are planned for the later Phase 1 work.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation, and plan-level approval.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -44,7 +44,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 | Keep | Direct saves into the workspace, version history in SQLite |
 | Protect | Atomic writes, path validation, trash-based soft delete |
 | Connect | Agent Desktop CLI detection, snapshots, allowlisted actions |
-| Delegate | LLM chat over OpenAI-compatible APIs; plan-level approval in later Phase 1 |
+| Delegate | LLM chat over OpenAI-compatible APIs, plan generation, and plan-level approval |
 | Extend | Terminal, Git, LSP / DAP (Phase 2+) |
 
 ### Design principles
@@ -64,13 +64,14 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Markdown preview** — GFM rendering via `react-markdown` + `remark-gfm` in a split pane
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
-- **Agent panel** — Chat and Runtime tabs, Passive / Assistive / Autonomous modes, `/status` and `/snapshot` commands
+- **Agent panel** — Chat, Plan, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, and `/plan` commands
 - **LLM chat** — OpenAI / Ollama / LM Studio / OpenRouter and other OpenAI-compatible APIs, with streaming output, cancellation, and a connection test. API keys are stored in the OS keychain
+- **Plan generation and approval** — describe an intent and the LLM proposes a plan built only from allowlisted Agent Desktop actions. Every step is validated before display; plans are approved as a unit, run step by step in Assistive mode, or run sequentially in Autonomous mode. Invalid actions and arguments from the model are rejected before execution
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, and agent commands
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
 - **Browser demo (sample)** — run the in-memory demo workspace with `npm run dev` without Tauri. On Vercel it is published as a sample until the Tauri version is ready
-- **Skill definitions** — agent action definitions live in `.agents/skills/*.json` (execution lands in Phase 1)
+- **Skill definitions** — agent action definitions live in `.agents/skills/*.json` (skill execution is not implemented yet)
 - **Theme** — dark theme, overlay title bar, native macOS window
 
 ### Architecture
@@ -237,6 +238,14 @@ vercel --prod          # Deploy to production
 
 ## Known limitations and roadmap
 
+### Unreleased
+
+- [x] LLM plan generation (Plan tab, `/plan <intent>`)
+- [x] Client-side action and argument validation with risk labels
+- [x] Plan-level approve / reject and per-step execution in Assistive mode
+- [x] Sequential execution of an approved plan in Autonomous mode (stops on failure)
+- [x] Per-step result output (stdout / stderr / exit code)
+
 ### v0.1.1
 
 - [x] OpenAI-compatible LLM connections (OpenAI / Ollama / LM Studio / OpenRouter / custom)
@@ -266,7 +275,6 @@ vercel --prod          # Deploy to production
 
 ### Next candidates
 
-- [ ] Plan generation and plan-level approval
 - [ ] Approval audit log and policy settings UI
 - [ ] Skill execution and verification loop
 - [ ] Terminal (PTY), Git, LSP / DAP
@@ -278,7 +286,9 @@ vercel --prod          # Deploy to production
 
 - Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is not implemented, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
 - The `agent-desktop` CLI is not bundled and must be installed separately
-- LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs, plan generation, and plan-level approval are not implemented yet
+- LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
+- Plans can only run allowlisted Agent Desktop actions. Editor, Git, and terminal skill execution is not implemented yet
+- Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved
 - Snapshots live in memory only and are lost on restart
 - Browser demo changes are not persisted
 - No sync or collaborative editing
@@ -292,7 +302,8 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / tabs / Markdown split preview
 │   ├── FileTree.tsx                # Workspace tree and file operations
-│   ├── AgentPanel.tsx              # Chat / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Runtime
+│   ├── PlanPanel.tsx               # Plan generation, approval, and execution
 │   ├── CommandPalette.tsx          # ⌘K command palette
 │   ├── HistoryDialog.tsx           # Version history
 │   ├── UnsavedChangesDialog.tsx    # Save / discard / cancel unsaved changes
@@ -300,6 +311,8 @@ src/
 ├── lib/
 │   ├── api.ts                      # Tauri invoke wrapper
 │   ├── demo.ts                     # In-memory browser workspace
+│   ├── llm.ts                      # LLM prompts and request conversion
+│   ├── plan.ts                     # Plan prompt, JSON parsing, argument validation
 │   └── monaco.ts                   # Monaco themes and worker setup
 ├── shared/types.ts                 # Shared frontend / backend types
 └── stores/                         # Zustand (workspace / editor / agent)

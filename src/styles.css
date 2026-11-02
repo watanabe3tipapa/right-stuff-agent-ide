@@ -1529,6 +1529,393 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   border-radius: 3px;
 }
 
+/* ---------- Agent plan ---------- */
+
+.agent-tabs button.has-plan {
+  position: relative;
+}
+
+.agent-tabs button.has-plan::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.plan-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 11.5px;
+}
+
+.plan-form {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--bg);
+}
+
+.plan-form-label {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+
+.plan-form textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 58px;
+  max-height: 180px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 11.5px;
+  line-height: 1.65;
+}
+
+.plan-form textarea:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+.plan-form textarea::placeholder {
+  color: var(--ink-dim);
+}
+
+.plan-form-foot {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.plan-notice,
+.plan-error {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in oklab, var(--accent3) 32%, transparent);
+  border-radius: 7px;
+  background: color-mix(in oklab, var(--accent3) 6%, var(--bg));
+  color: var(--ink-muted);
+  font-size: 10.5px;
+  line-height: 1.65;
+}
+
+.plan-notice .btn {
+  flex-shrink: 0;
+}
+
+.plan-error {
+  display: block;
+}
+
+.plan-error-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent3);
+  font-weight: 600;
+}
+
+.plan-error p {
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+
+.plan-error details,
+.plan-output {
+  margin-top: 7px;
+}
+
+.plan-error summary,
+.plan-output summary {
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+
+.plan-error pre,
+.plan-live pre,
+.plan-output pre {
+  margin-top: 6px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #0a0c10;
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.plan-live {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-raised);
+}
+
+.plan-live-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-dim);
+}
+
+.plan-empty {
+  padding: 18px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  color: var(--ink-dim);
+  text-align: left;
+}
+
+.plan-empty > svg {
+  color: var(--accent);
+}
+
+.plan-empty p {
+  margin: 8px 0;
+  font-size: 10.5px;
+  line-height: 1.75;
+  color: var(--ink-muted);
+}
+
+.plan-empty ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.plan-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--surface-raised);
+}
+
+.plan-card.approved,
+.plan-card.running {
+  border-color: color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+.plan-card.completed {
+  border-color: color-mix(in oklab, var(--accent2) 35%, transparent);
+}
+
+.plan-card.failed {
+  border-color: color-mix(in oklab, var(--danger) 40%, transparent);
+}
+
+.plan-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.plan-status {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.plan-card.completed .plan-status {
+  color: var(--accent2);
+}
+
+.plan-card.failed .plan-status {
+  color: var(--danger);
+}
+
+.plan-card.cancelled .plan-status {
+  color: var(--ink-dim);
+}
+
+.plan-progress {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+
+.plan-goal {
+  margin: 7px 0 10px;
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.plan-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-step {
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px;
+  background: var(--bg);
+}
+
+.plan-step.running {
+  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+}
+
+.plan-step.failed {
+  border-color: color-mix(in oklab, var(--danger) 40%, transparent);
+}
+
+.plan-step.done {
+  opacity: 0.82;
+}
+
+.plan-step-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.plan-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--ink-dim);
+  flex-shrink: 0;
+}
+
+.plan-step-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.plan-risk {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 8px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+}
+
+.plan-risk.write {
+  color: var(--accent3);
+  border-color: color-mix(in oklab, var(--accent3) 35%, transparent);
+}
+
+.plan-step-status {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--ink-dim);
+}
+
+.plan-step-status.running,
+.plan-step-status.approved {
+  color: var(--accent);
+}
+
+.plan-step-status.done {
+  color: var(--accent2);
+}
+
+.plan-step-status.failed {
+  color: var(--danger);
+}
+
+.plan-command {
+  display: block;
+  margin-top: 6px;
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: #0a0c10;
+  border: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1.55;
+  color: #a5d6ff;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.plan-rationale {
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.plan-step-error {
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+
+.plan-step-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 7px;
+}
+
+.plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.plan-hint {
+  margin-top: 8px;
+  font-size: 9.5px;
+  line-height: 1.65;
+  color: var(--ink-dim);
+}
+
 /* ---------- Status bar ---------- */
 
 .statusbar {

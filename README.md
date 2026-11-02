@@ -15,9 +15,10 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/phase-0%20foundation-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
-**クイックリンク:** [設計書](./right-stuff-agent-ide-implementation-plan.html) · [アーキテクチャ](./docs/ARCHITECTURE.md) · [API](./docs/API.md) · [セキュリティ](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+**クイックリンク:** [公開サイト](https://right-stuff-agent-ide.vercel.app/) · [ブラウザデモ](https://right-stuff-agent-ide.vercel.app/app/) · [設計書](./right-stuff-agent-ide-implementation-plan.html) · [アーキテクチャ](./docs/ARCHITECTURE.md) · [API](./docs/API.md) · [セキュリティ](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 
 ## ダウンロード
 
@@ -198,7 +199,14 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 
 ## サンプル公開（Vercel）
 
-ランディングページとブラウザデモは、Tauri 版が公開できるまでのサンプルとして Vercel で公開できます。製品版の開発は Tauri 2.0 のネイティブアプリが中心です。
+ランディングページとブラウザデモは、Tauri 版が公開できるまでのサンプルとして Vercel で公開中です。製品版の開発は Tauri 2.0 のネイティブアプリが中心です。
+
+| URL | 内容 |
+|---|---|
+| https://right-stuff-agent-ide.vercel.app/ | ランディングページ |
+| https://right-stuff-agent-ide.vercel.app/app/ | ブラウザデモ |
+
+リポジトリ内のパス:
 
 | パス | 内容 |
 |---|---|

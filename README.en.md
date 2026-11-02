@@ -15,9 +15,10 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/phase-0%20foundation-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
-**Quick links:** [Design document (JA)](./right-stuff-agent-ide-implementation-plan.html) · [Architecture](./docs/ARCHITECTURE.md) · [API](./docs/API.md) · [Security](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+**Quick links:** [Live site](https://right-stuff-agent-ide.vercel.app/) · [Browser demo](https://right-stuff-agent-ide.vercel.app/app/) · [Design document (JA)](./right-stuff-agent-ide-implementation-plan.html) · [Architecture](./docs/ARCHITECTURE.md) · [API](./docs/API.md) · [Security](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 
 ## Download
 
@@ -198,7 +199,14 @@ Detection order:
 
 ## Sample deployment (Vercel)
 
-The landing page and browser demo can be hosted on Vercel as a sample until the Tauri version is ready for release. The native Tauri 2.0 app remains the main development target.
+The landing page and browser demo are live on Vercel as a sample until the Tauri version is ready for release. The native Tauri 2.0 app remains the main development target.
+
+| URL | Content |
+|---|---|
+| https://right-stuff-agent-ide.vercel.app/ | Landing page |
+| https://right-stuff-agent-ide.vercel.app/app/ | Browser demo |
+
+Paths in the repository:
 
 | Path | Content |
 |---|---|

@@ -22,7 +22,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 
 ## ダウンロード
 
-v0.1.1 はソースからのビルドを前提としていますが、Apple Silicon（arm64）と Intel（x86_64）向けの DMG を [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) で公開しています。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.1.1 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
 - Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.1.1_aarch64.dmg`
 - Intel (x86_64): `Right-Stuff.Agent.IDE_0.1.1_x64.dmg`
@@ -107,7 +107,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 | Rust | >= 1.85（edition 2024） | `rustc --version` |
 | Xcode Command Line Tools | — | `xcode-select -p` |
 
-検証環境は macOS 15 / Node.js 22.17（CI は Node.js 24）/ Rust 1.94 です。
+検証環境は macOS 27 / Node.js 26.9（CI は Node.js 24）/ Rust 1.94–1.98 です。
 
 ### 基本的な手順
 
@@ -207,7 +207,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.1.1 はソースからのビルドを前提としていますが、Apple Silicon / Intel 向けの DMG を GitHub Releases で公開しています
+- v0.1.1 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - macOS（Apple Silicon / Intel）を対象としています
 

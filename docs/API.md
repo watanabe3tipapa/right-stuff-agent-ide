@@ -146,6 +146,7 @@ interface LlmTestResult {
 - 設定は SQLite の `settings` テーブルに `llm_config` として保存する。
 - `configured` は設定が保存済みかつ検証済みであることを、`keyConfigured` は API キーの有無を示す。
 - API キーは OS キーチェーンにのみ保存する。`llm_config_get` / `llm_key_status` は真偽値だけを返し、キー本文は WebView・SQLite・ログ・エラー文字列に含めない。
+- `llm_key_set` は保存済みプロバイダーのキーを保存する。プロバイダーを変更する場合は、先に `llm_config_set` を呼ぶ。
 - `baseUrl` は `https://` を必須とし、`http://` は `localhost` / `127.0.0.1` / `::1` のみ許可する。
 - `llm_chat` は OpenAI 互換の `POST {baseUrl}/chat/completions` に `stream: true` で接続する。
 - Channel で送信するイベント:

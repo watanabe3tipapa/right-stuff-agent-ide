@@ -22,7 +22,7 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 
 ## Download
 
-v0.1.1 assumes a build from source, but DMGs for Apple Silicon (arm64) and Intel (x86_64) are published on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases). See "Install and build" for build instructions.
+v0.1.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
 - Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.1.1_aarch64.dmg`
 - Intel (x86_64): `Right-Stuff.Agent.IDE_0.1.1_x64.dmg`
@@ -107,7 +107,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 | Rust | >= 1.85 (edition 2024) | `rustc --version` |
 | Xcode Command Line Tools | — | `xcode-select -p` |
 
-Verified on macOS 15 with Node.js 22.17 (CI uses Node.js 24) and Rust 1.94.
+Verified on macOS 27 with Node.js 26.9 (CI uses Node.js 24) and Rust 1.94–1.98.
 
 ### Basic steps
 
@@ -207,7 +207,7 @@ Detection order:
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.1.1 assumes building from source, but DMGs for Apple Silicon and Intel are published on GitHub Releases
+- v0.1.1 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned)
 - Targets macOS (Apple Silicon and Intel)
 

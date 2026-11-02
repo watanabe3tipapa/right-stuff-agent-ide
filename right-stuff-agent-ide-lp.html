@@ -919,7 +919,7 @@ footer .footer-links a:hover { color: var(--accent); }
   <div class="section-header">
     <div class="section-label">Sample Scope</div>
     <h2>サンプルが目指す構成</h2>
-    <p class="section-desc">Tauri 版の設計を紹介するためのサンプルです。Phase 0 で実装済みの範囲は README を参照してください。</p>
+    <p class="section-desc">Tauri 版の設計を紹介するためのサンプルです。実装済みの範囲は README を参照してください。</p>
   </div>
   <div class="feature-grid">
     <div class="feature-card">
@@ -1056,7 +1056,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="step-num">02</div>
       <div class="step-content">
         <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版はこのリポジトリからビルドします。対象 OS は macOS 11 以降です。Node.js 20.19 以上（または 22.12 以上）と Rust 1.85 以上が必要です。</div>
+        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.1.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.85 以上が必要です。</div>
         <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
 cd right-stuff-agent-ide
 npm ci</pre>
@@ -1235,7 +1235,8 @@ Base URL: http://localhost:11434/v1
   </div>
   <div class="install-box">
     <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Windows / Linux は未検証）</p>
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;">Tauri 版をソースからビルドする</p>
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.1.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。</p>
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;">ソースからビルドする場合</p>
     <pre>npm ci
 npm run tauri build
 open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"</pre>

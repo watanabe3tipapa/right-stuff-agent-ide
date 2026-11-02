@@ -1,0 +1,13 @@
+{
+  "name": "code-edit",
+  "description": "エディタ内でのコード編集操作",
+  "actions": [
+    "editor.openFile",
+    "editor.editRange",
+    "editor.insertText",
+    "editor.deleteRange",
+    "editor.saveFile",
+    "editor.runCommand"
+  ],
+  "verification": "snapshot_after_action"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "git-operation",
+  "description": "Git の状態確認とコミット操作",
+  "actions": [
+    "git.status",
+    "git.diff",
+    "git.stage",
+    "git.commit",
+    "git.branches",
+    "git.checkout",
+    "git.stash"
+  ],
+  "approval": {
+    "required": ["git.push", "git.forcePush", "git.resetHard"]
+  },
+  "verification": "status_after_action"
+}

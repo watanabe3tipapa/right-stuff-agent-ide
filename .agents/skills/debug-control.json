@@ -1,0 +1,14 @@
+{
+  "name": "debug-control",
+  "description": "デバッガ (DAP) の制御",
+  "actions": [
+    "debug.start",
+    "debug.stop",
+    "debug.setBreakpoint",
+    "debug.continue",
+    "debug.stepOver",
+    "debug.stepInto",
+    "debug.evaluate"
+  ],
+  "verification": "stopped_thread_state"
+}

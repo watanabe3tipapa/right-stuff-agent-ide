@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right-Stuff Agent IDE — 実装設計書</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Noto+Sans+JP:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface-raised: #1c2128;
+  --ink: #e6edf3;
+  --ink-muted: #8b949e;
+  --ink-dim: #484f58;
+  --accent: #58a6ff;
+  --accent-weak: color-mix(in oklab, var(--accent) 12%, var(--surface));
+  --accent-glow: color-mix(in oklab, var(--accent) 25%, transparent);
+  --accent2: #3fb950;
+  --accent2-weak: color-mix(in oklab, var(--accent2) 12%, var(--surface));
+  --accent3: #d29922;
+  --line: color-mix(in oklab, var(--ink) 10%, transparent);
+  --line-strong: color-mix(in oklab, var(--ink) 18%, transparent);
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  --step-0: clamp(0.95rem, 0.92rem + 0.2vw, 1.05rem);
+  --step-1: clamp(1.1rem, 1.05rem + 0.3vw, 1.3rem);
+  --step-2: clamp(1.4rem, 1.2rem + 1vw, 2rem);
+  --step-3: clamp(2rem, 1.5rem + 2.5vw, 3.2rem);
+  --space: clamp(1.2rem, 1rem + 1vw, 2rem);
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: var(--step-0);
+  line-height: 1.85;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hero */
+header.hero {
+  position: relative;
+  padding: calc(var(--space) * 3) var(--space) calc(var(--space) * 2.5);
+  text-align: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+header.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 0%, var(--accent-glow), transparent 70%),
+    radial-gradient(ellipse 40% 40% at 80% 60%, var(--accent2-weak), transparent 60%);
+  pointer-events: none;
+}
+header.hero .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--accent);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.35em 1em;
+  margin-bottom: 1.2em;
+  background: var(--surface);
+  position: relative;
+}
+header.hero .badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent2);
+  box-shadow: 0 0 6px var(--accent2);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+header.hero h1 {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-size: var(--step-3);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4em;
+  position: relative;
+}
+header.hero h1 .highlight {
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+header.hero .subtitle {
+  font-size: var(--step-1);
+  color: var(--ink-muted);
+  max-width: 52ch;
+  margin: 0 auto 1.5em;
+  position: relative;
+}
+header.hero .meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  display: flex;
+  justify-content: center;
+  gap: 1.5em;
+  flex-wrap: wrap;
+  position: relative;
+}
+header.hero .meta span {
+  display: flex; align-items: center; gap: 0.4em;
+}
+
+/* Layout */
+main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: calc(var(--space) * 1.5) var(--space);
+}
+
+section {
+  margin-bottom: calc(var(--space) * 2.2);
+}
+
+/* Section header with number */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7em;
+  margin-bottom: 1em;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid var(--line);
+}
+.section-num {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-weak);
+  padding: 0.15em 0.55em;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+h2 {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-size: var(--step-1);
+  font-weight: 600;
+  margin: 1.6em 0 0.5em;
+  color: var(--ink);
+}
+
+h4 {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.3em 0 0.4em;
+  color: var(--accent);
+}
+
+p { margin-bottom: 0.9em; }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: calc(var(--space) * 0.9);
+  margin-bottom: 1em;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 0.4em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.card-title .icon {
+  font-size: 1.1em;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92em;
+  margin: 1em 0;
+}
+th, td {
+  padding: 0.65em 0.9em;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+th {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-weight: 600;
+  font-size: 0.85em;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-raised);
+}
+tr:hover td { background: var(--surface-raised); }
+
+/* Code blocks */
+pre, code {
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  font-size: 0.85em;
+}
+pre {
+  background: #0a0c10;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1em 1.2em;
+  overflow-x: auto;
+  margin: 0.8em 0;
+  line-height: 1.6;
+}
+code {
+  background: var(--surface-raised);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  color: var(--accent);
+}
+pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* Lists */
+ul, ol {
+  padding-left: 1.4em;
+  margin-bottom: 0.9em;
+}
+li { margin-bottom: 0.35em; }
+
+/* Architecture diagram as styled blocks */
+.arch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8em;
+  margin: 1em 0;
+}
+.arch-block {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1em;
+}
+.arch-block .layer-name {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4em;
+}
+.arch-block .layer-desc {
+  font-size: 0.9em;
+  color: var(--ink-muted);
+}
+.arch-arrow {
+  text-align: center;
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+  margin: 0.3em 0;
+}
+
+/* Timeline / phases */
+.phase-list {
+  position: relative;
+  padding-left: 1.8em;
+  border-left: 2px solid var(--line);
+  margin: 1em 0;
+}
+.phase-item {
+  position: relative;
+  padding-bottom: 1.5em;
+}
+.phase-item::before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 0.4em;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateX(-4px);
+}
+.phase-item.done::before { background: var(--accent2); }
+.phase-item.future::before { background: var(--ink-dim); }
+.phase-item .phase-title {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 0.2em;
+}
+.phase-item .phase-meta {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  margin-bottom: 0.4em;
+}
+
+/* Feature tags */
+.tag {
+  display: inline-block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  padding: 0.2em 0.55em;
+  border-radius: 4px;
+  background: var(--accent-weak);
+  color: var(--accent);
+  margin-right: 0.3em;
+  margin-bottom: 0.3em;
+}
+.tag.green {
+  background: var(--accent2-weak);
+  color: var(--accent2);
+}
+.tag.orange {
+  background: color-mix(in oklab, var(--accent3) 15%, var(--surface));
+  color: var(--accent3);
+}
+
+/* Data flow diagram */
+.flow-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  justify-content: center;
+  margin: 1em 0;
+  padding: 1em;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+.flow-node {
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 0.5em 1em;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.82rem;
+  text-align: center;
+}
+.flow-node.accent {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.flow-node.green {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+.flow-arrow {
+  color: var(--ink-dim);
+  font-size: 1.1rem;
+}
+
+/* Signature element: side annotation */
+.side-note {
+  float: right;
+  width: 200px;
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+  padding: 0.8em 1em;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+  border-left: 2px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+@media (max-width: 700px) {
+  .side-note { float: none; width: 100%; margin-left: 0; }
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: calc(var(--space) * 2) var(--space);
+  border-top: 1px solid var(--line);
+  color: var(--ink-dim);
+  font-size: 0.85rem;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* Print */
+@media print {
+  body { background: #fff; color: #111; }
+  header.hero::before, .side-note { background: #f5f5f5; }
+  .card, .arch-block, .flow-box { background: #f9f9f9; border-color: #ddd; }
+  :root {
+    --bg: #fff; --surface: #f9f9f9; --ink: #111;
+    --accent: #0366d6; --accent2: #22863a;
+    --line: #ddd; --line-strong: #bbb;
+  }
+}
+@page { size: A4; margin: 16mm; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="badge"><span class="dot"></span> 実装設計書 v1.0</div>
+  <h1>Right-Stuff Agent IDE<br><span class="highlight">実装設計書</span></h1>
+  <p class="subtitle">
+    Right-Stuff Editor の執筆体験と Agent Desktop の OS レベル操作能力を統合した、<br>
+    次世代エージェント駆動型 IDE の実装方針
+  </p>
+  <div class="meta">
+    <span>作成日: 2026-11-02</span>
+    <span>対象プラットフォーム: macOS（Windows / Linux は将来対応）</span>
+    <span>ライセンス: MIT</span>
+  </div>
+  <div class="card" style="max-width: 880px; margin: 1.5em auto 0; text-align: left;">
+    <div class="card-title"><span class="icon">&#9670;</span> 本書の位置付け</div>
+    <p style="margin-bottom:0">
+      本書は Right-Stuff Agent IDE の構想をまとめた実装設計書です。Phase 0 の実装は、Lexical ベースの既存コードを移行したものではなく、
+      <strong>Tauri 2.0 + React 18 + Monaco</strong> で新規に構築しています。Lexical、LSP、統合ターミナル、Apple Notes 連携、
+      AI プロバイダー接続は今後の候補であり、現時点の実装範囲は README の「既知の制約とロードマップ」を参照してください。
+    </p>
+  </div>
+</header>
+
+<main>
+
+<!-- 01 コンセプト -->
+<section>
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>コンセプトとビジョン</h2>
+  </div>
+  <p>
+    Right-Stuff Agent IDE は、<strong>Right-Stuff Editor</strong> の執筆・編集体験を UI ベースにしつつ、
+    <strong>Agent Desktop</strong> の OS アクセシビリティツリー操作能力を統合した、新しい形のエージェント駆動型 IDE です。
+  </p>
+  <p>
+    従来の AI エディタは「エディタ内で AI に質問する」モデルでしたが、Right-Stuff Agent IDE は
+    「エディタそのものがエージェントの作業台になる」モデルを採用します。
+    エージェントはエディタの UI を直接操作できるだけでなく、エディタ外のデスクトップアプリケーションとも連携し、
+    コード作成からテスト実行、ドキュメント整備、デプロイまでの一連のワークフローを一貫して支援します。
+  </p>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#9670;</span> コアビジョン</div>
+    <p style="margin-bottom:0">
+      「書く、動かす、確認する」のサイクルを、エディタの中で完結させる。
+      エージェントがエディタの UI を直操作し、ファイルシステム、ターミナル、ブラウザ、
+      外部アプリケーションを横断して作業を進める。
+    </p>
+  </div>
+
+  <h3>統合の3本柱</h3>
+  <div class="arch-grid">
+    <div class="arch-block">
+      <div class="layer-name">執筆体験</div>
+      <div class="layer-desc">
+        Lexical ベースのリッチテキスト、Markdown 双方向編集、
+        ワークスペース管理、バージョン履歴、Apple Notes 連携を継承
+      </div>
+    </div>
+    <div class="arch-block">
+      <div class="layer-name">エージェント操作</div>
+      <div class="layer-desc">
+        Agent Desktop の OS アクセシビリティツリー API を統合し、
+        エディタ UI と外部アプリの両方をエージェントが操作可能に
+      </div>
+    </div>
+    <div class="arch-block">
+      <div class="layer-name">IDE 機能</div>
+      <div class="layer-desc">
+        ファイルエクスプローラ、ターミナル、デバッガ連携、
+        Git 統合、LSP 対応、マルチ言語サポート
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 アーキテクチャ -->
+<section>
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>システムアーキテクチャ</h2>
+  </div>
+
+  <h3>全体構成</h3>
+  <div class="arch-grid">
+    <div class="arch-block">
+      <div class="layer-name">Presentation Layer</div>
+      <div class="layer-desc">
+        React 18 + Vite + Tailwind CSS v4<br>
+        Lexical エディタ、ファイルツリー、ターミナルパネル、
+        エージェントチャット UI、設定画面
+      </div>
+    </div>
+    <div class="arch-block">
+      <div class="layer-name">Agent Bridge Layer</div>
+      <div class="layer-desc">
+        Agent Desktop CLI ラッパー<br>
+        スナップショット取得、アクション実行、検証ループ、
+        セッション管理、スキルディスパッチャ
+      </div>
+    </div>
+    <div class="arch-block">
+      <div class="layer-name">Core Engine Layer</div>
+      <div class="layer-desc">
+        Workspace I/O、SQLite 履歴、Markdown パーサ、
+        LSP クライアント、Git クライアント、PTY ターミナル
+      </div>
+    </div>
+    <div class="arch-block">
+      <div class="layer-name">Native Bridge Layer</div>
+      <div class="layer-desc">
+        tinyjs (txiki.js + WebView) / Tauri / Electron 選択可能<br>
+        OS ネイティブ API、ファイルダイアログ、通知、
+        Apple Notes ブリッジ、アクセシビリティ権限管理
+      </div>
+    </div>
+    <div class="arch-block">
+      <div class="layer-name">OS Integration Layer</div>
+      <div class="layer-desc">
+        Agent Desktop ネイティブバイナリ<br>
+        macOS AX API / Windows UI Automation / Linux AT-SPI<br>
+        スクリーンショット、クリップボード、ウィンドウ操作
+      </div>
+    </div>
+  </div>
+
+  <h3>技術スタック</h3>
+  <table>
+    <thead>
+      <tr><th>層</th><th>技術</th><th>役割</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>フロントエンド</td>
+        <td>React 18, Vite, Tailwind CSS v4, Lexical 0.32</td>
+        <td>UI コンポーネント、エディタ、状態管理</td>
+      </tr>
+      <tr>
+        <td>デスクトップ基盤</td>
+        <td>Tauri 2.0 (推奨) または tinyjs</td>
+        <td>ネイティブウィンドウ、OS API ブリッジ</td>
+      </tr>
+      <tr>
+        <td>バックエンド</td>
+        <td>Rust (Tauri コマンド) + TypeScript</td>
+        <td>ファイル I/O、DB、エージェント連携</td>
+      </tr>
+      <tr>
+        <td>エージェントエンジン</td>
+        <td>Agent Desktop CLI (Rust)</td>
+        <td>OS アクセシビリティツリー操作</td>
+      </tr>
+      <tr>
+        <td>データベース</td>
+        <td>SQLite (WAL モード)</td>
+        <td>履歴、設定、チャット、スナップショットキャッシュ</td>
+      </tr>
+      <tr>
+        <td>AI プロバイダー</td>
+        <td>OpenAI 互換 API, Ollama, Apple FM, Claude, Gemini</td>
+        <td>補完、チャット、エージェント推論</td>
+      </tr>
+      <tr>
+        <td>言語サポート</td>
+        <td>LSP クライアント (vscode-languageserver-protocol)</td>
+        <td>コード補完、診断、定義ジャンプ</td>
+      </tr>
+      <tr>
+        <td>ターミナル</td>
+        <td>xterm.js + PTY (Rust / Python)</td>
+        <td>統合ターミナル</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="side-note">
+    <strong>なぜ Tauri 2.0 を推奨するか</strong><br>
+    Right-Stuff Editor は tinyjs を採用していますが、
+    Agent Desktop との統合では Rust レイヤーが必須です。
+    Tauri 2.0 は Rust コア + WebView フロントエンドの構成で、
+    Agent Desktop の Rust バイナリとの親和性が高く、
+    マルチプラットフォーム対応も容易です。
+  </div>
+</section>
+
+<!-- 03 UI/UX 設計 -->
+<section>
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2>UI / UX 設計</h2>
+  </div>
+
+  <h3>レイアウト構成</h3>
+  <p>Right-Stuff Editor の3ペインレイアウトをベースに、IDE 機能とエージェント機能を追加します。</p>
+
+  <div class="card">
+    <div class="card-title">メインレイアウト</div>
+    <pre><code>+-------------------------------------------------------------+
+| [Menu]  Right-Stuff Agent IDE          [Agent] [Settings]   |
++------+----------------------------------+----------+--------+
+|      |                                  |          |        |
+| File |                                  |  Agent   |  Info  |
+| Tree |        Editor / Preview          |  Chat    | Panel  |
+|      |        (Lexical + Markdown)      |          |        |
+|      |                                  |          |        |
+|      +----------------------------------+          |        |
+|      |  Terminal / Debug / Git          |          |        |
+|      |                                  |          |        |
++------+----------------------------------+----------+--------+
+| Status Bar: [Branch] [LSP] [Agent Mode] [Save Status] [Encoding] |
++-------------------------------------------------------------+</code></pre>
+  </div>
+
+  <h3>ペイン詳細</h3>
+  <table>
+    <thead>
+      <tr><th>ペイン</th><th>内容</th><th>備考</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>左サイドバー</td>
+        <td>ファイルツリー、ワークスペース切替、検索、Git ステータス</td>
+        <td>Right-Stuff Editor 継承 + IDE 機能追加</td>
+      </tr>
+      <tr>
+        <td>中央エディタ</td>
+        <td>Lexical リッチテキスト / コードエディタ (Monaco) 切替</td>
+        <td>ファイル拡張子で自動切替</td>
+      </tr>
+      <tr>
+        <td>右サイドバー</td>
+        <td>エージェントチャット、AI 補完、ファイル情報、シンボル一覧</td>
+        <td>Agent Desktop 連携の UI ハブ</td>
+      </tr>
+      <tr>
+        <td>ボトムパネル</td>
+        <td>ターミナル、デバッグコンソール、Git 差分、問題パネル</td>
+        <td>タブ切替</td>
+      </tr>
+      <tr>
+        <td>ステータスバー</td>
+        <td>Git ブランチ、LSP 状態、エージェントモード、保存状態、行/列</td>
+        <td>クリックで各機能へアクセス</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>エージェントモード切替</h3>
+  <p>ステータスバーのエージェントモードインジケータをクリックすることで、以下のモードを切り替えます。</p>
+  <ul>
+    <li><span class="tag green">Passive</span> ゴーストテキスト補完、インライン提案のみ。UI 操作なし。</li>
+    <li><span class="tag">Assistive</span> 選択範囲の変換、チャット回答、ファイル内検索・置換を実行。</li>
+    <li><span class="tag orange">Autonomous</span> エージェントがファイル作成、ターミナル実行、外部アプリ操作を自律実行。ユーザー承認フロー必須。</li>
+  </ul>
+</section>
+
+<!-- 04 機能仕様 -->
+<section>
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2>機能仕様</h2>
+  </div>
+
+  <h3>4.1 Right-Stuff Editor 継承機能</h3>
+  <table>
+    <thead>
+      <tr><th>機能</th><th>実装方針</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>リッチテキスト編集</td><td>Lexical 0.32 をそのまま継承。Markdown 双方向同期も維持。</td></tr>
+      <tr><td>ワークスペース管理</td><td>フォルダ選択、Markdown/TXT 一覧、作成・名前変更・削除。</td></tr>
+      <tr><td>自動保存・競合検知</td><td>atomic write、ハッシュ/mtime による競合検知を継承。</td></tr>
+      <tr><td>バージョン履歴</td><td>SQLite WAL への保存履歴、任意版のプレビュー・復元。</td></tr>
+      <tr><td>リカバリ・バックアップ</td><td>15秒スナップショット、起動時復元提案、定期バックアップ。</td></tr>
+      <tr><td>Apple Notes 連携</td><td>macOS 限定。AppleScript ブリッジを継承。</td></tr>
+      <tr><td>強化プレビュー</td><td>GitHub Alerts、Mermaid、KaTeX、シンタックスハイライト。</td></tr>
+      <tr><td>AI アシスタント</td><td>19種プロバイダー、ゴーストテキスト、スラッシュコマンド。</td></tr>
+      <tr><td>文体・記憶</td><td>文体プロファイル、エンティティメモリを継承。</td></tr>
+      <tr><td>テーマ</td><td>Light / Dark / System。IDE 向けにシンタックステーマ追加。</td></tr>
+      <tr><td>書き出し</td><td>Markdown / HTML / JSON / TXT / DOCX / Ollama Modelfile。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.2 Agent Desktop 統合機能</h3>
+  <table>
+    <thead>
+      <tr><th>機能</th><th>実装方針</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>スナップショット取得</td><td><code>agent-desktop snapshot</code> をラップ。エディタ UI と外部アプリの両方をキャプチャ。</td></tr>
+      <tr><td>アクション実行</td><td>click / type / set-value / press などをエージェントチャットから発行。</td></tr>
+      <tr><td>検証ループ</td><td>アクション後にスナップショット再取得し、状態変化を確認。</td></tr>
+      <tr><td>アプリ一覧・操作</td><td>list-apps / list-windows / focus-window / launch / close-app。</td></tr>
+      <tr><td>クリップボード連携</td><td>clipboard-get / clipboard-set でコードスニペット共有。</td></tr>
+      <tr><td>通知管理</td><td>list-notifications / dismiss-notification でビルド完了等を捕捉。</td></tr>
+      <tr><td>セッション管理</td><td>session / trace でエージェントの操作ログを記録・再生。</td></tr>
+      <tr><td>カーソルオーバーレイ</td><td>エージェント操作中の視覚フィードバック。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 IDE 新規機能</h3>
+  <table>
+    <thead>
+      <tr><th>機能</th><th>実装方針</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>コードエディタ</td><td>Monaco Editor (VS Code コア) を統合。Markdown もコードも同じエディタで編集し、プレビューを分割表示。</td></tr>
+      <tr><td>LSP クライアント</td><td>vscode-languageserver-protocol 準拠。複数言語サーバー同時接続。</td></tr>
+      <tr><td>Git 統合</td><td>ブランチ一覧、コミット、差分表示、ブランチ切替、stash。</td></tr>
+      <tr><td>統合ターミナル</td><td>xterm.js + Rust PTY。ワークスペースをカレントディレクトリとして起動。</td></tr>
+      <tr><td>デバッガ連携</td><td>DAP (Debug Adapter Protocol) クライアント。ブレークポイント、変数監視。</td></tr>
+      <tr><td>ファイル検索</td><td>ripgrep 連携。ワークスペース全体の高速検索。</td></tr>
+      <tr><td>コマンドパレット</td><td>⌘K / ⌘⇧P で全コマンド検索。エージェント操作も含む。</td></tr>
+      <tr><td>マルチワークスペース</td><td>複数フォルダを同時に開く。各ワークスペース独立の履歴・設定。</td></tr>
+      <tr><td>拡張機能</td><td>JavaScript/TypeScript ベースのプラグイン API。エージェントスキルもプラグイン化。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.4 エージェントスキルシステム</h3>
+  <p>Agent Desktop の skills システムを拡張し、IDE 専用スキルを定義します。</p>
+  <pre><code>// スキル定義例: .agents/skills/code-edit.json
+{
+  "name": "code-edit",
+  "description": "エディタ内でのコード編集操作",
+  "actions": [
+    "editor.openFile",
+    "editor.editRange",
+    "editor.insertText",
+    "editor.deleteRange",
+    "editor.saveFile",
+    "editor.runCommand"
+  ],
+  "verification": "snapshot_after_action"
+}</code></pre>
+  <p>スキルは <code>.agents/skills/</code> ディレクトリに JSON で定義し、エージェントが動的に読み込みます。</p>
+</section>
+
+<!-- 05 データフロー -->
+<section>
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2>データフロー設計</h2>
+  </div>
+
+  <h3>エージェント操作フロー</h3>
+  <div class="flow-box">
+    <div class="flow-node accent">ユーザー意図</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node">AI 推論<br><small>(LLM)</small></div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node accent">スキル選択</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node">アクション計画</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node green">実行</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node">スナップショット検証</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node green">結果返却</div>
+  </div>
+  <p style="color:var(--ink-muted);font-size:0.9em;">
+    ※ 現時点では <code>agent_status</code> / <code>agent_snapshot</code> / <code>agent_run</code> のブリッジと、
+    UI からの <code>/status</code>・<code>/snapshot</code> 実行までを実装しています。LLM 推論、スキル選択、検証ループは Phase 1 以降です。
+  </p>
+
+  <h3>ファイル保存フロー</h3>
+  <div class="flow-box">
+    <div class="flow-node">編集</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node accent">変更検知</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node">30秒タイマー</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node">atomic write</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node green">履歴保存</div>
+    <span class="flow-arrow">&#8594;</span>
+    <div class="flow-node">Git 差分更新</div>
+  </div>
+  <p style="color:var(--ink-muted);font-size:0.9em;">
+    ※ 現時点は <code>⌘S</code> / <code>⌘⇧S</code> による手動保存です。自動保存、競合検知、Git 差分更新は Phase 2 以降で追加します。
+  </p>
+
+  <h3>エージェント・エディタ連携プロトコル</h3>
+  <pre><code>// エージェントからエディタへの操作リクエスト
+interface AgentActionRequest {
+  sessionId: string;
+  skill: string;
+  action: string;
+  target?: {
+    type: "editor" | "file" | "terminal" | "external_app";
+    ref?: string;           // Agent Desktop の ref_id
+    path?: string;          // ファイルパス
+    appName?: string;       // 外部アプリ名
+  };
+  params: Record&lt;string, unknown&gt;;
+  verify: boolean;          // 実行後にスナップショット検証を行うか
+}
+
+// エディタからエージェントへの状態通知
+interface EditorStateUpdate {
+  type: "fileChanged" | "terminalOutput" | "gitStatusChanged" | "lspDiagnostic";
+  payload: unknown;
+  timestamp: number;
+}</code></pre>
+</section>
+
+<!-- 06 実装フェーズ -->
+<section>
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>実装フェーズ</h2>
+  </div>
+
+  <div class="phase-list">
+    <div class="phase-item done">
+      <div class="phase-title">Phase 0: 基盤構築</div>
+      <div class="phase-meta">期間: 2週間 / 優先度: 最高</div>
+      <p>
+        Tauri 2.0 + React 18 のプロジェクトを新規に構築。Monaco エディタ、ワークスペース、
+        SQLite のバージョン履歴、Agent Desktop ブリッジを実装し、macOS で動作を確認。
+      </p>
+    </div>
+    <div class="phase-item">
+      <div class="phase-title">Phase 1: Agent Desktop 統合基盤</div>
+      <div class="phase-meta">期間: 3週間 / 優先度: 最高</div>
+      <p>
+        Agent Desktop CLI を Rust レイヤーから呼び出すラッパーを実装。
+        スナップショット取得、アクション実行、エラーハンドリング、セッション管理を構築。
+        エージェントチャット UI に「外部アプリ操作」モードを追加。
+      </p>
+    </div>
+    <div class="phase-item">
+      <div class="phase-title">Phase 2: IDE コア機能</div>
+      <div class="phase-meta">期間: 4週間 / 優先度: 高</div>
+      <p>
+        Monaco Editor の編集機能を拡張し、LSP クライアント、Git 統合、統合ターミナル、ファイル検索を実装。
+        Markdown プレビューとコード編集の切り替えを拡張。コマンドパレット、ステータスバーも拡張する。
+      </p>
+    </div>
+    <div class="phase-item">
+      <div class="phase-title">Phase 3: エージェントスキルシステム</div>
+      <div class="phase-meta">期間: 3週間 / 優先度: 高</div>
+      <p>
+        スキル定義フォーマット、スキルローダー、検証ループを実装。
+        IDE 専用スキル（code-edit、git-operation、terminal-command、debug-control）を定義。
+        エージェントが自律的に複数ステップの作業を実行できるように。
+      </p>
+    </div>
+    <div class="phase-item">
+      <div class="phase-title">Phase 4: マルチプラットフォーム対応</div>
+      <div class="phase-meta">期間: 2週間 / 優先度: 中</div>
+      <p>
+        macOS での動作確認後、Windows / Linux 向けに Agent Desktop 統合を調整。
+        プラットフォーム差異（アクセシビリティ API、権限モデル、パス形式）を抽象化。
+      </p>
+    </div>
+    <div class="phase-item future">
+      <div class="phase-title">Phase 5: 拡張機能エコシステム</div>
+      <div class="phase-meta">期間: 3週間 / 優先度: 中</div>
+      <p>
+        プラグイン API を公開。エージェントスキルをプラグインとして第三者が開発・配布できる仕組みを構築。
+        マーケットプレイス UI、プラグイン管理、サンドボックス実行環境。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 07 セキュリティ -->
+<section>
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>セキュリティ設計</h2>
+  </div>
+
+  <h3>エージェント操作の安全性</h3>
+  <div class="card">
+    <div class="card-title">承認フロー</div>
+    <p style="margin-bottom:0">
+      Autonomous モードでは、以下の操作にユーザー承認を必須とします。
+    </p>
+    <ul style="margin-bottom:0">
+      <li>ワークスペース外のファイルへの書き込み</li>
+      <li>ターミナルでのコマンド実行（特に <code>rm</code>, <code>curl | sh</code> 等）</li>
+      <li>外部アプリケーションの起動・操作</li>
+      <li>Git の push / force push</li>
+      <li>クリップボードへの機密情報の書き込み</li>
+    </ul>
+  </div>
+
+  <h3>データ保護</h3>
+  <table>
+    <thead>
+      <tr><th>項目</th><th>方針</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>原稿データ</td><td>ワークスペースのローカルファイルにのみ保存。クラウド送信なし。</td></tr>
+      <tr><td>API キー</td><td>OS キーチェーン（macOS Keychain / Windows Credential / Linux Secret Service）に保存。</td></tr>
+      <tr><td>スナップショット</td><td>メモリ上に一時保持。永続化はオプトイン。機密ウィンドウは自動マスク。</td></tr>
+      <tr><td>テレメトリ</td><td>収集なし。完全にオプトインのクラッシュレポートのみ。</td></tr>
+      <tr><td>パス検証</td><td>バックエンドでワークスペース外パスを拒否。<code>.right-stuff</code> 配下への直接アクセスも禁止。</td></tr>
+    </tbody>
+  </table>
+
+  <h3>プライバシー設計</h3>
+  <p>
+    Agent Desktop のスナップショットにはデスクトップ上の機密情報が含まれる可能性があります。
+    Right-Stuff Agent IDE では以下の対策を講じます。
+  </p>
+  <ul>
+    <li>スナップショットはセッション中のみメモリ保持。SQLite への永続化はユーザーが明示的に許可した場合のみ。</li>
+    <li>銀行アプリ、メールクライアント等の機密ウィンドウは自動検出し、スナップショットから除外。</li>
+    <li>LLM へのコンテキスト送信時は、スナップショットデータを最小化し、ファイルパス・ユーザー名を匿名化。</li>
+    <li>エージェントの全操作ログはローカルに保存。ユーザーが確認・削除可能。</li>
+  </ul>
+</section>
+
+<!-- 08 API 設計 -->
+<section>
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>API 設計</h2>
+  </div>
+
+  <h3>Tauri コマンド一覧</h3>
+  <pre><code>// ワークスペース
+async fn workspace_open(path: String) -> Result&lt;Workspace, Error&gt;
+async fn workspace_list_files() -> Result&lt;Vec&lt;FileEntry&gt;, Error&gt;
+async fn workspace_create_file(path: String, content: String) -> Result&lt;(), Error&gt;
+
+// エディタ
+async fn editor_get_content(fileId: String) -> Result&lt;EditorState, Error&gt;
+async fn editor_save(fileId: String, content: String) -> Result&lt;SaveResult, Error&gt;
+async fn editor_get_history(fileId: String) -> Result&lt;Vec&lt;Version&gt;, Error&gt;
+
+// エージェント
+async fn agent_snapshot(app: Option&lt;String&gt;) -> Result&lt;Snapshot, Error&gt;
+async fn agent_action(action: AgentAction) -> Result&lt;ActionResult, Error&gt;
+async fn agent_start_session() -> Result&lt;String, Error&gt;  // sessionId
+async fn agent_end_session(sessionId: String) -> Result&lt;(), Error&gt;
+
+// ターミナル
+async fn terminal_create(cwd: String) -> Result&lt;String, Error&gt;  // ptyId
+async fn terminal_write(ptyId: String, data: String) -> Result&lt;(), Error&gt;
+async fn terminal_read(ptyId: String) -> Result&lt;String, Error&gt;
+
+// Git
+async fn git_status() -> Result&lt;GitStatus, Error&gt;
+async fn git_commit(message: String) -> Result&lt;(), Error&gt;
+async fn git_branches() -> Result&lt;Vec&lt;Branch&gt;, Error&gt;
+
+// LSP
+async fn lsp_initialize(language: String, rootPath: String) -> Result&lt;(), Error&gt;
+async fn lsp_request(method: String, params: Value) -> Result&lt;Value, Error&gt;</code></pre>
+</section>
+
+<!-- 09 ディレクトリ構成 -->
+<section>
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>ディレクトリ構成</h2>
+  </div>
+
+  <pre><code>right-stuff-agent-ide/
+├── src/                             # フロントエンド (React 18 + Vite)
+│   ├── components/
+│   │   ├── EditorPane.tsx           # Monaco + Markdown プレビュー
+│   │   ├── FileTree.tsx
+│   │   ├── AgentPanel.tsx
+│   │   ├── CommandPalette.tsx
+│   │   ├── HistoryDialog.tsx
+│   │   └── ...
+│   ├── lib/
+│   │   ├── api.ts                   # Tauri invoke ラッパー
+│   │   ├── demo.ts                  # ブラウザ用デモワークスペース
+│   │   └── monaco.ts
+│   ├── stores/
+│   │   ├── workspaceStore.ts
+│   │   ├── editorStore.ts
+│   │   └── agentStore.ts
+│   ├── shared/types.ts
+│   ├── App.tsx
+│   └── main.tsx
+├── src-tauri/                       # Tauri Rust コア
+│   ├── src/
+│   │   ├── commands/
+│   │   │   ├── workspace.rs
+│   │   │   ├── editor.rs
+│   │   │   ├── agent.rs
+│   │   │   └── settings.rs
+│   │   ├── db.rs                    # SQLite WAL / バージョン履歴
+│   │   ├── paths.rs                 # ワークスペース外パス拒否
+│   │   ├── state.rs
+│   │   ├── error.rs
+│   │   ├── lib.rs
+│   │   └── main.rs
+│   ├── capabilities/default.json
+│   ├── icons/
+│   ├── tauri.conf.json
+│   └── Cargo.toml
+├── .agents/skills/
+│   ├── code-edit.json
+│   ├── git-operation.json
+│   ├── terminal-command.json
+│   └── debug-control.json
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── API.md
+│   └── SECURITY.md
+├── public/
+├── index.html
+├── vite.config.ts
+├── package.json
+└── README.md</code></pre>
+</section>
+
+<!-- 10 リスクと対策 -->
+<section>
+  <div class="section-header">
+    <span class="section-num">10</span>
+    <h2>リスクと対策</h2>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>リスク</th><th>影響</th><th>対策</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Agent Desktop の権限要件</td>
+        <td>macOS アクセシビリティ権限がないと動作しない</td>
+        <td>初回起動時に権限ガイドを表示。権限なしでエディタ単体で動作するフォールバック。</td>
+      </tr>
+      <tr>
+        <td>スナップショットの機密情報漏洩</td>
+        <td>デスクトップの機密データが LLM に送信される</td>
+        <td>機密ウィンドウ自動マスク、送信前匿名化、オプトイン制。</td>
+      </tr>
+      <tr>
+        <td>エージェントの誤操作</td>
+        <td>ファイル削除、誤った Git 操作等</td>
+        <td>危険操作の承認フロー、undo 履歴、バックアップ自動化。</td>
+      </tr>
+      <tr>
+        <td>プラットフォーム差異</td>
+        <td>macOS/Windows/Linux で挙動が異なる</td>
+        <td>Agent Desktop が抽象化済み。IDE 側はプラットフォーム判定で分岐。</td>
+      </tr>
+      <tr>
+        <td>パフォーマンス低下</td>
+        <td>スナップショット取得が重い</td>
+        <td>キャッシュ戦略、差分スナップショット、非同期処理。</td>
+      </tr>
+      <tr>
+        <td>LSP 互換性</td>
+        <td>言語サーバーごとに挙動が異なる</td>
+        <td>vscode-languageserver-protocol 準拠。主要言語サーバーでテスト。</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 11 今後の展望 -->
+<section>
+  <div class="section-header">
+    <span class="section-num">11</span>
+    <h2>今後の展望</h2>
+  </div>
+
+  <ul>
+    <li><strong>協調エージェント:</strong> 複数のエージェントが同時に異なるファイル・タスクを並行処理。</li>
+    <li><strong>音声インターフェース:</strong> 音声コマンドでエージェントに指示。執筆中のハンズフリー操作。</li>
+    <li><strong>リモート開発:</strong> SSH 越しのワークスペース編集。リモートマシン上のエージェントと連携。</li>
+    <li><strong>知識ベース統合:</strong> プロジェクト固有のドキュメントをベクトル DB に格納し、エージェントのコンテキストに組み込む。</li>
+    <li><strong>CI/CD 連携:</strong> GitHub Actions / Vercel 等のビルド・デプロイ状態をエージェントが監視・操作。</li>
+  </ul>
+</section>
+
+</main>
+
+<footer>
+  <p>Right-Stuff Agent IDE — 実装設計書 v1.0</p>
+  <p style="font-size:0.75rem; margin-top:0.5em;">
+    Based on Right-Stuff Editor (MIT) and Agent Desktop by Vercel Labs
+  </p>
+</footer>
+
+</body>
+</html>

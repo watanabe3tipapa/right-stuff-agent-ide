@@ -1,0 +1,16 @@
+{
+  "name": "terminal-command",
+  "description": "統合ターミナルでのコマンド実行",
+  "actions": [
+    "terminal.create",
+    "terminal.write",
+    "terminal.read",
+    "terminal.resize",
+    "terminal.kill"
+  ],
+  "approval": {
+    "required": ["terminal.write:destructive"],
+    "blocked": ["rm -rf /", "curl | sh", "wget | sh"]
+  },
+  "verification": "output_after_action"
+}

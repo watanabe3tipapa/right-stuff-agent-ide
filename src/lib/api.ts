@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import type {
@@ -7,6 +7,11 @@ import type {
   AppInfo,
   FileContent,
   FileEntry,
+  LlmChatMessage,
+  LlmConfig,
+  LlmSettings,
+  LlmStreamEvent,
+  LlmTestResult,
   SaveResult,
   VersionContent,
   VersionSummary,
@@ -104,6 +109,51 @@ export const api = {
     return isTauri
       ? call<AgentRunResult>("agent_run", { args })
       : demoApi.agentSnapshot();
+  },
+
+  llmConfig(): Promise<LlmSettings> {
+    return isTauri
+      ? call<LlmSettings>("llm_config_get")
+      : demoApi.llmConfig();
+  },
+
+  llmConfigSet(config: LlmConfig): Promise<LlmSettings> {
+    return isTauri
+      ? call<LlmSettings>("llm_config_set", { config })
+      : demoApi.llmConfigSet();
+  },
+
+  llmKeySet(key: string): Promise<void> {
+    return isTauri ? call<void>("llm_key_set", { key }) : demoApi.llmKeySet();
+  },
+
+  llmKeyDelete(): Promise<void> {
+    return isTauri ? call<void>("llm_key_delete") : demoApi.llmKeyDelete();
+  },
+
+  llmTest(): Promise<LlmTestResult> {
+    return isTauri ? call<LlmTestResult>("llm_test") : demoApi.llmTest();
+  },
+
+  /**
+   * Streams the response through a Tauri channel. The API key never leaves
+   * the Rust process: only the prompt messages cross the IPC boundary.
+   */
+  async llmChat(
+    messages: LlmChatMessage[],
+    onEvent: (event: LlmStreamEvent) => void,
+  ): Promise<void> {
+    if (!isTauri) {
+      return demoApi.llmChat();
+    }
+
+    const channel = new Channel<LlmStreamEvent>();
+    channel.onmessage = onEvent;
+    await call<void>("llm_chat", { messages, onEvent: channel });
+  },
+
+  llmCancel(): Promise<void> {
+    return isTauri ? call<void>("llm_cancel") : Promise.resolve();
   },
 
   async pickFolder(): Promise<string | null> {

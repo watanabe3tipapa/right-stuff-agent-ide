@@ -48,4 +48,8 @@ describe("demo workspace", () => {
     tree = await demoApi.listFiles();
     expect(tree.some((entry) => entry.name === "renamed-dir")).toBe(false);
   });
+
+  it("reports that LLM access is unavailable in the browser demo", async () => {
+    await expect(demoApi.llmChat()).rejects.toThrow("ブラウザデモでは LLM を利用できません");
+  });
 });

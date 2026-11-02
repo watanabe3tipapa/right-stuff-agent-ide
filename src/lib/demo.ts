@@ -4,11 +4,14 @@ import type {
   AppInfo,
   FileContent,
   FileEntry,
+  LlmSettings,
+  LlmTestResult,
   SaveResult,
   VersionContent,
   VersionSummary,
   WorkspaceInfo,
 } from "../shared/types";
+import { DEFAULT_LLM_CONFIG } from "./llm";
 
 /**
  * In-browser fallback used by `npm run dev` when the app is not running inside
@@ -32,7 +35,8 @@ Right-Stuff Editor の執筆体験と Agent Desktop の OS レベル操作能力
 - [x] ワークスペース / ファイルツリー
 - [x] Monaco エディタ + Markdown プレビュー
 - [x] バージョン履歴 (SQLite)
-- [x] Agent Desktop ブリッジ (Phase 1 で LLM 接続)
+- [x] Agent Desktop ブリッジ
+- [x] OpenAI 互換 LLM チャット (Tauri 版のみ)
 
 ## 開発
 
@@ -44,7 +48,7 @@ npm run tauri dev
   "package.json": `{
   "name": "right-stuff-agent-ide",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -229,7 +233,7 @@ export const demoApi = {
   async appInfo(): Promise<AppInfo> {
     return {
       name: "Right-Stuff Agent IDE",
-      version: "0.1.0-demo",
+      version: "0.1.1-demo",
       tauriVersion: "browser",
       platform: "browser",
       arch: "web",
@@ -349,6 +353,44 @@ export const demoApi = {
   async agentSnapshot(): Promise<AgentRunResult> {
     throw new Error(
       "ブラウザデモではスナップショットを取得できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async llmConfig(): Promise<LlmSettings> {
+    return {
+      ...DEFAULT_LLM_CONFIG,
+      configured: false,
+      keyConfigured: false,
+    };
+  },
+
+  async llmConfigSet(): Promise<LlmSettings> {
+    throw new Error(
+      "ブラウザデモでは LLM 設定を保存できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async llmKeySet(): Promise<void> {
+    throw new Error(
+      "ブラウザデモでは API キーを保存できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async llmKeyDelete(): Promise<void> {
+    throw new Error(
+      "ブラウザデモでは API キーを削除できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async llmTest(): Promise<LlmTestResult> {
+    throw new Error(
+      "ブラウザデモでは LLM に接続できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async llmChat(): Promise<void> {
+    throw new Error(
+      "ブラウザデモでは LLM を利用できません。`npm run tauri dev` で起動してください。",
     );
   },
 };

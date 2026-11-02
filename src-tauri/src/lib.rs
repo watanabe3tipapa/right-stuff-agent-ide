@@ -34,6 +34,14 @@ pub fn run() {
             commands::agent::agent_status,
             commands::agent::agent_run,
             commands::agent::agent_snapshot,
+            commands::llm::llm_config_get,
+            commands::llm::llm_config_set,
+            commands::llm::llm_key_set,
+            commands::llm::llm_key_status,
+            commands::llm::llm_key_delete,
+            commands::llm::llm_test,
+            commands::llm::llm_chat,
+            commands::llm::llm_cancel,
         ])
         .run(tauri::generate_context!())
         .expect("error while running right-stuff-agent-ide");

@@ -27,7 +27,8 @@ export type IconName =
   | "gear"
   | "panel-right"
   | "external"
-  | "clock";
+  | "clock"
+  | "stop";
 
 const paths: Record<IconName, React.ReactNode> = {
   "chevron-right": <path d="M9 18l6-6-6-6" />,
@@ -168,6 +169,7 @@ const paths: Record<IconName, React.ReactNode> = {
       <path d="M12 7.5V12l3 2" />
     </>
   ),
+  stop: <rect x="6" y="6" width="12" height="12" rx="2" />,
 };
 
 interface IconProps extends SVGProps<SVGSVGElement> {

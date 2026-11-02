@@ -19,6 +19,8 @@ pub enum AppError {
     Io(#[from] std::io::Error),
     #[error("データベースエラー: {0}")]
     Db(#[from] rusqlite::Error),
+    #[error("JSON の処理に失敗しました: {0}")]
+    Json(#[from] serde_json::Error),
     #[error("{0}")]
     Other(String),
 }

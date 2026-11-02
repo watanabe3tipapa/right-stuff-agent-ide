@@ -43,6 +43,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const takeSnapshot = useAgentStore((state) => state.takeSnapshot);
   const refreshStatus = useAgentStore((state) => state.refreshStatus);
   const clearMessages = useAgentStore((state) => state.clearMessages);
+  const openSettings = useAgentStore((state) => state.openSettings);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -150,6 +151,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       icon: "play",
       keywords: "agent status detect",
       run: () => void refreshStatus(),
+    },
+    {
+      id: "agent:settings",
+      label: "LLM 設定を開く",
+      hint: "プロバイダー・モデル・API キー",
+      icon: "gear",
+      keywords: "llm openai ollama model api key settings",
+      run: openSettings,
     },
     {
       id: "agent:mode",

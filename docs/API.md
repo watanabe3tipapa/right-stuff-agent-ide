@@ -106,4 +106,60 @@ session, trace, --version, --help
 | `settings_get` | `{ key }` | `string \| null` |
 | `settings_set` | `{ key, value }` | — |
 
-現在は `last_workspace` のみ利用。API キーは Phase 1 で OS キーチェーンに移す。
+現在は `last_workspace` と LLM 設定 (`llm_config`) を利用する。API キーは SQLite に保存せず、OS キーチェーンにのみ保存する。
+
+## LLM
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `llm_config_get` | — | `LlmSettings` |
+| `llm_config_set` | `{ config }` | `LlmSettings` |
+| `llm_key_set` | `{ key }` | — |
+| `llm_key_status` | — | `{ configured: boolean }` |
+| `llm_key_delete` | — | — |
+| `llm_test` | — | `LlmTestResult` |
+| `llm_chat` | `{ messages, onEvent }` | —（`Channel` でイベント送信） |
+| `llm_cancel` | — | — |
+
+```ts
+interface LlmConfig {
+  provider: "openai" | "ollama" | "lmstudio" | "openrouter" | "custom";
+  baseUrl: string;
+  model: string;
+  temperature: number; // 0.0 - 2.0
+  maxTokens: number;   // 1 - 128000
+}
+
+interface LlmSettings extends LlmConfig {
+  configured: boolean;
+  keyConfigured: boolean;
+}
+
+interface LlmTestResult {
+  ok: boolean;
+  status: number | null;
+  message: string;
+  models: string[];
+}
+```
+
+- 設定は SQLite の `settings` テーブルに `llm_config` として保存する。
+- `configured` は設定が保存済みかつ検証済みであることを、`keyConfigured` は API キーの有無を示す。
+- API キーは OS キーチェーンにのみ保存する。`llm_config_get` / `llm_key_status` は真偽値だけを返し、キー本文は WebView・SQLite・ログ・エラー文字列に含めない。
+- `baseUrl` は `https://` を必須とし、`http://` は `localhost` / `127.0.0.1` / `::1` のみ許可する。
+- `llm_chat` は OpenAI 互換の `POST {baseUrl}/chat/completions` に `stream: true` で接続する。
+- Channel で送信するイベント:
+
+```ts
+type LlmStreamEvent =
+  | { type: "delta"; text: string }
+  | { type: "done"; finishReason: string | null }
+  | { type: "cancelled" }
+  | { type: "error"; message: string };
+```
+
+- `llm_cancel` は進行中のストリームへ協調的キャンセルを通知する。
+- `llm_test` は `GET {baseUrl}/models` を呼び、HTTP ステータスとモデル一覧を返す。
+- リクエストは 1 メッセージあたり 100,000 文字、合計 400,000 文字、最大 100 件に制限する。
+- ストリーミング応答は 2,000,000 文字で打ち切る。プロバイダーが返したエラー本文に API キーが含まれる場合は `[REDACTED]` に置換する。
+- 接続テストなどで読み取る HTTP レスポンス本文は 1 MiB で打ち切る。

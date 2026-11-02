@@ -11,10 +11,10 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 > **Files stay local. Actions stay visible.** Drafts remain in the folder you choose, and every command an agent runs is shown with its output in the UI. No accounts, telemetry, or cloud sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
-[![Phase](https://img.shields.io/badge/phase-0%20foundation-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Phase](https://img.shields.io/badge/phase-1%20llm%20chat-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
@@ -22,7 +22,7 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 
 ## Download
 
-v0.1.0 currently assumes a build from source. Distribution binaries are not published yet.
+v0.1.1 currently assumes a build from source. Distribution binaries are not published yet.
 
 > Builds are ad-hoc signed. There is no Apple Developer ID signature or notarization. If macOS warns on first launch, right-click the app and choose "Open".
 
@@ -32,7 +32,7 @@ v0.1.0 currently assumes a build from source. Distribution binaries are not publ
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. LLM planning and plan-level approval arrive in Phase 1.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 PR1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, and streaming chat. LLM planning and plan-level approval are planned for the later Phase 1 work.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -41,7 +41,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 | Keep | Direct saves into the workspace, version history in SQLite |
 | Protect | Atomic writes, path validation, trash-based soft delete |
 | Connect | Agent Desktop CLI detection, snapshots, allowlisted actions |
-| Delegate | LLM planning and plan-level approval (Phase 1) |
+| Delegate | LLM chat over OpenAI-compatible APIs; plan-level approval in later Phase 1 |
 | Extend | Terminal, Git, LSP / DAP (Phase 2+) |
 
 ### Design principles
@@ -62,6 +62,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
 - **Agent panel** — Chat and Runtime tabs, Passive / Assistive / Autonomous modes, `/status` and `/snapshot` commands
+- **LLM chat** — OpenAI / Ollama / LM Studio / OpenRouter and other OpenAI-compatible APIs, with streaming output, cancellation, and a connection test. API keys are stored in the OS keychain
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, and agent commands
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
@@ -75,7 +76,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Editor**: Monaco Editor 0.52 (`@monaco-editor/react`)
 - **State**: Zustand 5 (workspace / editor / agent)
 - **Desktop shell**: Tauri 2.0 (Rust 2024 edition)
-- **Backend**: Tauri commands (workspace / editor / agent / settings / app), path validation, atomic writes
+- **Backend**: Tauri commands (workspace / editor / agent / llm / settings / app), path validation, atomic writes
 - **Database**: SQLite (WAL, bundled `rusqlite`) for version history and settings
 - **Bridge**: `src/lib/api.ts` wraps `invoke` and falls back to `src/lib/demo.ts` in the browser
 - **Packaging**: `tauri build` (`.app` / `.dmg`)
@@ -89,7 +90,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - Writes use a temporary file plus `rename` (atomic write); deletes move entries to trash
 - Agent Desktop enforces an action allowlist plus argument length/shape checks, and mutating actions require a native approval dialog; output is truncated at 200,000 characters
 - Snapshots are held in memory only and are not persisted to SQLite
-- API keys are not stored yet (Phase 1 will use the OS keychain)
+- API keys are stored only in the OS keychain and never in SQLite, logs, or error messages. LLM requests are sent from Rust; the WebView never calls external APIs directly
 - CSP is configured with a `default-src 'self'` baseline for both Tauri (separate production and development policies) and Vercel
 
 ## Install and build
@@ -194,7 +195,7 @@ Detection order:
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.1.0 assumes building from source
+- v0.1.1 assumes building from source
 - GitHub Releases distribution is not ready yet
 - Builds are ad-hoc signed; no Developer ID signature or notarization
 - Targets macOS (Apple Silicon and Intel)
@@ -225,6 +226,15 @@ vercel --prod          # Deploy to production
 
 ## Known limitations and roadmap
 
+### v0.1.1
+
+- [x] OpenAI-compatible LLM connections (OpenAI / Ollama / LM Studio / OpenRouter / custom)
+- [x] Streaming chat, cancellation, and connection test
+- [x] API key storage and deletion in the OS keychain
+- [x] LLM settings dialog with model list
+- [x] API key redaction, HTTP response body limits, and disabled redirects
+- [x] README / API / SECURITY / ARCHITECTURE / landing page updates
+
 ### v0.1.0
 
 - [x] Tauri 2.0 + React 18 + Vite foundation and native window
@@ -245,11 +255,11 @@ vercel --prod          # Deploy to production
 
 ### Next candidates
 
-- [ ] Connect LLM providers (OpenAI-compatible APIs, Ollama, Claude, etc.)
+- [ ] Plan generation and plan-level approval
 - [ ] Approval audit log and policy settings UI
 - [ ] Skill execution and verification loop
 - [ ] Terminal (PTY), Git, LSP / DAP
-- [ ] Store API keys in the OS keychain
+- [ ] Anthropic-specific API adapter
 - [ ] Release packaging (signing, notarization, DMG)
 - [ ] Windows / Linux support
 
@@ -257,7 +267,7 @@ vercel --prod          # Deploy to production
 
 - Verified on macOS only; distribution signing and notarization are not implemented
 - The `agent-desktop` CLI is not bundled and must be installed separately
-- LLM inference is not connected. Chat only answers `/status`, `/snapshot`, and setup guidance
+- LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs, plan generation, and plan-level approval are not implemented yet
 - Snapshots live in memory only and are lost on restart
 - Browser demo changes are not persisted
 - No sync or collaborative editing

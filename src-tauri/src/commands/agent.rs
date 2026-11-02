@@ -145,27 +145,25 @@ fn validate_args(args: &[String]) -> AppResult<()> {
     }
 
     match action.as_str() {
+        "launch" | "close-app" if args.len() != 2 => {
+            return Err(AppError::Other(format!(
+                "{action} にはアプリ名を 1 つ指定してください"
+            )));
+        }
         "launch" | "close-app" => {
-            if args.len() != 2 {
-                return Err(AppError::Other(format!(
-                    "{action} にはアプリ名を 1 つ指定してください"
-                )));
-            }
             validate_app_name(&args[1])?;
         }
-        "type" | "set-value" | "clipboard-set" => {
-            if args.len() < 2 || args[1].trim().is_empty() {
-                return Err(AppError::Other(format!(
-                    "{action} には書き込む内容を指定してください"
-                )));
-            }
+        "type" | "set-value" | "clipboard-set" if args.len() < 2 || args[1].trim().is_empty() => {
+            return Err(AppError::Other(format!(
+                "{action} には書き込む内容を指定してください"
+            )));
         }
-        "click" | "press" | "scroll" | "focus-window" | "dismiss-notification" => {
-            if args.len() < 2 {
-                return Err(AppError::Other(format!(
-                    "{action} には対象を指定してください"
-                )));
-            }
+        "click" | "press" | "scroll" | "focus-window" | "dismiss-notification"
+            if args.len() < 2 =>
+        {
+            return Err(AppError::Other(format!(
+                "{action} には対象を指定してください"
+            )));
         }
         _ => {}
     }

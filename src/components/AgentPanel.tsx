@@ -15,7 +15,7 @@ const modeCopy: Record<AgentMode, { label: string; description: string }> = {
   },
   autonomous: {
     label: "Autonomous",
-    description: "許可された操作のみ実行します。変更操作はネイティブ承認ダイアログを経由します。計画実行は Phase 1 で追加します。",
+    description: "許可された操作のみ実行します。変更操作はネイティブ承認ダイアログを経由します。計画の自動実行は未実装です。",
   },
 };
 
@@ -67,7 +67,15 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       )}
       <div className="message-body">
         {message.command && <code className="message-command">{message.command}</code>}
-        <MessageText text={message.text} />
+        {message.text ? (
+          <MessageText text={message.text} />
+        ) : (
+          <div className="typing typing-inline">
+            <span />
+            <span />
+            <span />
+          </div>
+        )}
         <time className="message-time">
           {new Intl.DateTimeFormat("ja-JP", {
             hour: "2-digit",
@@ -82,21 +90,26 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 function ChatView() {
   const messages = useAgentStore((state) => state.messages);
   const busy = useAgentStore((state) => state.busy);
+  const streaming = useAgentStore((state) => state.streaming);
   const send = useAgentStore((state) => state.send);
+  const stopStreaming = useAgentStore((state) => state.stopStreaming);
   const mode = useAgentStore((state) => state.mode);
+  const llm = useAgentStore((state) => state.llm);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastTextLength =
+    messages.length > 0 ? messages[messages.length - 1].text.length : 0;
 
   useEffect(() => {
     const element = scrollRef.current;
     if (element) {
       element.scrollTop = element.scrollHeight;
     }
-  }, [messages.length, busy]);
+  }, [messages.length, lastTextLength, busy, streaming]);
 
   const submit = async () => {
     const value = draft.trim();
-    if (!value || busy) return;
+    if (!value || busy || streaming) return;
     setDraft("");
     await send(value);
   };
@@ -107,7 +120,7 @@ function ChatView() {
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}
-        {busy && (
+        {busy && !streaming && (
           <div className="message agent">
             <div className="message-avatar">
               <Icon name="sparkles" size={13} />
@@ -134,7 +147,9 @@ function ChatView() {
           placeholder={
             mode === "passive"
               ? "Passive モードではチャットできません"
-              : "エージェントに指示する… (Enter で送信)"
+              : streaming
+                ? "応答を生成中… 停止してから次のメッセージを送信できます"
+                : "エージェントに指示する… (Enter で送信)"
           }
           disabled={mode === "passive"}
           onChange={(event) => setDraft(event.target.value)}
@@ -164,14 +179,29 @@ function ChatView() {
               /snapshot
             </button>
           </div>
-          <button
-            type="submit"
-            className="send-btn"
-            disabled={!draft.trim() || busy || mode === "passive"}
-            aria-label="送信"
-          >
-            <Icon name="send" size={15} />
-          </button>
+          <span className={`composer-model${llm?.configured ? "" : " unset"}`}>
+            {llm?.configured ? llm.model : "LLM 未設定"}
+          </span>
+          {streaming ? (
+            <button
+              type="button"
+              className="send-btn stop"
+              onClick={() => void stopStreaming()}
+              aria-label="生成を停止"
+              title="生成を停止"
+            >
+              <Icon name="stop" size={14} />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="send-btn"
+              disabled={!draft.trim() || busy || mode === "passive"}
+              aria-label="送信"
+            >
+              <Icon name="send" size={15} />
+            </button>
+          )}
         </div>
       </form>
     </>
@@ -259,6 +289,7 @@ export function AgentPanel() {
   const [tab, setTab] = useState<"chat" | "runtime">("chat");
   const mode = useAgentStore((state) => state.mode);
   const status = useAgentStore((state) => state.status);
+  const openSettings = useAgentStore((state) => state.openSettings);
 
   return (
     <aside className="agent-panel">
@@ -271,20 +302,31 @@ export function AgentPanel() {
             Agent
             <span className={`agent-status-dot${status?.available ? " online" : ""}`} />
           </div>
-          <div className="agent-tabs">
+          <div className="agent-head-tools">
+            <div className="agent-tabs">
+              <button
+                type="button"
+                className={tab === "chat" ? "active" : ""}
+                onClick={() => setTab("chat")}
+              >
+                Chat
+              </button>
+              <button
+                type="button"
+                className={tab === "runtime" ? "active" : ""}
+                onClick={() => setTab("runtime")}
+              >
+                Runtime
+              </button>
+            </div>
             <button
               type="button"
-              className={tab === "chat" ? "active" : ""}
-              onClick={() => setTab("chat")}
+              className="icon-btn"
+              onClick={openSettings}
+              aria-label="LLM 設定"
+              title="LLM 設定"
             >
-              Chat
-            </button>
-            <button
-              type="button"
-              className={tab === "runtime" ? "active" : ""}
-              onClick={() => setTab("runtime")}
-            >
-              Runtime
+              <Icon name="gear" size={14} />
             </button>
           </div>
         </div>

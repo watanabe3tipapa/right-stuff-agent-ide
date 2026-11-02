@@ -11,10 +11,10 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.1.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
-[![Phase](https://img.shields.io/badge/phase-0%20foundation-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Phase](https://img.shields.io/badge/phase-1%20llm%20chat-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
@@ -22,7 +22,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 
 ## ダウンロード
 
-v0.1.0 は現在、ソースからのビルドを前提としています。配布用バイナリはまだ公開していません。
+v0.1.1 は現在、ソースからのビルドを前提としています。配布用バイナリはまだ公開していません。
 
 > ビルドは ad-hoc 署名です。Apple Developer ID 署名・公証は行っていません。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。
 
@@ -32,7 +32,7 @@ v0.1.0 は現在、ソースからのビルドを前提としています。配�
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。LLM による計画立案と、計画単位の承認フローは Phase 1 で追加します。
+Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 PR1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットを追加しました。LLM による計画立案と、計画単位の承認フローは Phase 1 の後半で追加します。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -41,7 +41,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 | 残す | ワークスペースへ直接保存、SQLite にバージョン履歴 |
 | 守る | atomic write、パス検証、ゴミ箱へのソフトデリート |
 | つなぐ | Agent Desktop CLI の検出、スナップショット、許可アクションの実行 |
-| 任せる | LLM による計画と、計画単位の承認フロー（Phase 1） |
+| 任せる | LLM チャット（OpenAI 互換）、計画単位の承認フローは Phase 1 後半 |
 | 広げる | ターミナル、Git、LSP / DAP（Phase 2 以降） |
 
 ### 設計方針
@@ -62,6 +62,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **バージョン履歴** — 保存のたびに SQLite (WAL) へ記録。ファイルあたり最新 100 版を保持し、任意の版をプレビューしてエディタへ復元
 - **ファイル操作** — 新規作成、名前変更、削除。削除は `.right-stuff/trash/<timestamp>/` へ移動するソフトデリート
 - **エージェントパネル** — Chat / Runtime の 2 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot` コマンド
+- **LLM チャット** — OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続。ストリーミング表示、生成停止、接続テストに対応。API キーは OS キーチェーンに保存
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェントの操作を検索して実行
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
@@ -75,7 +76,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **エディタ**: Monaco Editor 0.52（`@monaco-editor/react`）
 - **状態管理**: Zustand 5（workspace / editor / agent）
 - **デスクトップ基盤**: Tauri 2.0（Rust 2024 edition）
-- **バックエンド**: Tauri コマンド（workspace / editor / agent / settings / app）、パス検証、atomic write
+- **バックエンド**: Tauri コマンド（workspace / editor / agent / llm / settings / app）、パス検証、atomic write
 - **データベース**: SQLite（WAL、`rusqlite` bundled）。バージョン履歴と設定を保存
 - **ブリッジ**: `src/lib/api.ts` が `invoke` を薄くラップし、ブラウザでは `src/lib/demo.ts` にフォールバック
 - **パッケージ**: `tauri build`（`.app` / `.dmg`）
@@ -89,7 +90,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - 書き込みは一時ファイル + `rename` の atomic write。削除はゴミ箱へ退避します
 - Agent Desktop の実行はアクション名の許可リスト、引数の長さ・形式の検証、変更操作のネイティブ承認ダイアログを通し、出力は 200,000 文字で打ち切ります
 - スナップショットはメモリ上にのみ保持し、SQLite へ永続化しません
-- API キーはまだ保存していません（Phase 1 で OS キーチェーンへ）
+- API キーは OS キーチェーンにのみ保存し、SQLite・ログ・エラーメッセージには含めません。LLM への通信は Rust 側で行い、WebView から外部 API を直接呼びません
 - CSP は Tauri（本番 / 開発で別ポリシー）と Vercel の両方に `default-src 'self'` ベースで設定しています
 
 ## インストールとビルド
@@ -194,7 +195,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.1.0 はソースからのビルドのみを想定しています
+- v0.1.1 はソースからのビルドのみを想定しています
 - GitHub Releases での配布は準備中です
 - 署名は ad-hoc です。Developer ID 署名・公証は行っていません
 - macOS（Apple Silicon / Intel）を対象としています
@@ -225,6 +226,15 @@ vercel --prod          # 本番環境へデプロイ
 
 ## 既知の制約とロードマップ
 
+### v0.1.1
+
+- [x] OpenAI 互換 LLM 接続（OpenAI / Ollama / LM Studio / OpenRouter / カスタム）
+- [x] ストリーミングチャット、生成停止、接続テスト
+- [x] API キーの OS キーチェーン保存・削除
+- [x] LLM 設定ダイアログとモデル一覧表示
+- [x] API キーのマスク、HTTP レスポンス本文の上限、リダイレクト無効化
+- [x] README / API / SECURITY / ARCHITECTURE / LP の更新
+
 ### v0.1.0
 
 - [x] Tauri 2.0 + React 18 + Vite の基盤、ネイティブウィンドウ
@@ -245,11 +255,11 @@ vercel --prod          # 本番環境へデプロイ
 
 ### 次の候補
 
-- [ ] LLM プロバイダーの接続（OpenAI 互換 API / Ollama / Claude など）
+- [ ] 計画立案と計画単位の承認フロー
 - [ ] 承認履歴の監査ログとポリシー設定 UI
 - [ ] スキル実行と検証ループ
 - [ ] ターミナル (PTY)、Git、LSP / DAP
-- [ ] API キーの OS キーチェーン保存
+- [ ] Anthropic 固有 API のアダプター
 - [ ] リリースパッケージング（署名・公証・DMG）
 - [ ] Windows / Linux 対応
 
@@ -257,7 +267,7 @@ vercel --prod          # 本番環境へデプロイ
 
 - 動作確認は macOS のみです。配布用の署名・公証は未対応です
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
-- LLM 推論は未接続です。チャットは `/status` と `/snapshot`、未設定の案内のみ応答します
+- LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API、計画立案、計画単位の承認は未実装です
 - スナップショットはメモリ上にのみ保持され、再起動すると失われます
 - ブラウザデモの変更は永続化されません
 - 同期・共同編集は提供していません

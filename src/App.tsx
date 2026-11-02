@@ -11,6 +11,7 @@ import { EditorPane } from "./components/EditorPane";
 import { FileTree } from "./components/FileTree";
 import { HistoryDialog } from "./components/HistoryDialog";
 import { Icon } from "./components/Icon";
+import { SettingsDialog } from "./components/SettingsDialog";
 import { StatusBar } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
 import { Welcome } from "./components/Welcome";
@@ -38,6 +39,7 @@ export function App() {
   const notice = useEditorStore((state) => state.notice);
   const clearNotice = useEditorStore((state) => state.clearNotice);
   const refreshAgentStatus = useAgentStore((state) => state.refreshStatus);
+  const refreshLlm = useAgentStore((state) => state.refreshLlm);
 
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -50,6 +52,7 @@ export function App() {
 
     void initWorkspace();
     void refreshAgentStatus();
+    void refreshLlm();
     void api
       .appInfo()
       .then((next) => {
@@ -60,7 +63,7 @@ export function App() {
       .catch(() => {
         document.documentElement.dataset.runtime = api.isTauri ? "tauri" : "browser";
       });
-  }, [initWorkspace, refreshAgentStatus]);
+  }, [initWorkspace, refreshAgentStatus, refreshLlm]);
 
   useEffect(() => {
     const root = info?.root;
@@ -149,6 +152,7 @@ export function App() {
 
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       <HistoryDialog />
+      <SettingsDialog />
 
       {notice && (
         <div className="toast info" role="status">

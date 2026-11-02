@@ -1,6 +1,6 @@
 [package]
 name = "right-stuff-agent-ide"
-version = "0.1.0"
+version = "0.1.1"
 description = "Agent-driven IDE built on Right-Stuff Editor and Agent Desktop"
 authors = ["watanabe3tipapa"]
 edition = "2024"
@@ -26,6 +26,20 @@ rusqlite = { version = "0.41.1", features = ["bundled"] }
 chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
 thiserror = "2.0.21"
 tauri-plugin-dialog = "2"
+reqwest = { version = "0.13", features = ["json", "stream"] }
+futures-util = "0.3"
+tokio = { version = "1", features = ["macros", "sync", "time"] }
+
+# Keep the OS-native credential store per platform so unsupported backends are
+# not compiled into the macOS build.
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6.3", features = ["apple-native"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3.6.3", features = ["windows-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6.3", features = ["sync-secret-service"] }
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

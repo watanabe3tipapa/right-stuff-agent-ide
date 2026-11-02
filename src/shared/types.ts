@@ -74,4 +74,41 @@ export interface ChatMessage {
   text: string;
   createdAt: number;
   command?: string;
+  /** Local UI notice that must not be sent back to the LLM. */
+  local?: boolean;
 }
+
+export type LlmProvider = "openai" | "ollama" | "lmstudio" | "openrouter" | "custom";
+
+export interface LlmConfig {
+  provider: LlmProvider;
+  baseUrl: string;
+  model: string;
+  temperature: number;
+  maxTokens: number;
+}
+
+export interface LlmSettings extends LlmConfig {
+  configured: boolean;
+  keyConfigured: boolean;
+}
+
+export interface LlmTestResult {
+  ok: boolean;
+  status: number | null;
+  message: string;
+  models: string[];
+}
+
+export type LlmChatRole = "system" | "user" | "assistant";
+
+export interface LlmChatMessage {
+  role: LlmChatRole;
+  content: string;
+}
+
+export type LlmStreamEvent =
+  | { type: "delta"; text: string }
+  | { type: "done"; finishReason: string | null }
+  | { type: "cancelled" }
+  | { type: "error"; message: string };

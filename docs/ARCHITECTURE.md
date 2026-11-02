@@ -54,12 +54,30 @@ SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
   → savedContent を更新して dirty を解除
 ```
 
-## エージェント操作フロー (LLM 推論は Phase 1)
+## LLM チャットフロー
+
+```
+ユーザー入力
+  → agentStore.send
+  → toRequestMessages (直近 20 件、ローカル通知とコマンド出力を除外)
+  → api.llmChat (Tauri Channel)
+  → Rust: llm_chat
+      → 設定と API キーを読み込み (キーは OS キーチェーン)
+      → POST {baseUrl}/chat/completions (stream: true)
+      → SSE を解析して delta / done / cancelled / error を Channel へ送信
+  → agentStore が応答を逐次更新
+  → llm_cancel で協調的キャンセル
+```
+
+API キーは Rust プロセス内でのみ扱い、WebView・SQLite・ログ・エラー文字列へは渡さない。
+CSP の `connect-src` に外部オリジンを追加しないため、LLM への HTTP 通信は必ず Rust 側で行う。
+
+## エージェント操作フロー (計画立案は Phase 1 後半)
 
 ```
 ユーザー意図
-  → LLM 推論 (Phase 1)
-  → スキル選択 (.agents/skills/*.json) (Phase 1)
+  → LLM 推論 (実装済み: チャット応答まで)
+  → スキル選択 (.agents/skills/*.json) (Phase 1 後半)
   → agent_run (許可リスト + 引数検証 + 変更操作の承認)
   → Agent Desktop が OS を操作
   → agent_snapshot で状態を再取得
@@ -67,8 +85,8 @@ SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
 ```
 
 現時点では `agent_status` / `agent_snapshot` / `agent_run` のブリッジ、
-引数検証、ネイティブ承認ダイアログ、UI からの `/status`・`/snapshot` 実行までを
-実装している。
+引数検証、ネイティブ承認ダイアログ、UI からの `/status`・`/snapshot` 実行、
+OpenAI 互換 API のチャット（ストリーミング・停止・接続テスト）までを実装している。
 
 ## ディレクトリ
 
@@ -77,12 +95,12 @@ SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
 
 ```
 src/
-├── components/
-├── lib/{api,demo,monaco}.ts
+├── components/ (AgentPanel, SettingsDialog, ...)
+├── lib/{api,demo,llm,monaco}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,settings,app}.rs
+├── commands/{workspace,editor,agent,llm,settings,app}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs

@@ -43,6 +43,27 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - `agent_run` の stdout / stderr は 200,000 文字で打ち切る。
 - コマンドは UI に `command[]` として表示し、何を実行したか追跡できるようにする。
 
+## LLM 接続と API キー
+
+- LLM への HTTP 通信は WebView ではなく Rust 側で行う。CSP の `connect-src` に外部オリジンを追加しない。
+- API キーは OS キーチェーン（macOS は Keychain Services）にのみ保存する。キーはプロバイダーごとに 1 つ保持する。
+- SQLite にはプロバイダー名・Base URL・モデル名・Temperature・最大トークン数のみを保存する。API キーは保存しない。
+- `llm_config_get` / `llm_key_status` が返すのは「設定済みかどうか」の真偽値だけ。キー本文は WebView に返さない。
+- キーはログ・エラー文字列・監査ログに出力しない。キーチェーン操作の失敗は一般的なメッセージに置き換える。
+- Base URL は `https://` を必須とし、`http://` は `localhost` / `127.0.0.1` / `::1` のみ許可する。URL にユーザー名・パスワード・クエリ・フラグメントは含められない。
+- メッセージは role の許可リスト、1 件あたり 100,000 文字、合計 400,000 文字、最大 100 件で検証する。
+- ストリーミングは `llm_cancel` で協調的に停止できる。
+
+### 送信範囲
+
+- 現在のチャットは、ユーザーが入力したプロンプトと直近 20 件の会話だけを送信する。
+- ローカル通知、コマンド出力、システムメッセージ、`/status` などのローカルコマンドは履歴から除外する。
+- ワークスペースのファイル、デスクトップスナップショット、クリップボードの内容を自動で送信しない。
+- ローカルプロバイダー（Ollama / LM Studio）は `http://localhost` を許可するが、外部ホストへの平文 HTTP は拒否する。
+- プロバイダーが返したエラー本文に API キーが含まれる場合は、WebView へ渡す前に `[REDACTED]` へ置換する。
+- 接続テストなどで読み取る HTTP レスポンス本文は 1 MiB で打ち切る。
+- HTTP リダイレクトには追従しない。API キーの送信先を Base URL のホストに固定するため。
+
 ## CSP と HTTP ヘッダー
 
 - Tauri は本番用 `csp` と開発用 `devCsp` を分けて設定する。本番は `default-src 'self'` を基底とし、Monaco の worker 用に `worker-src 'self' blob:`、Google Fonts 用に `font-src`、Tauri IPC 用に `connect-src ipc: http://ipc.localhost` を許可する。
@@ -52,7 +73,8 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 ## スナップショットとプライバシー
 
 - スナップショットは現時点ではメモリ上にのみ保持し、SQLite へ永続化しない。
-- Phase 1 で以下を追加する:
+- LLM へ自動送信するのはチャットの会話のみ。スナップショットやファイル内容は送信しない。
+- 今後、以下を追加する:
   - 銀行・メールクライアント等の機密ウィンドウの自動マスク
   - LLM 送信前のパス・ユーザー名の匿名化
   - 永続化の明示的なオプトイン
@@ -63,15 +85,16 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 | データ | 場所 |
 | --- | --- |
 | ワークスペースのファイル | ユーザーが選んだフォルダ |
-| バージョン履歴・設定 | OS の app data ディレクトリ内 `right-stuff.db` |
+| バージョン履歴・LLM 設定 | OS の app data ディレクトリ内 `right-stuff.db` |
 | エージェントモード | WebView の `localStorage` |
-| API キー (Phase 1) | OS キーチェーン |
+| API キー | OS キーチェーン |
 
 `right-stuff.db` は WAL モードで開く。履歴にはファイル内容が含まれるため、
 バックアップや共有の際は注意する。
 
 ## 既知の制約
 
-- API キーはまだ保存していない。
+- LLM は OpenAI 互換 API のみ対応する。Anthropic 固有の API は未対応。
 - LLM による計画単位の承認キューは未実装。
 - 承認履歴の監査ログとポリシー設定 UI は未実装。
+- API キーのローテーションや複数キーの管理は未実装。

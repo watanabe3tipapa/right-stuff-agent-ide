@@ -910,7 +910,7 @@ footer .footer-links a:hover { color: var(--accent); }
       </div>
     </div>
   </div>
-  <p class="hero-mockup-note"><strong>※ 画面はシミュレーションです。</strong> 現時点では LLM は未接続で、チャットは <code>/status</code> と <code>/snapshot</code> のみ応答します。実際の UI は <a href="/app/">ブラウザデモ</a> で操作できます。</p>
+  <p class="hero-mockup-note"><strong>※ 画面はシミュレーションです。</strong> ブラウザデモでは LLM を利用できません。Tauri 版では設定画面から OpenAI 互換 API に接続し、ストリーミングチャットを使えます。実際の UI は <a href="/app/">ブラウザデモ</a> で操作できます。</p>
 </header>
 
 <main>
@@ -930,7 +930,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon" style="background:var(--accent2-weak)">&#9670;</div>
       <div class="feature-title">エージェントによる直接操作</div>
-      <div class="feature-desc">Agent Desktop の OS アクセシビリティツリー API を統合し、エディタ UI と外部アプリの両方をエージェントが操作できる構成を目指します（Phase 1）。</div>
+      <div class="feature-desc">Agent Desktop の OS アクセシビリティツリー API を統合し、エディタ UI と外部アプリの両方をエージェントが操作できる構成を目指します（Phase 1 後半）。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#9881;</div>
@@ -940,12 +940,12 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon">&#128274;</div>
       <div class="feature-title">安全な承認フロー</div>
-      <div class="feature-desc">Agent Desktop の変更操作は、実行直前に OS のネイティブ承認ダイアログで確認します。LLM の計画単位の承認キューと機密ウィンドウの自動マスクは Phase 1 で追加します。</div>
+      <div class="feature-desc">Agent Desktop の変更操作は、実行直前に OS のネイティブ承認ダイアログで確認します。LLM の計画単位の承認キューと機密ウィンドウの自動マスクは今後追加します。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon" style="background:var(--accent2-weak)">&#128260;</div>
       <div class="feature-title">検証ループ</div>
-      <div class="feature-desc">エージェントのアクション後にスナップショットを再取得し、状態変化を検証する設計です。Phase 1 で接続します。</div>
+      <div class="feature-desc">エージェントのアクション後にスナップショットを再取得し、状態変化を検証する設計です。検証ループは今後実装します。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">&#127760;</div>
@@ -976,12 +976,12 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="eval-card bad">
       <h3>注意点</h3>
       <ul>
-        <li><strong>LLM は未接続</strong> — チャットは /status と /snapshot のみ。計画立案と計画単位の承認は Phase 1</li>
+        <li><strong>LLM は OpenAI 互換 API に対応</strong> — Tauri 版では OpenAI / Ollama / LM Studio / OpenRouter などに接続できます。ブラウザデモでは利用できません。Anthropic 固有 API と計画立案は今後対応</li>
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か <code>AGENT_DESKTOP_BIN</code> で指定する</li>
         <li><strong>計画単位の承認はこれから</strong> — Agent Desktop の変更操作には引数検証とネイティブ承認ダイアログを実装済み。LLM の計画単位の承認キューは Phase 1</li>
         <li><strong>macOS のみ検証</strong> — 配布署名・公証は未対応。Windows / Linux は未検証</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
-        <li><strong>配布とキー管理はこれから</strong> — CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キー保存、署名・公証は Phase 1 以降</li>
+        <li><strong>配布はこれから</strong> — CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は今後対応</li>
       </ul>
     </div>
   </div>
@@ -1004,7 +1004,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="roadmap-phase">Phase 1</div>
       <div class="roadmap-title">Agent Desktop 統合基盤 <span class="roadmap-status">進行中</span></div>
       <div class="roadmap-meta">3週間 / 優先度: 最高</div>
-      <p>LLM プロバイダー接続、計画立案、計画単位の承認フロー、スキル選択と検証ループ。</p>
+      <p>OpenAI 互換 LLM 接続、ストリーミングチャット、API キーのキーチェーン保存は実装済み。計画立案、計画単位の承認フロー、検証ループを追加中。</p>
     </div>
     <div class="roadmap-item">
       <div class="roadmap-phase">Phase 2</div>
@@ -1038,7 +1038,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <ul>
       <li><strong>対応 OS は macOS のみ</strong> — 検証済みは macOS 11 以降です。Windows / Linux は未検証です。</li>
       <li><strong>ブラウザデモは保存されません</strong> — 変更はメモリ上のみで、再読み込みすると初期状態に戻ります。</li>
-      <li><strong>LLM は未接続</strong> — チャットは <code>/status</code> と <code>/snapshot</code> のみ応答します。</li>
+      <li><strong>LLM は Tauri 版で利用可能</strong> — ブラウザデモでは利用できません。エージェントパネル右上の歯車アイコンから設定します。</li>
       <li><strong>Agent Desktop CLI は別途必要</strong> — 同梱していません。次の手順でインストールします。</li>
     </ul>
   </div>
@@ -1097,12 +1097,28 @@ agent-desktop permissions --guide</pre>
       <div class="step-num">06</div>
       <div class="step-content">
         <div class="step-title">エージェントの状態を確認</div>
-        <div class="step-desc">エージェントパネルで /status を実行すると Agent Desktop CLI の検出状態を確認できます。LLM 推論は Phase 1 で追加します。</div>
+        <div class="step-desc">エージェントパネルで /status を実行すると Agent Desktop CLI の検出状態を確認できます。LLM チャットは次の手順で設定します。</div>
         <pre>/status
 /snapshot
 
 # Agent Desktop が PATH にない場合:
 AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
+      </div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-num">07</div>
+      <div class="step-content">
+        <div class="step-title">LLM に接続</div>
+        <div class="step-desc">エージェントパネル右上の歯車アイコンから「LLM 設定」を開きます。プロバイダー・Base URL・モデルを選び、必要なら API キーを保存して「保存して接続テスト」を実行してください。API キーは OS キーチェーンにのみ保存されます。</div>
+        <pre># 設定例
+プロバイダー: OpenAI
+Base URL: https://api.openai.com/v1
+モデル: gpt-4o-mini
+
+# ローカル LLM の場合
+プロバイダー: Ollama
+Base URL: http://localhost:11434/v1
+モデル: llama3.2</pre>
       </div>
     </div>
   </div>
@@ -1124,7 +1140,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
   <div class="section-header">
     <div class="section-label">Agent Modes</div>
     <h2>3 段階のエージェントモード</h2>
-    <p class="section-desc">用途に応じてモードを切り替える権限設計です。実際の自律実行と計画単位の承認は Phase 1 で実装します。</p>
+    <p class="section-desc">用途に応じてモードを切り替える権限設計です。計画立案と計画単位の承認は Phase 1 の後半で実装します。</p>
   </div>
   <div class="mode-grid">
     <div class="mode-card passive">
@@ -1140,7 +1156,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
     <div class="mode-card autonomous">
       <span class="mode-tag">Autonomous / 自律</span>
       <div class="mode-title">自律実行</div>
-      <div class="mode-desc">複数ステップの自律実行を想定したモードです。現在は許可されたアクションのみ実行し、変更操作にはネイティブ承認ダイアログを表示します。計画実行は Phase 1 で追加します。</div>
+      <div class="mode-desc">複数ステップの自律実行を想定したモードです。現在は許可されたアクションのみ実行し、変更操作にはネイティブ承認ダイアログを表示します。計画の自動実行は今後追加します。</div>
     </div>
   </div>
 </section>
@@ -1257,7 +1273,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>どの機能が実装済みですか？</summary>
     <div class="faq-answer">
-      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
+      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 PR1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存を追加しました。計画立案と計画単位の承認は Phase 1 の後半で追加します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
     </div>
   </details>
   <details class="faq-item">
@@ -1275,7 +1291,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>LLM を使った操作はできますか？</summary>
     <div class="faq-answer">
-      現在は <code>/status</code> と <code>/snapshot</code> のみ応答します。LLM プロバイダーの接続、計画立案、計画単位の承認は Phase 1 で追加します。
+      はい。Tauri 版では、エージェントパネル右上の歯車アイコンから OpenAI 互換 API（OpenAI / Ollama / LM Studio / OpenRouter / カスタム）に接続できます。API キーは OS キーチェーンに保存され、チャットはストリーミング表示・生成停止・接続テストに対応しています。ブラウザデモでは LLM を利用できません。計画立案と計画単位の承認は Phase 1 の後半で追加します。
     </div>
   </details>
   <details class="faq-item">

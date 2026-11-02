@@ -54,20 +54,21 @@ SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
   → savedContent を更新して dirty を解除
 ```
 
-## エージェント操作フロー (Phase 1 で完成)
+## エージェント操作フロー (LLM 推論は Phase 1)
 
 ```
 ユーザー意図
-  → LLM 推論
-  → スキル選択 (.agents/skills/*.json)
-  → agent_run (許可されたアクションのみ)
+  → LLM 推論 (Phase 1)
+  → スキル選択 (.agents/skills/*.json) (Phase 1)
+  → agent_run (許可リスト + 引数検証 + 変更操作の承認)
   → Agent Desktop が OS を操作
   → agent_snapshot で状態を再取得
   → 結果を検証して UI に返す
 ```
 
-現時点では `agent_status` / `agent_snapshot` / `agent_run` のブリッジと、
-UI からの `/status`・`/snapshot` 実行までを実装している。
+現時点では `agent_status` / `agent_snapshot` / `agent_run` のブリッジ、
+引数検証、ネイティブ承認ダイアログ、UI からの `/status`・`/snapshot` 実行までを
+実装している。
 
 ## ディレクトリ
 

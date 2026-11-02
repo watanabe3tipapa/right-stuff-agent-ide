@@ -2148,3 +2148,69 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- Fatal error boundary ---------- */
+
+.fatal-error {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 32px;
+  background:
+    radial-gradient(48rem 24rem at 20% -10%, var(--accent-glow), transparent 70%),
+    var(--bg);
+  overflow: auto;
+}
+
+.fatal-error-card {
+  width: min(640px, 100%);
+  padding: 32px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow);
+}
+
+.fatal-error-code {
+  margin-bottom: 8px;
+  color: var(--danger);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.fatal-error-card h1 {
+  margin-bottom: 12px;
+  font-size: 22px;
+  line-height: 1.35;
+}
+
+.fatal-error-card > p:not(.fatal-error-code) {
+  color: var(--ink-muted);
+  line-height: 1.8;
+}
+
+.fatal-error-detail {
+  max-height: 220px;
+  margin: 20px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
+.fatal-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fatal-error-actions a {
+  text-decoration: none;
+}

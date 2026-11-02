@@ -37,4 +37,8 @@ await cp(
   path.join(outDir, "rs-mark.svg"),
 );
 
+for (const file of ["robots.txt", "sitemap.xml", "404.html", "og-image.png"]) {
+  await cp(path.join(root, "public", file), path.join(outDir, file));
+}
+
 console.log("Vercel output ready: dist-vercel/ (LP at /, app at /app/)");

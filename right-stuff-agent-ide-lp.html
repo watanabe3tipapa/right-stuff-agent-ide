@@ -5,6 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Right-Stuff Agent IDE</title>
 <meta name="description" content="Right-Stuff Editor と Agent Desktop を統合した、エージェントが IDE を直接操作する次世代開発環境。">
+<meta name="theme-color" content="#0d1117">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://right-stuff-agent-ide.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Right-Stuff Agent IDE">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="Right-Stuff Agent IDE">
+<meta property="og:description" content="Right-Stuff Editor と Agent Desktop を統合した、エージェントが IDE を直接操作する次世代開発環境。">
+<meta property="og:url" content="https://right-stuff-agent-ide.vercel.app/">
+<meta property="og:image" content="https://right-stuff-agent-ide.vercel.app/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Right-Stuff Agent IDE — エージェント駆動型デスクトップ IDE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Right-Stuff Agent IDE">
+<meta name="twitter:description" content="Right-Stuff Editor と Agent Desktop を統合した、エージェントが IDE を直接操作する次世代開発環境。">
+<meta name="twitter:image" content="https://right-stuff-agent-ide.vercel.app/og-image.png">
+<meta name="twitter:image:alt" content="Right-Stuff Agent IDE — エージェント駆動型デスクトップ IDE">
 <link rel="icon" type="image/svg+xml" href="/rs-mark.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Noto+Sans+JP:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
@@ -738,7 +757,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon">&#128274;</div>
       <div class="feature-title">安全な承認フロー</div>
-      <div class="feature-desc">危険な操作（ファイル削除、Git push、ターミナル実行）の承認フローを Phase 1 で実装します。機密ウィンドウの自動マスクも計画しています。</div>
+      <div class="feature-desc">Agent Desktop の変更操作は、実行直前に OS のネイティブ承認ダイアログで確認します。LLM の計画単位の承認キューと機密ウィンドウの自動マスクは Phase 1 で追加します。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon" style="background:var(--accent2-weak)">&#128260;</div>
@@ -774,12 +793,12 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="eval-card bad">
       <h3>注意点</h3>
       <ul>
-        <li><strong>LLM は未接続</strong> — チャットは /status と /snapshot のみ。計画立案と承認フローは Phase 1</li>
+        <li><strong>LLM は未接続</strong> — チャットは /status と /snapshot のみ。計画立案と計画単位の承認は Phase 1</li>
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か AGENT_DESKTOP_BIN で指定する</li>
-        <li><strong>承認フローは未実装</strong> — 現在はアクション名の許可リストのみで、引数の検証はこれから</li>
+        <li><strong>計画単位の承認はこれから</strong> — Agent Desktop の変更操作には引数検証とネイティブ承認ダイアログを実装済み。LLM の計画単位の承認キューは Phase 1</li>
         <li><strong>macOS のみ検証</strong> — 配布署名・公証は未対応。Windows / Linux は未検証</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
-        <li><strong>開発途上のセキュリティ設定</strong> — CSP は開発用の null。API キー保存は Phase 1</li>
+        <li><strong>配布とキー管理はこれから</strong> — CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キー保存、署名・公証は Phase 1 以降</li>
       </ul>
     </div>
   </div>
@@ -805,7 +824,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="step-num">02</div>
       <div class="step-content">
         <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版はこのリポジトリからビルドします。Node.js 20 以上と Rust 1.85 以上が必要です。</div>
+        <div class="step-desc">Tauri 版はこのリポジトリからビルドします。Node.js 20.19 以上（または 22.12 以上）と Rust 1.85 以上が必要です。</div>
         <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
 cd right-stuff-agent-ide
 npm ci</pre>
@@ -847,7 +866,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
   <div class="section-header">
     <div class="section-label">Agent Modes</div>
     <h2>3 段階のエージェントモード</h2>
-    <p class="section-desc">用途に応じてモードを切り替える権限設計です。実際の自律実行と承認フローは Phase 1 で実装します。</p>
+    <p class="section-desc">用途に応じてモードを切り替える権限設計です。実際の自律実行と計画単位の承認は Phase 1 で実装します。</p>
   </div>
   <div class="mode-grid">
     <div class="mode-card passive">
@@ -858,12 +877,12 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
     <div class="mode-card assistive">
       <span class="mode-tag">Assistive</span>
       <div class="mode-title">能動的支援</div>
-      <div class="mode-desc">チャット応答とファイル編集を支援します。危険な操作の承認フローは Phase 1 で追加します。</div>
+      <div class="mode-desc">チャット応答とファイル編集を支援します。Agent Desktop の変更操作はネイティブ承認ダイアログを経由します。</div>
     </div>
     <div class="mode-card autonomous">
       <span class="mode-tag">Autonomous</span>
       <div class="mode-title">自律実行</div>
-      <div class="mode-desc">複数ステップの自律実行を想定したモードです。現在は許可されたアクションのみ実行し、承認フローは Phase 1 で追加します。</div>
+      <div class="mode-desc">複数ステップの自律実行を想定したモードです。現在は許可されたアクションのみ実行し、変更操作にはネイティブ承認ダイアログを表示します。計画実行は Phase 1 で追加します。</div>
     </div>
   </div>
 </section>
@@ -976,7 +995,7 @@ open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"</pre>
   <details class="faq-item">
     <summary>LLM を使った操作はできますか？</summary>
     <div class="faq-answer">
-      現在は <code>/status</code> と <code>/snapshot</code> のみ応答します。LLM プロバイダーの接続、計画立案、承認フローは Phase 1 で追加します。
+      現在は <code>/status</code> と <code>/snapshot</code> のみ応答します。LLM プロバイダーの接続、計画立案、計画単位の承認は Phase 1 で追加します。
     </div>
   </details>
   <details class="faq-item">

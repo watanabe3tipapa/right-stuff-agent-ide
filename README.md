@@ -32,7 +32,7 @@ v0.1.0 は現在、ソースからのビルドを前提としています。配�
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。LLM による計画立案と承認フローは Phase 1 で追加します。
+Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。LLM による計画立案と、計画単位の承認フローは Phase 1 で追加します。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -41,7 +41,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 | 残す | ワークスペースへ直接保存、SQLite にバージョン履歴 |
 | 守る | atomic write、パス検証、ゴミ箱へのソフトデリート |
 | つなぐ | Agent Desktop CLI の検出、スナップショット、許可アクションの実行 |
-| 任せる | LLM による計画と承認フロー（Phase 1） |
+| 任せる | LLM による計画と、計画単位の承認フロー（Phase 1） |
 | 広げる | ターミナル、Git、LSP / DAP（Phase 2 以降） |
 
 ### 設計方針
@@ -87,10 +87,10 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - ファイル操作は Rust 側で検証し、絶対パス、`..`、ワークスペース外への書き込みを拒否します
 - シンボリックリンクはファイルツリーに列挙しません
 - 書き込みは一時ファイル + `rename` の atomic write。削除はゴミ箱へ退避します
-- Agent Desktop の実行はアクション名の許可リストを通し、出力は 200,000 文字で打ち切ります
+- Agent Desktop の実行はアクション名の許可リスト、引数の長さ・形式の検証、変更操作のネイティブ承認ダイアログを通し、出力は 200,000 文字で打ち切ります
 - スナップショットはメモリ上にのみ保持し、SQLite へ永続化しません
 - API キーはまだ保存していません（Phase 1 で OS キーチェーンへ）
-- CSP は現在 `null`（開発用）です。リリース前に `default-src 'self'` ベースへ絞る予定です
+- CSP は Tauri（本番 / 開発で別ポリシー）と Vercel の両方に `default-src 'self'` ベースで設定しています
 
 ## インストールとビルド
 
@@ -99,11 +99,11 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 | ツール | 必要バージョン | 確認コマンド |
 |---|---:|---|
 | macOS | 11 以降 | `sw_vers` |
-| Node.js | >= 20 | `node --version` |
+| Node.js | `^20.19.0 \|\| >=22.12.0`（`.nvmrc` は 24） | `node --version` |
 | Rust | >= 1.85（edition 2024） | `rustc --version` |
 | Xcode Command Line Tools | — | `xcode-select -p` |
 
-検証環境は macOS 15 / Node.js 22 / Rust 1.94 です。
+検証環境は macOS 15 / Node.js 22.17（CI は Node.js 24）/ Rust 1.94 です。
 
 ### 基本的な手順
 
@@ -158,6 +158,8 @@ npm run dev
 | `npm run dev` | Vite 開発サーバーのみ起動（ブラウザデモ） |
 | `npm run build` | 型検査 + フロントエンドを `dist/` へビルド |
 | `npm run typecheck` | TypeScript の型検査 |
+| `npm run lint` | ESLint による静的解析 |
+| `npm test` | Vitest による単体テスト |
 | `npm run check` | 型検査 + `cargo check` |
 | `npm run tauri build` | macOS アプリ（`.app` / `.dmg`）をビルド |
 | `npm run preview` | `dist/` をローカルでプレビュー |
@@ -233,6 +235,9 @@ vercel --prod          # 本番環境へデプロイ
 - [x] SQLite (WAL) バージョン履歴（最新 100 版 / ファイル）と復元
 - [x] パス検証、atomic write、ゴミ箱へのソフトデリート
 - [x] Agent Desktop の検出、スナップショット、許可アクション実行
+- [x] Agent Desktop の引数検証とネイティブ承認ダイアログ
+- [x] CSP（Tauri / Vercel）とセキュリティヘッダー
+- [x] ESLint / Vitest / GitHub Actions CI
 - [x] エージェントパネル（Chat / Runtime、3 モード、`/status`・`/snapshot`）
 - [x] コマンドパレット
 - [x] ブラウザ用デモワークスペース
@@ -241,11 +246,11 @@ vercel --prod          # 本番環境へデプロイ
 ### 次の候補
 
 - [ ] LLM プロバイダーの接続（OpenAI 互換 API / Ollama / Claude など）
-- [ ] 承認キューと引数レベルのポリシー検証
+- [ ] 承認履歴の監査ログとポリシー設定 UI
 - [ ] スキル実行と検証ループ
 - [ ] ターミナル (PTY)、Git、LSP / DAP
-- [ ] CSP の強化、API キーの OS キーチェーン保存
-- [ ] CI（typecheck / cargo check / build）とリリースパッケージング
+- [ ] API キーの OS キーチェーン保存
+- [ ] リリースパッケージング（署名・公証・DMG）
 - [ ] Windows / Linux 対応
 
 ### 制約

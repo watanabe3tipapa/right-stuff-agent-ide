@@ -2,10 +2,15 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use serde::Serialize;
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
 use crate::error::{AppError, AppResult};
 
 const MAX_OUTPUT_CHARS: usize = 200_000;
+const MAX_ARG_COUNT: usize = 12;
+const MAX_ARG_CHARS: usize = 16_384;
+const MAX_TOTAL_ARG_CHARS: usize = 32_768;
+const DIALOG_ARG_PREVIEW_CHARS: usize = 240;
 
 const ALLOWED_ACTIONS: &[&str] = &[
     "snapshot",
@@ -25,6 +30,17 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "dismiss-notification",
     "session",
     "trace",
+    "--version",
+    "--help",
+];
+
+/// Actions that only read state and never mutate the desktop. Everything else
+/// must be approved by the user through a native dialog before it runs.
+const READ_ONLY_ACTIONS: &[&str] = &[
+    "snapshot",
+    "list-apps",
+    "list-windows",
+    "list-notifications",
     "--version",
     "--help",
 ];
@@ -83,6 +99,135 @@ fn truncate(value: String) -> String {
         truncated.push_str("\n… (出力が長いため省略されました)");
         truncated
     }
+}
+
+/// Validate the action and its arguments before anything is executed.
+///
+/// The CLI is invoked without a shell, so quoting is not an issue. This layer
+/// still bounds the input size and rejects argument shapes that are known to be
+/// dangerous for the action (for example launching an arbitrary path).
+fn validate_args(args: &[String]) -> AppResult<()> {
+    let Some(action) = args.first() else {
+        return Err(AppError::Other(
+            "実行するアクションを指定してください".into(),
+        ));
+    };
+
+    if !ALLOWED_ACTIONS.contains(&action.as_str()) {
+        return Err(AppError::Other(format!(
+            "許可されていないアクションです: {action}"
+        )));
+    }
+
+    if args.len() > MAX_ARG_COUNT {
+        return Err(AppError::Other(format!(
+            "引数が多すぎます (上限 {MAX_ARG_COUNT} 個)"
+        )));
+    }
+
+    let mut total_chars = 0usize;
+    for arg in args {
+        if arg.contains('\0') {
+            return Err(AppError::Other("引数に NUL 文字は指定できません".into()));
+        }
+        let chars = arg.chars().count();
+        if chars > MAX_ARG_CHARS {
+            return Err(AppError::Other(format!(
+                "引数が長すぎます (1 個あたり上限 {MAX_ARG_CHARS} 文字)"
+            )));
+        }
+        total_chars += chars;
+    }
+    if total_chars > MAX_TOTAL_ARG_CHARS {
+        return Err(AppError::Other(format!(
+            "引数の合計が長すぎます (上限 {MAX_TOTAL_ARG_CHARS} 文字)"
+        )));
+    }
+
+    match action.as_str() {
+        "launch" | "close-app" => {
+            if args.len() != 2 {
+                return Err(AppError::Other(format!(
+                    "{action} にはアプリ名を 1 つ指定してください"
+                )));
+            }
+            validate_app_name(&args[1])?;
+        }
+        "type" | "set-value" | "clipboard-set" => {
+            if args.len() < 2 || args[1].trim().is_empty() {
+                return Err(AppError::Other(format!(
+                    "{action} には書き込む内容を指定してください"
+                )));
+            }
+        }
+        "click" | "press" | "scroll" | "focus-window" | "dismiss-notification" => {
+            if args.len() < 2 {
+                return Err(AppError::Other(format!(
+                    "{action} には対象を指定してください"
+                )));
+            }
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
+
+fn validate_app_name(name: &str) -> AppResult<()> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Other("アプリ名が空です".into()));
+    }
+    if trimmed.starts_with('-') {
+        return Err(AppError::Other(
+            "アプリ名をオプションとして指定することはできません".into(),
+        ));
+    }
+    if trimmed.contains('/') || trimmed.contains('\\') || trimmed.contains("..") {
+        return Err(AppError::Other(
+            "アプリ名にはパス区切りや '..' を指定できません".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn requires_approval(action: &str) -> bool {
+    !READ_ONLY_ACTIONS.contains(&action)
+}
+
+fn approval_message(args: &[String]) -> String {
+    let command = args
+        .iter()
+        .map(|arg| {
+            if arg.chars().count() > DIALOG_ARG_PREVIEW_CHARS {
+                format!(
+                    "{}…",
+                    arg.chars()
+                        .take(DIALOG_ARG_PREVIEW_CHARS)
+                        .collect::<String>()
+                )
+            } else {
+                arg.clone()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    format!(
+        "Agent Desktop で次の操作を実行します。\n\n{command}\n\n内容を確認して承認してください。"
+    )
+}
+
+fn confirm_action(app: &tauri::AppHandle, args: &[String]) -> bool {
+    app.dialog()
+        .message(approval_message(args))
+        .title("Agent Desktop の操作を承認")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "実行".to_string(),
+            "キャンセル".to_string(),
+        ))
+        .blocking_show()
 }
 
 fn execute(binary: &PathBuf, args: &[String]) -> AppResult<AgentRunResult> {
@@ -144,17 +289,12 @@ pub async fn agent_status() -> AgentStatus {
 }
 
 #[tauri::command]
-pub async fn agent_run(args: Vec<String>) -> AppResult<AgentRunResult> {
-    let Some(action) = args.first() else {
-        return Err(AppError::Other(
-            "実行するアクションを指定してください".into(),
-        ));
-    };
+pub async fn agent_run(app: tauri::AppHandle, args: Vec<String>) -> AppResult<AgentRunResult> {
+    validate_args(&args)?;
 
-    if !ALLOWED_ACTIONS.contains(&action.as_str()) {
-        return Err(AppError::Other(format!(
-            "許可されていないアクションです: {action}"
-        )));
+    let action = args[0].as_str();
+    if requires_approval(action) && !confirm_action(&app, &args) {
+        return Err(AppError::Other("操作はキャンセルされました".into()));
     }
 
     let binary = find_binary().ok_or_else(|| {
@@ -183,4 +323,79 @@ pub async fn agent_snapshot(app: Option<String>) -> AppResult<AgentRunResult> {
     }
 
     execute(&binary, &args)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn args(items: &[&str]) -> Vec<String> {
+        items.iter().map(|item| item.to_string()).collect()
+    }
+
+    #[test]
+    fn rejects_empty_arguments() {
+        assert!(validate_args(&[]).is_err());
+    }
+
+    #[test]
+    fn rejects_unknown_actions() {
+        assert!(validate_args(&args(&["rm", "-rf", "/"])).is_err());
+    }
+
+    #[test]
+    fn rejects_nul_bytes() {
+        assert!(validate_args(&args(&["type", "hello\0world"])).is_err());
+    }
+
+    #[test]
+    fn rejects_excessive_argument_count() {
+        let mut values = vec!["type".to_string()];
+        values.extend((0..MAX_ARG_COUNT).map(|index| format!("arg-{index}")));
+        assert!(validate_args(&values).is_err());
+    }
+
+    #[test]
+    fn rejects_oversized_arguments() {
+        let value = "a".repeat(MAX_ARG_CHARS + 1);
+        assert!(validate_args(&args(&["type", &value])).is_err());
+    }
+
+    #[test]
+    fn launch_requires_exactly_one_app_name() {
+        assert!(validate_args(&args(&["launch"])).is_err());
+        assert!(validate_args(&args(&["launch", "Safari", "extra"])).is_err());
+        assert!(validate_args(&args(&["launch", "Safari"])).is_ok());
+    }
+
+    #[test]
+    fn launch_rejects_paths() {
+        assert!(validate_args(&args(&["launch", "/Applications/Safari.app"])).is_err());
+        assert!(validate_args(&args(&["launch", "../Safari"])).is_err());
+        assert!(validate_args(&args(&["launch", "-a"])).is_err());
+    }
+
+    #[test]
+    fn typing_requires_content() {
+        assert!(validate_args(&args(&["type"])).is_err());
+        assert!(validate_args(&args(&["type", "   "])).is_err());
+        assert!(validate_args(&args(&["type", "hello"])).is_ok());
+    }
+
+    #[test]
+    fn read_only_actions_do_not_require_approval() {
+        for action in READ_ONLY_ACTIONS {
+            assert!(!requires_approval(action), "{action} should be read-only");
+        }
+    }
+
+    #[test]
+    fn mutating_actions_require_approval() {
+        for action in ["click", "type", "launch", "close-app", "clipboard-set"] {
+            assert!(
+                requires_approval(action),
+                "{action} should require approval"
+            );
+        }
+    }
 }

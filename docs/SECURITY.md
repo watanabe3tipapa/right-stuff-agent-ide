@@ -29,21 +29,25 @@
 | Assistive | 可 (危険操作は承認) | 可 | なし |
 | Autonomous | 可 | 可 | 承認フロー経由 |
 
-### 承認が必要な操作 (Phase 1 で実装)
+### 承認が必要な操作
 
-- ワークスペース外への書き込み
-- `rm`, `curl | sh` などの破壊的コマンド
-- 外部アプリケーションの起動・操作
-- `git push` / `git push --force` / `git reset --hard`
-- クリップボードへの機密情報の書き込み
+`agent_run` は次の二段階で防御する。
 
-`agent_run` は現時点ではアクション名の許可リストのみで、引数の内容までは
-検証しない。Phase 1 で承認キューと引数ポリシーを追加する。
+1. **引数検証** — アクション名の許可リスト、引数個数（最大 12）、1 引数あたりの長さ（最大 16,384 文字）、合計長（最大 32,768 文字）、NUL 文字の拒否。`launch` / `close-app` はアプリ名 1 つだけを許可し、パス区切り・`..`・先頭 `-` を拒否する。`type` / `set-value` / `clipboard-set` は内容の存在を必須にする。
+2. **ネイティブ承認** — 読み取り専用アクション（`snapshot`, `list-apps`, `list-windows`, `list-notifications`, `--version`, `--help`）以外は、実行直前に OS の確認ダイアログを表示する。ダイアログには実行するコマンドを表示し、承認した場合のみ CLI を起動する。
+
+CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動するため、シェルインジェクションは成立しない。
 
 ### 出力
 
 - `agent_run` の stdout / stderr は 200,000 文字で打ち切る。
 - コマンドは UI に `command[]` として表示し、何を実行したか追跡できるようにする。
+
+## CSP と HTTP ヘッダー
+
+- Tauri は本番用 `csp` と開発用 `devCsp` を分けて設定する。本番は `default-src 'self'` を基底とし、Monaco の worker 用に `worker-src 'self' blob:`、Google Fonts 用に `font-src`、Tauri IPC 用に `connect-src ipc: http://ipc.localhost` を許可する。
+- Vercel は `Content-Security-Policy`, `X-Frame-Options: DENY`, `Permissions-Policy`, `X-Content-Type-Options`, `Referrer-Policy` を全レスポンスへ付与する。
+- `frame-ancestors 'none'` と `X-Frame-Options: DENY` でクリックジャッキングを防ぐ。
 
 ## スナップショットとプライバシー
 
@@ -68,6 +72,6 @@
 
 ## 既知の制約
 
-- CSP は現在 `null` (開発用)。リリース前に `default-src 'self'` ベースへ絞る。
 - API キーはまだ保存していない。
-- エージェントの引数レベル検証と承認キューは未実装。
+- LLM による計画単位の承認キューは未実装。
+- 承認履歴の監査ログとポリシー設定 UI は未実装。

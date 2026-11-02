@@ -93,6 +93,10 @@ clipboard-get, clipboard-set, list-notifications, dismiss-notification,
 session, trace, --version, --help
 ```
 
+引数は個数・長さ・形式を検証する。`launch` / `close-app` はアプリ名 1 つだけを許可し、パス区切り・`..`・先頭 `-` を拒否する。`type` / `set-value` / `clipboard-set` は内容を必須にする。
+
+読み取り専用アクション（`snapshot`, `list-apps`, `list-windows`, `list-notifications`, `--version`, `--help`）以外は、実行前にネイティブ承認ダイアログを表示する。キャンセルされた場合はエラーを返し、CLI は起動しない。
+
 出力は 200,000 文字で打ち切る。
 
 ## 設定

@@ -96,6 +96,10 @@ export const api = {
       : demoApi.agentSnapshot();
   },
 
+  /**
+   * The Rust command validates the action and its arguments, then shows a
+   * native confirmation dialog for mutating actions before spawning the CLI.
+   */
   agentRun(args: string[]): Promise<AgentRunResult> {
     return isTauri
       ? call<AgentRunResult>("agent_run", { args })

@@ -32,7 +32,7 @@ v0.1.0 currently assumes a build from source. Distribution binaries are not publ
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. LLM planning and an approval queue arrive in Phase 1.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. LLM planning and plan-level approval arrive in Phase 1.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -41,7 +41,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 | Keep | Direct saves into the workspace, version history in SQLite |
 | Protect | Atomic writes, path validation, trash-based soft delete |
 | Connect | Agent Desktop CLI detection, snapshots, allowlisted actions |
-| Delegate | LLM planning and approval flow (Phase 1) |
+| Delegate | LLM planning and plan-level approval (Phase 1) |
 | Extend | Terminal, Git, LSP / DAP (Phase 2+) |
 
 ### Design principles
@@ -87,10 +87,10 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - File operations are validated in Rust; absolute paths, `..`, and writes outside the workspace are rejected
 - Symlinks are not listed in the file tree
 - Writes use a temporary file plus `rename` (atomic write); deletes move entries to trash
-- Agent Desktop runs only allowlisted action names, and output is truncated at 200,000 characters
+- Agent Desktop enforces an action allowlist plus argument length/shape checks, and mutating actions require a native approval dialog; output is truncated at 200,000 characters
 - Snapshots are held in memory only and are not persisted to SQLite
 - API keys are not stored yet (Phase 1 will use the OS keychain)
-- CSP is currently `null` for development. It will be tightened to a `default-src 'self'` policy before release
+- CSP is configured with a `default-src 'self'` baseline for both Tauri (separate production and development policies) and Vercel
 
 ## Install and build
 
@@ -99,11 +99,11 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 | Tool | Required version | Check |
 |---|---:|---|
 | macOS | 11 or later | `sw_vers` |
-| Node.js | >= 20 | `node --version` |
+| Node.js | `^20.19.0 \|\| >=22.12.0` (`.nvmrc` pins 24) | `node --version` |
 | Rust | >= 1.85 (edition 2024) | `rustc --version` |
 | Xcode Command Line Tools | — | `xcode-select -p` |
 
-Verified on macOS 15 with Node.js 22 and Rust 1.94.
+Verified on macOS 15 with Node.js 22.17 (CI uses Node.js 24) and Rust 1.94.
 
 ### Basic steps
 
@@ -158,6 +158,8 @@ Open `http://localhost:1420` to use the in-memory workspace from `src/lib/demo.t
 | `npm run dev` | Vite dev server only (browser demo) |
 | `npm run build` | Type-check and build the frontend into `dist/` |
 | `npm run typecheck` | TypeScript type check |
+| `npm run lint` | Static analysis with ESLint |
+| `npm test` | Unit tests with Vitest |
 | `npm run check` | Type check + `cargo check` |
 | `npm run tauri build` | Build the macOS app (`.app` / `.dmg`) |
 | `npm run preview` | Preview `dist/` locally |
@@ -233,6 +235,9 @@ vercel --prod          # Deploy to production
 - [x] SQLite (WAL) version history (latest 100 per file) and restore
 - [x] Path validation, atomic writes, trash-based soft delete
 - [x] Agent Desktop detection, snapshots, allowlisted action execution
+- [x] Agent Desktop argument validation and native approval dialog
+- [x] CSP (Tauri / Vercel) and security headers
+- [x] ESLint / Vitest / GitHub Actions CI
 - [x] Agent panel (Chat / Runtime, three modes, `/status` and `/snapshot`)
 - [x] Command palette
 - [x] Browser demo workspace
@@ -241,11 +246,11 @@ vercel --prod          # Deploy to production
 ### Next candidates
 
 - [ ] Connect LLM providers (OpenAI-compatible APIs, Ollama, Claude, etc.)
-- [ ] Approval queue and argument-level policy validation
+- [ ] Approval audit log and policy settings UI
 - [ ] Skill execution and verification loop
 - [ ] Terminal (PTY), Git, LSP / DAP
-- [ ] Tighten CSP and store API keys in the OS keychain
-- [ ] CI (typecheck / cargo check / build) and release packaging
+- [ ] Store API keys in the OS keychain
+- [ ] Release packaging (signing, notarization, DMG)
 - [ ] Windows / Linux support
 
 ### Constraints

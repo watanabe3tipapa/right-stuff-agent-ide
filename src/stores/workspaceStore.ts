@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import type { FileEntry, WorkspaceInfo } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
-import { useEditorStore } from "./editorStore";
+import { confirmUnsavedChanges, useEditorStore } from "./editorStore";
 
 interface WorkspaceState {
   info: WorkspaceInfo | null;
@@ -67,6 +67,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   async openWorkspace() {
+    const allowed = await confirmUnsavedChanges({
+      title: "ワークスペースを切り替える",
+      message:
+        "未保存の変更があります。保存してから切り替えるか、変更を破棄してください。",
+    });
+    if (!allowed) return;
+
     set({ loading: true, error: null });
     try {
       const folder = await api.pickFolder();

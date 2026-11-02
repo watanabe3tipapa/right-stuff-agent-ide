@@ -60,7 +60,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 ### Capabilities
 
 - **Workspace** — pick a folder and list its files recursively; create, rename, delete, and refresh. The last workspace reopens on launch
-- **Editor** — Monaco 0.52 with syntax highlighting, tabs, dirty indicators, and `⌘S` / `⌘⇧S` save
+- **Editor** — Monaco 0.52 with syntax highlighting, tabs, dirty indicators, and `⌘S` / `⌘⇧S` save. Switching workspaces or closing all tabs prompts you to save, discard, or cancel unsaved changes. Closing the window and `⌘Q` use the same prompt.
 - **Markdown preview** — GFM rendering via `react-markdown` + `remark-gfm` in a split pane
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
@@ -282,6 +282,7 @@ vercel --prod          # Deploy to production
 - Snapshots live in memory only and are lost on restart
 - Browser demo changes are not persisted
 - No sync or collaborative editing
+- Quitting from the macOS Dock menu, logging out, or restarting bypasses the unsaved-changes prompt because the OS terminates the app directly (`⌘Q` and the app menu Quit item are guarded)
 - No auto-update
 
 ## Directory layout
@@ -294,6 +295,7 @@ src/
 │   ├── AgentPanel.tsx              # Chat / Runtime
 │   ├── CommandPalette.tsx          # ⌘K command palette
 │   ├── HistoryDialog.tsx           # Version history
+│   ├── UnsavedChangesDialog.tsx    # Save / discard / cancel unsaved changes
 │   └── ConfirmDialog.tsx           # Confirmation modal
 ├── lib/
 │   ├── api.ts                      # Tauri invoke wrapper

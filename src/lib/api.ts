@@ -1,4 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow, type CloseRequestedEvent } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import type {
@@ -31,6 +33,31 @@ export const api = {
 
   appInfo(): Promise<AppInfo> {
     return isTauri ? call<AppInfo>("app_info") : demoApi.appInfo();
+  },
+
+  /**
+   * Ask the user to resolve unsaved changes before the window closes. The
+   * handler must call `event.preventDefault()` when the close should be
+   * cancelled. When allowed, the app quits through `api.quit()`.
+   */
+  async onCloseRequested(
+    handler: (event: CloseRequestedEvent) => void | Promise<void>,
+  ): Promise<() => void> {
+    if (!isTauri) return () => {};
+    return getCurrentWindow().onCloseRequested(handler);
+  },
+
+  /**
+   * macOS Cmd+Q and the app menu Quit item are routed through this event so the
+   * WebView can confirm unsaved changes first.
+   */
+  async onQuitRequested(handler: () => void): Promise<() => void> {
+    if (!isTauri) return () => {};
+    return listen("app://quit-requested", () => handler());
+  },
+
+  quit(): Promise<void> {
+    return isTauri ? call<void>("app_quit") : Promise.resolve();
   },
 
   workspaceLast(): Promise<WorkspaceInfo | null> {

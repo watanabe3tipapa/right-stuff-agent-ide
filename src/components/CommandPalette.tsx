@@ -35,6 +35,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const activePath = useEditorStore((state) => state.activePath);
   const saveActive = useEditorStore((state) => state.saveActive);
   const saveAll = useEditorStore((state) => state.saveAll);
+  const closeAllWithConfirmation = useEditorStore(
+    (state) => state.closeAllWithConfirmation,
+  );
   const togglePreview = useEditorStore((state) => state.togglePreview);
   const loadHistory = useEditorStore((state) => state.loadHistory);
 
@@ -117,6 +120,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       shortcut: "⌘⇧S",
       keywords: "save all",
       run: () => void saveAll(),
+    },
+    {
+      id: "editor:close-all",
+      label: "すべてのタブを閉じる",
+      hint: "未保存の変更は確認します",
+      icon: "x",
+      keywords: "close all tabs",
+      run: () => void closeAllWithConfirmation(),
     },
     {
       id: "editor:preview",

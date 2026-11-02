@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { AppInfo, FileEntry } from "./shared/types";
-import { api } from "./lib/api";
+import { api, errorMessage } from "./lib/api";
 import { useAgentStore } from "./stores/agentStore";
-import { useEditorStore } from "./stores/editorStore";
+import { confirmUnsavedChanges, useEditorStore } from "./stores/editorStore";
 import { useWorkspaceStore } from "./stores/workspaceStore";
 import { AgentPanel } from "./components/AgentPanel";
 import { CommandPalette } from "./components/CommandPalette";
@@ -14,6 +14,7 @@ import { Icon } from "./components/Icon";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StatusBar } from "./components/StatusBar";
 import { TopBar } from "./components/TopBar";
+import { UnsavedChangesDialog } from "./components/UnsavedChangesDialog";
 import { Welcome } from "./components/Welcome";
 
 function findEntry(entries: FileEntry[], predicate: (entry: FileEntry) => boolean): FileEntry | null {
@@ -45,6 +46,7 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const booted = useRef(false);
   const openedWorkspace = useRef<string | null>(null);
+  const quitting = useRef(false);
 
   useEffect(() => {
     if (booted.current) return;
@@ -64,6 +66,65 @@ export function App() {
         document.documentElement.dataset.runtime = api.isTauri ? "tauri" : "browser";
       });
   }, [initWorkspace, refreshAgentStatus, refreshLlm]);
+
+  useEffect(() => {
+    if (!api.isTauri) return;
+
+    let disposed = false;
+    const unlisteners: Array<() => void> = [];
+
+    const register = (registration: Promise<() => void>) => {
+      void registration
+        .then((unlisten) => {
+          if (disposed) {
+            unlisten();
+          } else {
+            unlisteners.push(unlisten);
+          }
+        })
+        .catch((error) => {
+          useEditorStore.setState({ error: errorMessage(error) });
+        });
+    };
+
+    const requestQuit = async () => {
+      if (quitting.current) return;
+      quitting.current = true;
+      try {
+        const allowed = await confirmUnsavedChanges({
+          title: "アプリを終了する",
+          message:
+            "未保存の変更があります。保存してから終了するか、変更を破棄してください。",
+        });
+        if (!allowed) return;
+        await api.quit();
+      } catch (error) {
+        useEditorStore.setState({ error: errorMessage(error) });
+      } finally {
+        quitting.current = false;
+      }
+    };
+
+    register(
+      api.onCloseRequested(async (event) => {
+        // Always cancel the native close first. The app exits through
+        // `api.quit()` only after the unsaved-changes dialog is resolved.
+        event.preventDefault();
+        await requestQuit();
+      }),
+    );
+
+    register(
+      api.onQuitRequested(() => {
+        void requestQuit();
+      }),
+    );
+
+    return () => {
+      disposed = true;
+      for (const unlisten of unlisteners) unlisten();
+    };
+  }, []);
 
   useEffect(() => {
     const root = info?.root;
@@ -153,6 +214,7 @@ export function App() {
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       <HistoryDialog />
       <SettingsDialog />
+      <UnsavedChangesDialog />
 
       {notice && (
         <div className="toast info" role="status">

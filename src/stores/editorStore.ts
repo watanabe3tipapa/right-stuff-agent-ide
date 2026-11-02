@@ -21,6 +21,16 @@ export interface EditorNotice {
   text: string;
 }
 
+export type UnsavedDecision = "save" | "discard" | "cancel";
+
+export interface UnsavedPrompt {
+  title: string;
+  message: string;
+}
+
+/** Resolver for the currently visible unsaved-changes dialog. */
+let pendingUnsaved: ((decision: UnsavedDecision) => void) | null = null;
+
 interface EditorState {
   files: Record<string, OpenFile>;
   order: string[];
@@ -32,15 +42,20 @@ interface EditorState {
   historyPath: string | null;
   history: VersionSummary[];
   historyLoading: boolean;
+  unsavedPrompt: UnsavedPrompt | null;
 
   openFile: (path: string) => Promise<void>;
   closeFile: (path: string, force?: boolean) => void;
   closeAll: () => void;
+  closeAllWithConfirmation: () => Promise<void>;
   setActive: (path: string) => void;
   updateContent: (path: string, content: string) => void;
   saveFile: (path: string) => Promise<void>;
   saveActive: () => Promise<void>;
   saveAll: () => Promise<void>;
+  dirtyPaths: () => string[];
+  requestUnsavedDecision: (prompt: UnsavedPrompt) => Promise<UnsavedDecision>;
+  resolveUnsavedDecision: (decision: UnsavedDecision) => void;
   togglePreview: () => void;
   renamePath: (from: string, to: string) => void;
   loadHistory: (path: string) => Promise<void>;
@@ -60,6 +75,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   historyPath: null,
   history: [],
   historyLoading: false,
+  unsavedPrompt: null,
 
   async openFile(path) {
     const existing = get().files[path];
@@ -120,6 +136,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
   },
 
+  async closeAllWithConfirmation() {
+    const allowed = await confirmUnsavedChanges({
+      title: "すべてのタブを閉じる",
+      message:
+        "未保存の変更があるタブを閉じようとしています。保存してから閉じるか、変更を破棄してください。",
+    });
+    if (!allowed) return;
+    get().closeAll();
+  },
+
   setActive(path) {
     set({ activePath: path });
   },
@@ -138,9 +164,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const file = get().files[path];
     if (!file) return;
 
+    // Snapshot the content that is actually written. If the user keeps typing
+    // while the write is in flight, the tab must stay dirty instead of being
+    // marked as saved with content that never reached the disk.
+    const content = file.content;
+
     set({ saving: true, error: null });
     try {
-      const result = await api.writeFile(path, file.content);
+      const result = await api.writeFile(path, content);
       set((state) => {
         const current = state.files[path];
         if (!current) return { saving: false };
@@ -150,7 +181,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             ...state.files,
             [path]: {
               ...current,
-              savedContent: current.content,
+              savedContent: content,
               size: result.size,
               modified: result.savedAt,
             },
@@ -181,6 +212,39 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     for (const path of dirty) {
       await get().saveFile(path);
     }
+  },
+
+  dirtyPaths() {
+    return get().order.filter((path) => {
+      const file = get().files[path];
+      return file ? isDirty(file) : false;
+    });
+  },
+
+  requestUnsavedDecision(prompt) {
+    if (get().dirtyPaths().length === 0) {
+      return Promise.resolve<UnsavedDecision>("discard");
+    }
+
+    // Only one dialog can be visible at a time. A newer request wins and the
+    // previous caller is treated as cancelled.
+    if (pendingUnsaved) {
+      const previous = pendingUnsaved;
+      pendingUnsaved = null;
+      previous("cancel");
+    }
+
+    return new Promise<UnsavedDecision>((resolve) => {
+      pendingUnsaved = resolve;
+      set({ unsavedPrompt: prompt });
+    });
+  },
+
+  resolveUnsavedDecision(decision) {
+    const resolve = pendingUnsaved;
+    pendingUnsaved = null;
+    set({ unsavedPrompt: null });
+    resolve?.(decision);
   },
 
   togglePreview() {
@@ -237,3 +301,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ notice: null });
   },
 }));
+
+/**
+ * Ask the user how to handle unsaved tabs before an action that would discard
+ * them. Returns false when the caller must abort (cancel or failed save).
+ */
+export async function confirmUnsavedChanges(prompt: UnsavedPrompt): Promise<boolean> {
+  const editor = useEditorStore.getState();
+  if (editor.dirtyPaths().length === 0) return true;
+
+  const decision = await editor.requestUnsavedDecision(prompt);
+  if (decision === "cancel") return false;
+
+  if (decision === "save") {
+    await editor.saveAll();
+    if (useEditorStore.getState().dirtyPaths().length > 0) return false;
+  }
+
+  return true;
+}

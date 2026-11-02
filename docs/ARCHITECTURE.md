@@ -54,6 +54,31 @@ SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
   → savedContent を更新して dirty を解除
 ```
 
+保存中にユーザーが編集を続けた場合、書き込んだ内容と現在の内容が一致するまで
+dirty を維持する（保存済みと誤判定して未保存の入力を失わない）。
+
+ワークスペース切替と「すべてのタブを閉じる」は `confirmUnsavedChanges` を通す。
+未保存のタブがある場合は「保存して続行」「保存せず続行」「キャンセル」を提示し、
+キャンセルまたは保存失敗時は破壊的な操作を実行しない。
+
+## 終了時の未保存確認
+
+```
+ウィンドウを閉じる (onCloseRequested)
+  → event.preventDefault()
+  → confirmUnsavedChanges (保存 / 破棄 / キャンセル)
+  → 許可された場合のみ app_quit → app.exit(0)
+
+⌘Q / アプリメニューの「終了」
+  → Rust がメニュー項目 app:quit を WebView へ通知
+  → 同じ confirmUnsavedChanges
+  → 許可された場合のみ app_quit
+```
+
+macOS では `RunEvent::ExitRequested` が `⌘Q` で発火しないため、既定メニューの
+Quit 項目を `app:quit` に置き換えて `app://quit-requested` を送る。Dock メニューの
+「終了」やログアウトは OS が直接終了するため対象外。
+
 ## LLM チャットフロー
 
 ```

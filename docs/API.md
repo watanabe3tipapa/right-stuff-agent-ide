@@ -8,6 +8,11 @@ Tauri コマンドは `invoke("<command>", { ...args })` で呼び出す。
 | コマンド | 引数 | 戻り値 |
 | --- | --- | --- |
 | `app_info` | — | `{ name, version, tauriVersion, platform, arch }` |
+| `app_quit` | — | —（確認済みの終了要求でプロセスを終了） |
+
+`app_quit` は WebView 側で未保存変更の確認を終えた後にのみ呼ぶ。`⌘Q` と
+アプリメニューの「終了」は Rust が `app://quit-requested` イベントを送り、
+WebView が同じ確認フローを実行する。
 
 ## ワークスペース
 

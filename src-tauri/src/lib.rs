@@ -5,20 +5,80 @@ mod paths;
 mod state;
 
 use state::AppState;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+
+/// macOS builds the predefined Quit item as `Quit <AppName>` (muda sets an
+/// explicit title), so match the prefix rather than the exact word.
+#[cfg(target_os = "macos")]
+fn is_quit_item_text(text: &str) -> bool {
+    let text = text.trim().to_lowercase();
+    text == "quit" || text.starts_with("quit ") || text == "exit" || text == "終了"
+}
+
+/// Replace the native macOS Quit menu item with one that notifies the WebView
+/// first. `RunEvent::ExitRequested` is not emitted for Cmd+Q on macOS, so the
+/// menu item is the only reliable hook for the keyboard shortcut and app menu.
+#[cfg(target_os = "macos")]
+fn install_quit_menu_guard(app: &tauri::App) -> tauri::Result<()> {
+    let Some(menu) = app.menu() else {
+        return Ok(());
+    };
+
+    let mut target = None;
+    'outer: for item in menu.items()? {
+        let Some(submenu) = item.as_submenu() else {
+            continue;
+        };
+        for (index, child) in submenu.items()?.into_iter().enumerate() {
+            let Some(predefined) = child.as_predefined_menuitem() else {
+                continue;
+            };
+            let text = predefined.text().unwrap_or_default().replace('&', "");
+            if is_quit_item_text(&text) {
+                target = Some((submenu.clone(), index));
+                break 'outer;
+            }
+        }
+    }
+
+    let Some((submenu, index)) = target else {
+        return Ok(());
+    };
+
+    submenu.remove_at(index)?;
+    let quit = tauri::menu::MenuItem::with_id(
+        app,
+        "app:quit",
+        "Quit Right-Stuff Agent IDE",
+        true,
+        Some("CmdOrCtrl+Q"),
+    )?;
+    submenu.append(&quit)?;
+
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .on_menu_event(|app, event| {
+            if event.id() == "app:quit" {
+                let _ = app.emit("app://quit-requested", ());
+            }
+        })
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            install_quit_menu_guard(app)?;
+
             let state = AppState::new(app.handle())?;
             app.manage(state);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             commands::app::app_info,
+            commands::app::app_quit,
             commands::workspace::workspace_open,
             commands::workspace::workspace_last,
             commands::workspace::workspace_list_files,

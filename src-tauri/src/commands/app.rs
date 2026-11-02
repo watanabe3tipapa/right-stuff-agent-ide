@@ -20,3 +20,10 @@ pub fn app_info() -> AppInfo {
         arch: std::env::consts::ARCH.into(),
     }
 }
+
+/// Exit after the WebView has confirmed that unsaved changes were handled.
+/// Kept as a command so the exit only happens after the in-app dialog resolves.
+#[tauri::command]
+pub fn app_quit(app: tauri::AppHandle) {
+    app.exit(0);
+}

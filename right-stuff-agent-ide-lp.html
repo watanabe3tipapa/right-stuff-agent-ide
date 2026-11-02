@@ -979,9 +979,9 @@ footer .footer-links a:hover { color: var(--accent); }
         <li><strong>LLM は OpenAI 互換 API に対応</strong> — Tauri 版では OpenAI / Ollama / LM Studio / OpenRouter などに接続できます。ブラウザデモでは利用できません。Anthropic 固有 API と計画立案は今後対応</li>
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か <code>AGENT_DESKTOP_BIN</code> で指定する</li>
         <li><strong>計画単位の承認はこれから</strong> — Agent Desktop の変更操作には引数検証とネイティブ承認ダイアログを実装済み。LLM の計画単位の承認キューは Phase 1</li>
-        <li><strong>macOS のみ検証</strong> — 配布署名・公証は未対応。Windows / Linux は未検証</li>
+        <li><strong>macOS のみ検証</strong> — 配布用 DMG は Developer ID 署名・公証なし。Intel 実機での起動確認は未実施。Windows / Linux は未検証</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
-        <li><strong>配布はこれから</strong> — CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は今後対応</li>
+        <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は今後対応</li>
       </ul>
     </div>
   </div>

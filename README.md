@@ -22,9 +22,12 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 
 ## ダウンロード
 
-v0.1.1 は現在、ソースからのビルドを前提としています。配布用バイナリはまだ公開していません。
+v0.1.1 はソースからのビルドを前提としていますが、Apple Silicon（arm64）と Intel（x86_64）向けの DMG を [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) で公開しています。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-> ビルドは ad-hoc 署名です。Apple Developer ID 署名・公証は行っていません。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.1.1_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.1.1_x64.dmg`
+
+> DMG は Apple Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。
 
 ## コンセプト
 
@@ -136,6 +139,15 @@ npm run tauri build
 open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"
 ```
 
+Intel (x86_64) 向けにクロスビルドする場合（Apple Silicon 上）:
+
+```bash
+rustup target add x86_64-apple-darwin
+npm run tauri build -- --target x86_64-apple-darwin
+```
+
+成果物は `src-tauri/target/x86_64-apple-darwin/release/bundle/` に出力されます。`cargo` が Homebrew の Rust を指していると x86_64 の標準ライブラリが見つからず失敗するため、rustup のツールチェーンを使用してください（例: `PATH="$HOME/.cargo/bin:$PATH"`）。
+
 バンドルを作らずにデバッグビルドだけ確認する場合:
 
 ```bash
@@ -195,9 +207,8 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.1.1 はソースからのビルドのみを想定しています
-- GitHub Releases での配布は準備中です
-- 署名は ad-hoc です。Developer ID 署名・公証は行っていません
+- v0.1.1 はソースからのビルドを前提としていますが、Apple Silicon / Intel 向けの DMG を GitHub Releases で公開しています
+- DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - macOS（Apple Silicon / Intel）を対象としています
 
 ## サンプル公開（Vercel）
@@ -260,12 +271,12 @@ vercel --prod          # 本番環境へデプロイ
 - [ ] スキル実行と検証ループ
 - [ ] ターミナル (PTY)、Git、LSP / DAP
 - [ ] Anthropic 固有 API のアダプター
-- [ ] リリースパッケージング（署名・公証・DMG）
+- [ ] リリースパッケージング（Developer ID 署名・公証）
 - [ ] Windows / Linux 対応
 
 ### 制約
 
-- 動作確認は macOS のみです。配布用の署名・公証は未対応です
+- 動作確認は macOS（Apple Silicon）のみです。Intel 実機での起動確認は未実施です。公証は未対応で、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API、計画立案、計画単位の承認は未実装です
 - スナップショットはメモリ上にのみ保持され、再起動すると失われます

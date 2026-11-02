@@ -22,9 +22,12 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 
 ## Download
 
-v0.1.1 currently assumes a build from source. Distribution binaries are not published yet.
+v0.1.1 assumes a build from source, but DMGs for Apple Silicon (arm64) and Intel (x86_64) are published on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases). See "Install and build" for build instructions.
 
-> Builds are ad-hoc signed. There is no Apple Developer ID signature or notarization. If macOS warns on first launch, right-click the app and choose "Open".
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.1.1_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.1.1_x64.dmg`
+
+> The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
 
 ## Concept
 
@@ -136,6 +139,15 @@ npm run tauri build
 open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"
 ```
 
+To cross-build for Intel (x86_64) on Apple Silicon:
+
+```bash
+rustup target add x86_64-apple-darwin
+npm run tauri build -- --target x86_64-apple-darwin
+```
+
+Bundles are written to `src-tauri/target/x86_64-apple-darwin/release/bundle/`. If `cargo` resolves to Homebrew's Rust, the x86_64 standard library is missing and the build fails; use the rustup toolchain instead (for example, `PATH="$HOME/.cargo/bin:$PATH"`).
+
 To verify a debug build without bundling:
 
 ```bash
@@ -195,9 +207,8 @@ Detection order:
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.1.1 assumes building from source
-- GitHub Releases distribution is not ready yet
-- Builds are ad-hoc signed; no Developer ID signature or notarization
+- v0.1.1 assumes building from source, but DMGs for Apple Silicon and Intel are published on GitHub Releases
+- The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned)
 - Targets macOS (Apple Silicon and Intel)
 
 ## Sample deployment (Vercel)
@@ -260,12 +271,12 @@ vercel --prod          # Deploy to production
 - [ ] Skill execution and verification loop
 - [ ] Terminal (PTY), Git, LSP / DAP
 - [ ] Anthropic-specific API adapter
-- [ ] Release packaging (signing, notarization, DMG)
+- [ ] Release packaging (Developer ID signing and notarization)
 - [ ] Windows / Linux support
 
 ### Constraints
 
-- Verified on macOS only; distribution signing and notarization are not implemented
+- Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is not implemented, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs, plan generation, and plan-level approval are not implemented yet
 - Snapshots live in memory only and are lost on restart

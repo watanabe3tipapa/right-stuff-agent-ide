@@ -219,6 +219,41 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   padding: 2px 7px;
 }
 
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-bottom: 1px solid color-mix(in oklab, var(--accent3) 28%, transparent);
+  background: var(--accent3-weak);
+  color: var(--ink-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.demo-banner > svg {
+  color: var(--accent3);
+  flex-shrink: 0;
+}
+
+.demo-banner strong {
+  color: var(--accent3);
+  font-weight: 700;
+}
+
+.demo-banner a {
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.demo-banner a:hover {
+  text-decoration: underline;
+}
+
 .agent-health {
   display: inline-flex;
   align-items: center;
@@ -2045,6 +2080,16 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
 
 .toast.error > svg {
   color: var(--danger);
+  flex-shrink: 0;
+}
+
+.toast.info {
+  border-color: color-mix(in oklab, var(--accent3) 45%, transparent);
+  color: var(--ink);
+}
+
+.toast.info > svg {
+  color: var(--accent3);
   flex-shrink: 0;
 }
 

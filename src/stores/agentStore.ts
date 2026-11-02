@@ -44,7 +44,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   messages: [
     message(
       "agent",
-      "こんにちは。Right-Stuff Agent IDE のエージェントパネルです。\nPhase 0 ではワークスペース操作とエディタの土台が動作します。Agent Desktop 連携は Phase 1 で有効になります。",
+      "こんにちは。Right-Stuff Agent IDE のエージェントパネルです。\n現在は LLM 未接続のため、通常のチャットには応答できません。\n`/status` — Agent Desktop の検出状態\n`/snapshot` — デスクトップのスナップショット取得",
     ),
   ],
   busy: false,

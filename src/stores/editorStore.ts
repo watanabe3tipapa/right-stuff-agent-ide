@@ -16,12 +16,18 @@ export function isDirty(file: OpenFile): boolean {
   return file.content !== file.savedContent;
 }
 
+export interface EditorNotice {
+  id: number;
+  text: string;
+}
+
 interface EditorState {
   files: Record<string, OpenFile>;
   order: string[];
   activePath: string | null;
   saving: boolean;
   error: string | null;
+  notice: EditorNotice | null;
   preview: boolean;
   historyPath: string | null;
   history: VersionSummary[];
@@ -40,6 +46,7 @@ interface EditorState {
   loadHistory: (path: string) => Promise<void>;
   closeHistory: () => void;
   clearError: () => void;
+  clearNotice: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -48,6 +55,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activePath: null,
   saving: false,
   error: null,
+  notice: null,
   preview: false,
   historyPath: null,
   history: [],
@@ -147,6 +155,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
               modified: result.savedAt,
             },
           },
+          notice: api.isTauri
+            ? state.notice
+            : {
+                id: Date.now(),
+                text: "デモモードのため、変更はページを再読み込みすると失われます（サーバーには送信されません）。",
+              },
         };
       });
     } catch (error) {
@@ -217,5 +231,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   clearError() {
     set({ error: null });
+  },
+
+  clearNotice() {
+    set({ notice: null });
   },
 }));

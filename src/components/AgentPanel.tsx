@@ -15,7 +15,7 @@ const modeCopy: Record<AgentMode, { label: string; description: string }> = {
   },
   autonomous: {
     label: "Autonomous",
-    description: "許可された操作を実行します。承認フローは Phase 1 で追加します。",
+    description: "許可された操作のみ実行します。変更操作はネイティブ承認ダイアログを経由します。計画実行は Phase 1 で追加します。",
   },
 };
 

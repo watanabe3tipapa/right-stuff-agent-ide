@@ -122,6 +122,16 @@ nav .nav-cta {
   transition: opacity 0.2s;
 }
 nav .nav-cta:hover { opacity: 0.85; }
+nav .nav-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+nav .nav-github svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
 @media (max-width: 700px) {
   nav .nav-links { display: none; }
 }
@@ -204,6 +214,9 @@ header.hero h1 .highlight {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+.block-line {
+  display: block;
 }
 header.hero .subtitle {
   font-size: var(--step-1);
@@ -290,6 +303,9 @@ header.hero .cta-secondary {
   white-space: nowrap;
 }
 .hero-mockup .mockup-sidebar .tree-line.indent { padding-left: 1.2em; }
+.hero-mockup .mockup-sidebar .tree-line.indent-2 { padding-left: 2.4em; }
+.hero-mockup .mockup-sidebar .tree-line.active { color: var(--accent); }
+.hero-mockup .mockup-sidebar .tree-line .tree-caret { color: var(--ink-dim); }
 .hero-mockup .mockup-editor {
   padding: 1em;
   color: var(--ink);
@@ -316,7 +332,26 @@ header.hero .cta-secondary {
 .hero-mockup .mockup-right .chat-bubble.agent {
   border-left: 2px solid var(--accent2);
 }
+.hero-mockup-note {
+  max-width: 900px;
+  margin: 0.9em auto 0;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  text-align: center;
+}
+.hero-mockup-note strong { color: var(--accent3); }
+.hero-mockup-note a { color: var(--accent); }
 main { max-width: 1100px; margin: 0 auto; padding: 0 var(--space); }
+code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.86em;
+  padding: 0.05em 0.32em;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-raised);
+  color: var(--accent);
+}
 section { margin-bottom: calc(var(--space) * 3); }
 .section-header {
   text-align: center;
@@ -573,6 +608,146 @@ h2 {
   margin: 1em 0;
   text-align: left;
 }
+.notice-box {
+  background: color-mix(in oklab, var(--accent3) 8%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--accent3) 35%, var(--line));
+  border-radius: var(--radius);
+  padding: calc(var(--space) * 0.9);
+  margin-bottom: calc(var(--space) * 1.2);
+}
+.notice-box .notice-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  color: var(--accent3);
+  font-weight: 700;
+  margin-bottom: 0.5em;
+}
+.notice-box ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.5em 1.2em;
+  list-style: none;
+  padding: 0;
+}
+.notice-box li {
+  position: relative;
+  padding-left: 1.1em;
+  color: var(--ink-muted);
+  font-size: 0.88em;
+  line-height: 1.7;
+}
+.notice-box li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--accent3);
+}
+.notice-box strong { color: var(--ink); }
+.shortcut-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: calc(var(--space) * 1.2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 0.88em;
+}
+.shortcut-table th,
+.shortcut-table td {
+  padding: 0.65em 1em;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.shortcut-table th {
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--surface-raised);
+}
+.shortcut-table td { color: var(--ink-muted); }
+.shortcut-table tr:last-child td { border-bottom: none; }
+.shortcut-table kbd {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.82em;
+  padding: 0.1em 0.4em;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--surface-raised);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.roadmap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 0.9em;
+}
+.roadmap-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: calc(var(--space) * 0.8);
+  position: relative;
+}
+.roadmap-item::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--ink-dim);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.roadmap-item.done::before { background: var(--accent2); }
+.roadmap-item.current::before { background: var(--accent); }
+.roadmap-item .roadmap-phase {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-bottom: 0.25em;
+}
+.roadmap-item .roadmap-title {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 0.3em;
+}
+.roadmap-item .roadmap-meta {
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  margin-bottom: 0.5em;
+}
+.roadmap-item p {
+  color: var(--ink-muted);
+  font-size: 0.88em;
+  line-height: 1.7;
+}
+.roadmap-status {
+  display: inline-block;
+  margin-left: 0.5em;
+  padding: 0.1em 0.5em;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  vertical-align: middle;
+  background: var(--accent2-weak);
+  color: var(--accent2);
+}
+.roadmap-item.current .roadmap-status {
+  background: var(--accent-weak);
+  color: var(--accent);
+}
+.tech-item { position: relative; }
+.tech-item .tech-phase {
+  position: absolute;
+  top: 0.5em;
+  right: 0.6em;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.6rem;
+  color: var(--ink-dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.05em 0.45em;
+}
 .faq-item {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -670,11 +845,18 @@ footer .footer-links a:hover { color: var(--accent); }
     <ul class="nav-links">
       <li><a href="#features">構成</a></li>
       <li><a href="#evaluation">評価</a></li>
+      <li><a href="#roadmap">ロードマップ</a></li>
       <li><a href="#tutorial">動かし方</a></li>
       <li><a href="#modes">モード</a></li>
       <li><a href="#tech">技術</a></li>
       <li><a href="#faq">FAQ</a></li>
       <li><a href="/app/">ブラウザデモ</a></li>
+      <li>
+        <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="nav-github" aria-label="GitHub リポジトリ" title="GitHub リポジトリ">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+          <span>GitHub</span>
+        </a>
+      </li>
     </ul>
     <a href="#install" class="nav-cta">サンプルについて</a>
   </div>
@@ -682,11 +864,8 @@ footer .footer-links a:hover { color: var(--accent); }
 
 <header class="hero">
   <div class="badge"><span class="dot"></span> Sample Preview</div>
-  <h1>エージェントが IDE を<br><span class="highlight">直接操作する</span></h1>
-  <p class="subtitle">
-    Right-Stuff Editor の執筆体験と Agent Desktop の OS レベル操作能力を統合。
-    Tauri 2.0 で開発中のネイティブ IDE を、公開前のサンプルとして紹介します。
-  </p>
+  <h1>エージェントが IDE を<span class="highlight block-line">直接操作する</span></h1>
+  <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。Tauri 2.0 で開発中のネイティブ IDE を、公開前のサンプルとして紹介します。</p>
   <div class="cta-group">
     <a href="/app/" class="cta-btn cta-primary">ブラウザデモを試す</a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary">Tauri 版の構成を見る</a>
@@ -701,12 +880,15 @@ footer .footer-links a:hover { color: var(--accent); }
     </div>
     <div class="mockup-body">
       <div class="mockup-sidebar">
-        <div class="tree-line">src/</div>
-        <div class="tree-line indent">components/</div>
-        <div class="tree-line indent" style="color:var(--accent)">AgentPanel.tsx</div>
-        <div class="tree-line indent">StatusBar.tsx</div>
-        <div class="tree-line indent">FileTree.tsx</div>
-        <div class="tree-line indent">stores/</div>
+        <div class="tree-line"><span class="tree-caret">▾</span> src/</div>
+        <div class="tree-line indent"><span class="tree-caret">▾</span> components/</div>
+        <div class="tree-line indent-2 active">├─ AgentPanel.tsx</div>
+        <div class="tree-line indent-2">├─ StatusBar.tsx</div>
+        <div class="tree-line indent-2">└─ FileTree.tsx</div>
+        <div class="tree-line indent"><span class="tree-caret">▾</span> stores/</div>
+        <div class="tree-line indent-2">├─ agentStore.ts</div>
+        <div class="tree-line indent-2">└─ editorStore.ts</div>
+        <div class="tree-line indent">└─ App.tsx</div>
         <div class="tree-line">package.json</div>
         <div class="tree-line">tauri.conf.json</div>
       </div>
@@ -717,7 +899,7 @@ footer .footer-links a:hover { color: var(--accent); }
         <div><span class="keyword">export function</span> <span class="func">AgentPanel</span>() {</div>
         <div style="padding-left:1.2em"> <span class="keyword">const</span> [mode, setMode] = <span class="func">useState</span>(<span class="string">"assistive"</span>);</div>
         <div style="padding-left:1.2em"> <span class="comment">// snapshot -&gt; action -&gt; verify loop</span></div>
-        <div style="padding-left:1.2em"> <span class="keyword">return</span> &lt;Panel&gt;...&lt;/Panel&gt;;</div>
+        <div style="padding-left:1.2em"> <span class="keyword">return</span> &lt;Panel&gt;<span class="comment">{/* ... */}</span>&lt;/Panel&gt;;</div>
         <div>}</div>
       </div>
       <div class="mockup-right">
@@ -728,6 +910,7 @@ footer .footer-links a:hover { color: var(--accent); }
       </div>
     </div>
   </div>
+  <p class="hero-mockup-note"><strong>※ 画面はシミュレーションです。</strong> 現時点では LLM は未接続で、チャットは <code>/status</code> と <code>/snapshot</code> のみ応答します。実際の UI は <a href="/app/">ブラウザデモ</a> で操作できます。</p>
 </header>
 
 <main>
@@ -742,7 +925,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon">&#9998;</div>
       <div class="feature-title">執筆体験の継承</div>
-      <div class="feature-desc">Monaco による Markdown / コード編集、タブ、未保存管理。ワークスペース管理と SQLite のバージョン履歴を Phase 0 から実装。</div>
+      <div class="feature-desc">Monaco による Markdown / コード編集、タブ、未保存管理、ワークスペース管理。SQLite のバージョン履歴を Phase 0 から実装しています。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon" style="background:var(--accent2-weak)">&#9670;</div>
@@ -794,7 +977,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <h3>注意点</h3>
       <ul>
         <li><strong>LLM は未接続</strong> — チャットは /status と /snapshot のみ。計画立案と計画単位の承認は Phase 1</li>
-        <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か AGENT_DESKTOP_BIN で指定する</li>
+        <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か <code>AGENT_DESKTOP_BIN</code> で指定する</li>
         <li><strong>計画単位の承認はこれから</strong> — Agent Desktop の変更操作には引数検証とネイティブ承認ダイアログを実装済み。LLM の計画単位の承認キューは Phase 1</li>
         <li><strong>macOS のみ検証</strong> — 配布署名・公証は未対応。Windows / Linux は未検証</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
@@ -804,11 +987,60 @@ footer .footer-links a:hover { color: var(--accent); }
   </div>
 </section>
 
+<section id="roadmap">
+  <div class="section-header">
+    <div class="section-label">Roadmap</div>
+    <h2>実装ロードマップ</h2>
+    <p class="section-desc">Phase 0 は完了済みです。以降の期間・優先度・内容は実装設計書に基づく目安で、進捗に応じて更新します。</p>
+  </div>
+  <div class="roadmap-grid">
+    <div class="roadmap-item done">
+      <div class="roadmap-phase">Phase 0</div>
+      <div class="roadmap-title">基盤構築 <span class="roadmap-status">完了</span></div>
+      <div class="roadmap-meta">2週間 / 優先度: 最高</div>
+      <p>Tauri 2.0 + React 18、Monaco、ワークスペース、SQLite 履歴、Agent Desktop ブリッジ。</p>
+    </div>
+    <div class="roadmap-item current">
+      <div class="roadmap-phase">Phase 1</div>
+      <div class="roadmap-title">Agent Desktop 統合基盤 <span class="roadmap-status">進行中</span></div>
+      <div class="roadmap-meta">3週間 / 優先度: 最高</div>
+      <p>LLM プロバイダー接続、計画立案、計画単位の承認フロー、スキル選択と検証ループ。</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Phase 2</div>
+      <div class="roadmap-title">IDE コア機能</div>
+      <div class="roadmap-meta">4週間 / 優先度: 高</div>
+      <p>LSP クライアント、Git 統合、統合ターミナル、ファイル検索、プレビュー拡張。</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Phase 3</div>
+      <div class="roadmap-title">エージェントスキルシステム</div>
+      <div class="roadmap-meta">3週間 / 優先度: 高</div>
+      <p>スキル定義フォーマット、スキルローダー、複数ステップの自律実行と検証。</p>
+    </div>
+    <div class="roadmap-item">
+      <div class="roadmap-phase">Phase 4</div>
+      <div class="roadmap-title">マルチプラットフォーム対応</div>
+      <div class="roadmap-meta">2週間 / 優先度: 中</div>
+      <p>Windows / Linux 向けに Agent Desktop 統合と権限モデルの差異を抽象化。</p>
+    </div>
+  </div>
+</section>
+
 <section id="tutorial">
   <div class="section-header">
     <div class="section-label">Try the Sample</div>
     <h2>サンプルの動かし方</h2>
     <p class="section-desc">ブラウザデモで UI を確認し、Tauri 版をソースから起動して実際のファイル操作を試せます。</p>
+  </div>
+  <div class="notice-box" role="note">
+    <div class="notice-title">始める前に確認</div>
+    <ul>
+      <li><strong>対応 OS は macOS のみ</strong> — 検証済みは macOS 11 以降です。Windows / Linux は未検証です。</li>
+      <li><strong>ブラウザデモは保存されません</strong> — 変更はメモリ上のみで、再読み込みすると初期状態に戻ります。</li>
+      <li><strong>LLM は未接続</strong> — チャットは <code>/status</code> と <code>/snapshot</code> のみ応答します。</li>
+      <li><strong>Agent Desktop CLI は別途必要</strong> — 同梱していません。次の手順でインストールします。</li>
+    </ul>
   </div>
   <div class="tutorial-steps">
     <div class="tutorial-step">
@@ -824,7 +1056,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="step-num">02</div>
       <div class="step-content">
         <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版はこのリポジトリからビルドします。Node.js 20.19 以上（または 22.12 以上）と Rust 1.85 以上が必要です。</div>
+        <div class="step-desc">Tauri 版はこのリポジトリからビルドします。対象 OS は macOS 11 以降です。Node.js 20.19 以上（または 22.12 以上）と Rust 1.85 以上が必要です。</div>
         <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
 cd right-stuff-agent-ide
 npm ci</pre>
@@ -844,11 +1076,25 @@ npm ci</pre>
         <div class="step-title">ワークスペースを開く</div>
         <div class="step-desc">フォルダを選択するとファイルツリーが表示されます。Markdown は Monaco で編集し、分割プレビューで確認できます。</div>
         <pre># GUI の「フォルダを開く」から選択
-# ⌘S で保存、⌘K でコマンドパレット</pre>
+# 保存: ⌘S (macOS) / Ctrl+S (Windows / Linux)
+# コマンドパレット: ⌘K (macOS) / Ctrl+K (Windows / Linux)</pre>
       </div>
     </div>
     <div class="tutorial-step">
       <div class="step-num">05</div>
+      <div class="step-content">
+        <div class="step-title">Agent Desktop CLI をインストール</div>
+        <div class="step-desc">
+          Agent Desktop は Vercel Labs が公開する Apache-2.0 の OS 操作 CLI です。npm で最新版をインストールし、macOS ではアクセシビリティ権限を付与してください。特定のバージョン固定要件はありません。
+          <a href="https://github.com/vercel-labs/agent-desktop" style="color:var(--accent);">公式リポジトリ</a>も参照してください。
+        </div>
+        <pre>npm install -g agent-desktop
+agent-desktop version
+agent-desktop permissions --guide</pre>
+      </div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-num">06</div>
       <div class="step-content">
         <div class="step-title">エージェントの状態を確認</div>
         <div class="step-desc">エージェントパネルで /status を実行すると Agent Desktop CLI の検出状態を確認できます。LLM 推論は Phase 1 で追加します。</div>
@@ -860,6 +1106,18 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
       </div>
     </div>
   </div>
+
+  <table class="shortcut-table">
+    <thead>
+      <tr><th>操作</th><th>macOS</th><th>Windows / Linux</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>保存</td><td><kbd>⌘</kbd> <kbd>S</kbd></td><td><kbd>Ctrl</kbd> <kbd>S</kbd></td></tr>
+      <tr><td>すべて保存</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd></td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd></td></tr>
+      <tr><td>コマンドパレット</td><td><kbd>⌘</kbd> <kbd>K</kbd></td><td><kbd>Ctrl</kbd> <kbd>K</kbd></td></tr>
+      <tr><td>コマンドパレット（代替）</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd></td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>P</kbd></td></tr>
+    </tbody>
+  </table>
 </section>
 
 <section id="modes">
@@ -870,17 +1128,17 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
   </div>
   <div class="mode-grid">
     <div class="mode-card passive">
-      <span class="mode-tag">Passive</span>
+      <span class="mode-tag">Passive / 受動</span>
       <div class="mode-title">受動的支援</div>
       <div class="mode-desc">読み取り専用。チャット入力とエージェントによる UI 操作は無効です。</div>
     </div>
     <div class="mode-card assistive">
-      <span class="mode-tag">Assistive</span>
+      <span class="mode-tag">Assistive / 支援</span>
       <div class="mode-title">能動的支援</div>
       <div class="mode-desc">チャット応答とファイル編集を支援します。Agent Desktop の変更操作はネイティブ承認ダイアログを経由します。</div>
     </div>
     <div class="mode-card autonomous">
-      <span class="mode-tag">Autonomous</span>
+      <span class="mode-tag">Autonomous / 自律</span>
       <div class="mode-title">自律実行</div>
       <div class="mode-desc">複数ステップの自律実行を想定したモードです。現在は許可されたアクションのみ実行し、変更操作にはネイティブ承認ダイアログを表示します。計画実行は Phase 1 で追加します。</div>
     </div>
@@ -899,48 +1157,56 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
         <div class="tech-name">Tauri 2.0</div>
         <div class="tech-role">デスクトップ基盤 (Rust)</div>
       </div>
+      <span class="tech-phase">Phase 0</span>
     </div>
     <div class="tech-item">
       <div>
         <div class="tech-name">React 18</div>
         <div class="tech-role">UI フレームワーク</div>
       </div>
+      <span class="tech-phase">Phase 0</span>
     </div>
     <div class="tech-item">
       <div>
         <div class="tech-name">Vite</div>
         <div class="tech-role">ビルドツール</div>
       </div>
+      <span class="tech-phase">Phase 0</span>
     </div>
     <div class="tech-item">
       <div>
         <div class="tech-name">Zustand</div>
         <div class="tech-role">状態管理</div>
       </div>
+      <span class="tech-phase">Phase 0</span>
     </div>
     <div class="tech-item">
       <div>
         <div class="tech-name">Monaco Editor</div>
         <div class="tech-role">コードエディタ</div>
       </div>
+      <span class="tech-phase">Phase 0</span>
     </div>
     <div class="tech-item">
       <div>
         <div class="tech-name">Agent Desktop</div>
         <div class="tech-role">OS アクセシビリティ操作</div>
       </div>
+      <span class="tech-phase">Phase 0 / 1</span>
     </div>
     <div class="tech-item">
       <div>
         <div class="tech-name">SQLite</div>
         <div class="tech-role">ローカルデータベース</div>
       </div>
+      <span class="tech-phase">Phase 0</span>
     </div>
     <div class="tech-item">
       <div>
         <div class="tech-name">Rust</div>
         <div class="tech-role">バックエンド / ファイル I/O</div>
       </div>
+      <span class="tech-phase">Phase 0</span>
     </div>
   </div>
 </section>
@@ -952,13 +1218,21 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
     <p class="section-desc">Vercel の LP とブラウザデモは、Tauri 版が公開できるまでのサンプルです。製品版の開発は Tauri 2.0 のネイティブアプリが中心です。</p>
   </div>
   <div class="install-box">
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Windows / Linux は未検証）</p>
     <p style="color:var(--ink-muted);margin-bottom:0.5em;">Tauri 版をソースからビルドする</p>
     <pre>npm ci
 npm run tauri build
 open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"</pre>
+    <p style="color:var(--ink-muted);margin-top:1.2em;margin-bottom:0.5em;">Agent Desktop CLI（OS 操作を使う場合）</p>
+    <pre>npm install -g agent-desktop
+agent-desktop version
+agent-desktop permissions --guide</pre>
     <p style="color:var(--ink-muted);margin-top:1.2em;font-size:0.85em;">
-      ブラウザデモは <a href="/app/" style="color:var(--accent);">/app/</a> で確認できます。データはメモリ上のみで、保存されません。<br>
-      Agent Desktop CLI は同梱していません。別途インストールし、必要に応じて <code>AGENT_DESKTOP_BIN</code> を指定してください。
+      ブラウザデモは <a href="/app/" style="color:var(--accent);">/app/</a> で確認できます。データはメモリ上のみで、再読み込みすると失われます。<br>
+      Agent Desktop CLI は同梱していません。PATH に通すか、必要に応じて <code>AGENT_DESKTOP_BIN</code> を指定してください。
+    </p>
+    <p style="color:var(--ink-muted);margin-top:0.8em;font-size:0.85em;">
+      <strong style="color:var(--ink);">プライバシー:</strong> この LP とブラウザデモは、入力内容をサーバーへ送信しません。アカウント登録・テレメトリ・クラウド同期もありません。Tauri 版の原稿は、選んだフォルダのファイルとして端末内に保存されます。
     </p>
   </div>
 </section>
@@ -983,13 +1257,19 @@ open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"</pre>
   <details class="faq-item">
     <summary>どの機能が実装済みですか？</summary>
     <div class="faq-answer">
-      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。詳細は README の「既知の制約とロードマップ」を参照してください。
+      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
     </div>
   </details>
   <details class="faq-item">
     <summary>Agent Desktop は同梱されていますか？</summary>
     <div class="faq-answer">
-      同梱していません。Agent Desktop CLI を別途インストールし、PATH に通すか <code>AGENT_DESKTOP_BIN</code> で指定してください。
+      同梱していません。<a href="https://github.com/vercel-labs/agent-desktop" style="color:var(--accent);">Agent Desktop</a>（Apache-2.0）を <code>npm install -g agent-desktop</code> で別途インストールし、PATH に通すか <code>AGENT_DESKTOP_BIN</code> で指定してください。macOS では <code>agent-desktop permissions --guide</code> でアクセシビリティ権限を付与します。バージョン固定の要件はありません。
+    </div>
+  </details>
+  <details class="faq-item">
+    <summary>入力内容はサーバーに送信されますか？</summary>
+    <div class="faq-answer">
+      送信されません。この LP とブラウザデモは静的サイトで、アカウント登録・テレメトリ・クラウド同期はありません。デモの編集内容はブラウザのメモリ上にのみ保持され、再読み込みすると失われます。Tauri 版の原稿も、選んだフォルダのファイルとして端末内に保存されます。
     </div>
   </details>
   <details class="faq-item">
@@ -1007,7 +1287,7 @@ open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"</pre>
 </section>
 
 <div class="footer-cta">
-  <h2>サンプルから、<br><span class="highlight" style="background: linear-gradient(90deg, var(--accent), var(--accent2));-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text;">自分の IDE へ</span></h2>
+  <h2>サンプルから、<span class="highlight block-line" style="background: linear-gradient(90deg, var(--accent), var(--accent2));-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text;">自分の IDE へ</span></h2>
   <p>Tauri 版は開発中です。構成とソースは GitHub で公開しています。</p>
   <div class="cta-group" style="justify-content:center;">
     <a href="/app/" class="cta-btn cta-primary">ブラウザデモを試す</a>

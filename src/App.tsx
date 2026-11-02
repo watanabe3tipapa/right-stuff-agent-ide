@@ -35,6 +35,8 @@ export function App() {
   const clearWorkspaceError = useWorkspaceStore((state) => state.clearError);
   const editorError = useEditorStore((state) => state.error);
   const clearEditorError = useEditorStore((state) => state.clearError);
+  const notice = useEditorStore((state) => state.notice);
+  const clearNotice = useEditorStore((state) => state.clearNotice);
   const refreshAgentStatus = useAgentStore((state) => state.refreshStatus);
 
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
@@ -75,6 +77,12 @@ export function App() {
       void useEditorStore.getState().openFile(readme.path);
     }
   }, [info?.root, tree]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(clearNotice, 6000);
+    return () => window.clearTimeout(timer);
+  }, [notice, clearNotice]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -118,6 +126,17 @@ export function App() {
     <div className="app">
       <TopBar onOpenPalette={() => setPaletteOpen(true)} />
 
+      {!api.isTauri && (
+        <div className="demo-banner" role="status">
+          <Icon name="alert" size={13} />
+          <span>
+            <strong>ブラウザデモ</strong> — 変更はメモリ上のみで、再読み込みすると失われます。
+            LLM と Agent Desktop は動作しません。
+          </span>
+          <a href="/">LP に戻る</a>
+        </div>
+      )}
+
       <div className="workbench">
         <FileTree />
         <main className="main-area">
@@ -130,6 +149,21 @@ export function App() {
 
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       <HistoryDialog />
+
+      {notice && (
+        <div className="toast info" role="status">
+          <Icon name="alert" size={15} />
+          <span>{notice.text}</span>
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={clearNotice}
+            aria-label="閉じる"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="toast error" role="alert">

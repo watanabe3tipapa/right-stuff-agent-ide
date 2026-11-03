@@ -64,10 +64,11 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **Markdown プレビュー** — `react-markdown` + `remark-gfm` による GFM プレビューを分割表示
 - **バージョン履歴** — 保存のたびに SQLite (WAL) へ記録。ファイルあたり最新 100 版を保持し、任意の版をプレビューしてエディタへ復元
 - **ファイル操作** — 新規作成、名前変更、削除。削除は `.right-stuff/trash/<timestamp>/` へ移動するソフトデリート
-- **エージェントパネル** — Chat / Plan / Audit / Runtime の 4 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan` コマンド
+- **エージェントパネル** — Chat / Plan / Deploy / Audit / Runtime の 5 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan`・`/ship`・`/deploy`・`/logs`・`/rollback` コマンド
 - **LLM チャット** — OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続。ストリーミング表示、生成停止、接続テストに対応。API キーは OS キーチェーンに保存
 - **計画立案と承認** — 意図を入力すると LLM が Agent Desktop の許可アクションだけを使った実行計画を生成。手順ごとの引数検証、計画単位の承認、Assistive での個別実行、Autonomous での連続実行に対応。モデルが生成した不正なアクションや引数は実行前に拒否
-- **承認監査ログ** — 計画の作成・承認・却下・中止、操作の実行・拒否・キャンセル、ポリシー変更をローカルの SQLite に記録。Audit タブで新しい順に確認でき、保持期間（既定 30 日）を過ぎた記録と最新 5,000 件を超えた記録は自動で削除
+- **承認監査ログ** — 計画の作成・承認・却下・中止、操作の実行・拒否・キャンセル、ポリシー変更、Openship のデプロイ・ロールバックをローカルの SQLite に記録。Audit タブで新しい順に確認でき、保持期間（既定 30 日）を過ぎた記録と最新 5,000 件を超えた記録は自動で削除
+- **Openship 連携（ローカルファースト）** — Deploy タブからデプロイ履歴・ログ・ロールバックを操作。`openship` CLI を検出できれば CLI を優先し、未検出または失敗時のみセルフホスト REST API にフォールバック。接続設定は SQLite、PAT は OS キーチェーンに保存し、変更操作は必ずネイティブ承認ダイアログを通ります。構成図は [docs/diagrams/openship-local-first.html](./docs/diagrams/openship-local-first.html)
 - **エージェントポリシー** — 読み取り専用アクションは「許可 / 確認 / 禁止」、変更アクションは「確認 / 禁止」から選択。変更アクションのネイティブ承認を省略することはできず、ポリシーで禁止した操作は Rust 側で実行前に拒否
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェントの操作を検索して実行
@@ -82,7 +83,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **エディタ**: Monaco Editor 0.52（`@monaco-editor/react`）
 - **状態管理**: Zustand 5（workspace / editor / agent）
 - **デスクトップ基盤**: Tauri 2.0（Rust 2024 edition）
-- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / settings / app）、パス検証、atomic write
+- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / openship / settings / app）、パス検証、atomic write
 - **データベース**: SQLite（WAL、`rusqlite` bundled）。バージョン履歴、設定、監査ログを保存
 - **ブリッジ**: `src/lib/api.ts` が `invoke` を薄くラップし、ブラウザでは `src/lib/demo.ts` にフォールバック
 - **パッケージ**: `tauri build`（`.app` / `.dmg`）
@@ -97,7 +98,8 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - Agent Desktop の実行はアクション名の許可リスト、引数の長さ・形式の検証、エージェントポリシー、変更操作のネイティブ承認ダイアログを通し、出力は 200,000 文字で打ち切ります
 - 監査ログはローカルの SQLite にのみ保存し、外部へ送信しません。コマンド引数・出力・エラーの抜粋を含むため、バックアップや共有の際は注意してください
 - スナップショットはメモリ上にのみ保持し、SQLite へ永続化しません
-- API キーは OS キーチェーンにのみ保存し、SQLite・ログ・エラーメッセージには含めません。LLM への通信は Rust 側で行い、WebView から外部 API を直接呼びません
+- API キーと Openship の PAT は OS キーチェーンにのみ保存し、SQLite・ログ・エラーメッセージには含めません。LLM と Openship への通信は Rust 側で行い、WebView から外部 API を直接呼びません
+- Openship の REST 接続はセルフホストを想定し、`http://` は localhost / 127.0.0.1 / ::1 のみ許可します。デプロイ・ロールバックは Passive モードでは無効で、それ以外のモードでもネイティブ承認を省略できません
 - CSP は Tauri（本番 / 開発で別ポリシー）と Vercel の両方に `default-src 'self'` ベースで設定しています
 
 ## インストールとビルド
@@ -207,6 +209,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 7. `⌘K` でコマンドパレットを開き、操作を検索して実行します
 8. エージェントパネルで `/status` を実行し、Agent Desktop の検出状態を確認します
 9. `/snapshot` でデスクトップのスナップショットを取得できます
+10. Openship を使う場合は「設定 > Openship」で Base URL と PAT を登録するか、`openship` CLI を `PATH` に配置します。Deploy タブの「デプロイ」はネイティブ承認を経て実行され、履歴・ログ・ロールバックも同じ画面から操作できます
 
 ## 配布
 
@@ -250,6 +253,10 @@ vercel --prod          # 本番環境へデプロイ
 - [x] 実行結果（stdout / stderr / 終了コード）の手順ごとの表示
 - [x] 承認・実行・ポリシー変更の監査ログ（SQLite、保持期間 / 件数上限つき）
 - [x] エージェントポリシー設定 UI（読み取り専用は許可 / 確認 / 禁止、変更は確認 / 禁止）
+- [x] Openship CLI 検出と `openship --json deploy` の実行
+- [x] セルフホスト REST API へのフォールバック（デプロイ・履歴・ログ・ロールバック）
+- [x] Openship 設定 UI、PAT の OS キーチェーン保存、Deploy タブ
+- [x] `/ship`・`/deploy`・`/logs`・`/rollback` コマンドと監査ログ記録
 
 ### v0.1.1
 
@@ -307,10 +314,12 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / タブ / Markdown 分割プレビュー
 │   ├── FileTree.tsx                # ワークスペースツリーとファイル操作
-│   ├── AgentPanel.tsx              # Chat / Plan / Audit / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Deploy / Audit / Runtime
 │   ├── PlanPanel.tsx               # 計画の生成・承認・実行
+│   ├── DeployPanel.tsx             # Openship の履歴・ログ・デプロイ
 │   ├── AuditPanel.tsx              # 監査ログの一覧
 │   ├── AgentPolicySettings.tsx     # エージェントポリシー設定
+│   ├── OpenShipSettings.tsx        # Openship 接続・PAT 設定
 │   ├── CommandPalette.tsx          # ⌘K コマンドパレット
 │   ├── HistoryDialog.tsx           # バージョン履歴
 │   ├── UnsavedChangesDialog.tsx    # 未保存変更の保存 / 破棄 / キャンセル
@@ -327,7 +336,7 @@ src/
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / policy / settings / app
+│   ├── commands/                   # workspace / editor / agent / policy / openship / settings / app
 │   ├── db.rs                       # SQLite (WAL) 履歴・設定・監査ログ
 │   ├── paths.rs                    # パス検証
 │   ├── state.rs                    # AppState
@@ -337,6 +346,9 @@ src-tauri/
 
 .agents/skills/                     # スキル定義 (JSON)
 docs/                               # アーキテクチャ / API / セキュリティ
+docs/diagrams/                      # archify 構成図（JSON / HTML / PNG）
+public/openship-local-first.png     # LP 用の構成図プレビュー
+public/diagrams/                    # 公開用のインタラクティブ構成図
 public/rs-mark.svg                  # アプリアイコン原画
 right-stuff-agent-ide-implementation-plan.html
 right-stuff-agent-ide-lp.html
@@ -348,8 +360,9 @@ right-stuff-agent-ide-lp.html
 2. [API.md](./docs/API.md) — Tauri コマンドと型
 3. [SECURITY.md](./docs/SECURITY.md) — パス検証、エージェント権限、保存データ
 4. [実装設計書](./right-stuff-agent-ide-implementation-plan.html) — 全体設計とロードマップ
-5. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
-6. [README（English）](./README.en.md) — English overview
+5. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
+6. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
+7. [README（English）](./README.en.md) — English overview
 
 ## ライセンス
 

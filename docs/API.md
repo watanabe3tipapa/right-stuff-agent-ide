@@ -209,6 +209,63 @@ interface AuditEntry extends Omit<AuditInput, "command"> {
 - 監査ログはローカルの SQLite にのみ保存し、外部へ送信しない。API キーは記録しない。
 - 計画イベントはフロントエンドが `audit_log_add` で記録し、操作の実行・拒否・キャンセルは Rust 側の `agent_run` / `agent_snapshot` が記録する。
 
+## Openship（ローカルファースト）
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `openship_config_get` | — | `OpenShipSettings` |
+| `openship_config_set` | `{ config }` | `OpenShipSettings` |
+| `openship_token_set` | `{ token }` | — |
+| `openship_token_delete` | — | — |
+| `openship_status` | — | `OpenShipStatus` |
+| `openship_projects` | — | `OpenShipProject[]` |
+| `openship_deployments` | `{ projectId?, limit? }` | `OpenShipDeployment[]` |
+| `openship_deploy` | `{ projectId? }` | `OpenShipDeployResult` |
+| `openship_logs` | `{ deploymentId }` | `OpenShipLogs` |
+| `openship_rollback` | `{ deploymentId }` | `OpenShipDeployResult` |
+
+```ts
+interface OpenShipConfig {
+  baseUrl: string;
+  organizationId: string;
+  projectId: string;
+  branch: string;
+  cliPath: string;
+}
+
+interface OpenShipSettings extends OpenShipConfig {
+  tokenConfigured: boolean;
+}
+
+interface OpenShipStatus {
+  cliAvailable: boolean;
+  cliPath: string | null;
+  cliVersion: string | null;
+  serverConfigured: boolean;
+  serverReachable: boolean;
+  serverMessage: string;
+  tokenConfigured: boolean;
+  baseUrl: string;
+}
+
+interface OpenShipDeployResult {
+  ok: boolean;
+  code: number | null;
+  stdout: string;
+  stderr: string;
+  command: string[];
+  deployment: OpenShipDeployment | null;
+}
+```
+
+- 設定は SQLite の `settings` テーブルに `openship_config` として保存する。PAT は OS キーチェーン (`com.rightstuff.agentide.openship`) にのみ保存し、`tokenConfigured` の真偽値だけを返す。
+- CLI は設定された `cliPath`、`PATH`、環境変数 `OPENSHIP_BIN` の順に検出し、`openship --version` で応答を確認する。
+- `openship_deploy` は CLI があればワークスペースルートで `openship --json deploy` を実行する。CLI がない、または失敗した場合は `POST {baseUrl}/api/deployments` に `{ projectId, branch, environment: "production" }` を送る。
+- REST の想定エンドポイント: `GET /api/health`、`GET /api/projects`、`GET /api/deployments`、`GET /api/deployments/{id}/logs`、`POST /api/deployments/{id}/rollback`。
+- `baseUrl` は `https://` を必須とし、`http://` は `localhost` / `127.0.0.1` / `::1` のみ許可する。末尾のスラッシュは正規化する。
+- `deploy` と `rollback` は変更操作として扱い、Passive モードでは拒否する。Assistive / Autonomous でもネイティブ承認ダイアログを必ず表示し、ポリシーで省略できない。実行結果は監査ログ (`action_run` / `action_blocked`) に記録する。
+- プロジェクト ID・デプロイ ID・ブランチは英数字と `-` / `_` に制限し、シェル引数へ直接展開しない。
+
 ## 設定
 
 | コマンド | 引数 | 戻り値 |
@@ -216,7 +273,7 @@ interface AuditEntry extends Omit<AuditInput, "command"> {
 | `settings_get` | `{ key }` | `string \| null` |
 | `settings_set` | `{ key, value }` | — |
 
-現在は `last_workspace`、LLM 設定 (`llm_config`)、エージェントポリシー (`agent_policy`) を利用する。API キーは SQLite に保存せず、OS キーチェーンにのみ保存する。
+現在は `last_workspace`、LLM 設定 (`llm_config`)、エージェントポリシー (`agent_policy`)、Openship 設定 (`openship_config`) を利用する。API キーと Openship PAT は SQLite に保存せず、OS キーチェーンにのみ保存する。
 
 ## LLM
 

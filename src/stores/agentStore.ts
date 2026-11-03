@@ -12,6 +12,12 @@ import type {
   AuditInput,
   ChatMessage,
   LlmSettings,
+  OpenShipConfig,
+  OpenShipDeployResult,
+  OpenShipDeployment,
+  OpenShipLogs,
+  OpenShipSettings,
+  OpenShipStatus,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
 import { toRequestMessages } from "../lib/llm";
@@ -76,6 +82,15 @@ interface AgentState {
   auditLoading: boolean;
   auditError: string | null;
   auditHasMore: boolean;
+  openship: OpenShipSettings | null;
+  openshipStatus: OpenShipStatus | null;
+  openshipDeployments: OpenShipDeployment[];
+  openshipLogs: Record<string, OpenShipLogs>;
+  openshipLoading: boolean;
+  openshipBusy: boolean;
+  openshipError: string | null;
+  openshipNotice: string | null;
+  openshipLastResult: OpenShipDeployResult | null;
   setMode: (mode: AgentMode) => void;
   setPanelTab: (tab: AgentPanelTab) => void;
   refreshStatus: () => Promise<void>;
@@ -97,6 +112,15 @@ interface AgentState {
   savePolicy: (policy: AgentPolicy) => Promise<AgentPolicy>;
   refreshAudit: () => Promise<void>;
   loadMoreAudit: () => Promise<void>;
+  refreshOpenShip: () => Promise<void>;
+  saveOpenShipConfig: (config: OpenShipConfig) => Promise<OpenShipSettings>;
+  saveOpenShipToken: (token: string) => Promise<void>;
+  deleteOpenShipToken: () => Promise<void>;
+  refreshOpenShipDeployments: () => Promise<void>;
+  deployOpenShip: (projectId?: string) => Promise<OpenShipDeployResult | null>;
+  loadOpenShipLogs: (deploymentId: string) => Promise<OpenShipLogs | null>;
+  rollbackOpenShip: (deploymentId: string) => Promise<OpenShipDeployResult | null>;
+  clearOpenShipNotice: () => void;
 }
 
 function appendLocal(
@@ -126,7 +150,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   messages: [
     message(
       "agent",
-      "こんにちは。Right-Stuff Agent IDE のエージェントパネルです。\nLLM を設定するとチャットと計画立案が使えます。右上の歯車アイコンからプロバイダーとモデルを設定してください。\n`/status` — Agent Desktop の検出状態\n`/snapshot` — デスクトップのスナップショット取得\n`/plan <意図>` — 実行計画の作成と承認",
+      "こんにちは。Right-Stuff Agent IDE のエージェントパネルです。\nLLM を設定するとチャットと計画立案が使えます。右上の歯車アイコンからプロバイダーとモデルを設定してください。\n`/status` — Agent Desktop の検出状態\n`/snapshot` — デスクトップのスナップショット取得\n`/plan <意図>` — 実行計画の作成と承認\n`/ship` — Openship の接続状態\n`/deploy [projectId]` — Openship へデプロイ\n`/logs <deploymentId>` — デプロイログを表示\n`/rollback <deploymentId>` — デプロイをロールバック",
       { local: true },
     ),
   ],
@@ -148,6 +172,15 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   auditLoading: false,
   auditError: null,
   auditHasMore: false,
+  openship: null,
+  openshipStatus: null,
+  openshipDeployments: [],
+  openshipLogs: {},
+  openshipLoading: false,
+  openshipBusy: false,
+  openshipError: null,
+  openshipNotice: null,
+  openshipLastResult: null,
 
   setMode(mode) {
     if (typeof window !== "undefined") {
@@ -200,8 +233,19 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
     const isPlanCommand =
       trimmed === "/plan" || trimmed.startsWith("/plan ");
+    const isShipCommand = trimmed === "/ship" || trimmed === "/openship";
+    const isDeployCommand =
+      trimmed === "/deploy" || trimmed.startsWith("/deploy ");
+    const isLogsCommand =
+      trimmed === "/logs" || trimmed.startsWith("/logs ");
+    const isRollbackCommand =
+      trimmed === "/rollback" || trimmed.startsWith("/rollback ");
     const isLocalCommand =
       isPlanCommand ||
+      isShipCommand ||
+      isDeployCommand ||
+      isLogsCommand ||
+      isRollbackCommand ||
       trimmed === "/status" ||
       trimmed === "ステータス" ||
       trimmed === "/snapshot" ||
@@ -225,6 +269,114 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         return;
       }
       await get().generatePlan(intent);
+      return;
+    }
+
+    if (isShipCommand) {
+      set({ panelTab: "deploy" });
+      await get().refreshOpenShip();
+      const openshipStatus = get().openshipStatus;
+      if (!openshipStatus) {
+        appendLocal(
+          set,
+          get().openshipError ??
+            "Openship の状態を取得できませんでした。設定を確認してください。",
+        );
+      } else {
+        appendLocal(
+          set,
+          [
+            `Openship CLI: ${
+              openshipStatus.cliAvailable
+                ? `${openshipStatus.cliVersion ?? "version unknown"} (${openshipStatus.cliPath})`
+                : "未検出"
+            }`,
+            `サーバー: ${
+              openshipStatus.serverConfigured
+                ? openshipStatus.serverReachable
+                  ? "接続可能"
+                  : "接続できません"
+                : "未設定"
+            }`,
+            openshipStatus.serverMessage,
+          ].join("\n"),
+          { command: "openship status" },
+        );
+      }
+      return;
+    }
+
+    if (isDeployCommand) {
+      const projectId = trimmed.slice("/deploy".length).trim();
+      set({ panelTab: "deploy" });
+      if (get().mode === "passive") {
+        appendLocal(
+          set,
+          "Passive モードではデプロイできません。Assistive 以上に切り替えてください。",
+        );
+        return;
+      }
+      const result = await get().deployOpenShip(projectId || undefined);
+      if (result) {
+        appendLocal(
+          set,
+          result.ok
+            ? `Openship デプロイを開始しました。${result.deployment ? `\nID: ${result.deployment.id} / status: ${result.deployment.status}` : ""}`
+            : `Openship デプロイに失敗しました。\n${result.stderr || result.stdout || "詳細は Deploy タブを確認してください。"}`,
+          { command: result.command.join(" ") },
+        );
+      }
+      return;
+    }
+
+    if (isLogsCommand) {
+      const deploymentId = trimmed.slice("/logs".length).trim();
+      if (!deploymentId) {
+        appendLocal(
+          set,
+          "Deployment ID を指定してください。例: `/logs dep_xxxxx`。Deploy タブの一覧からも表示できます。",
+        );
+        return;
+      }
+      const logs = await get().loadOpenShipLogs(deploymentId);
+      if (logs) {
+        appendLocal(
+          set,
+          logs.ok
+            ? `\`\`\`\n${logs.logs.slice(0, 8_000)}\n\`\`\``
+            : `ログを取得できませんでした (HTTP ${logs.status ?? "?"})。\n${logs.logs}`,
+          { command: `openship logs ${deploymentId}` },
+        );
+      }
+      return;
+    }
+
+    if (isRollbackCommand) {
+      const deploymentId = trimmed.slice("/rollback".length).trim();
+      if (!deploymentId) {
+        appendLocal(
+          set,
+          "Deployment ID を指定してください。例: `/rollback dep_xxxxx`。Deploy タブの一覧からも実行できます。",
+        );
+        return;
+      }
+      if (get().mode === "passive") {
+        appendLocal(
+          set,
+          "Passive モードではロールバックできません。Assistive 以上に切り替えてください。",
+        );
+        return;
+      }
+      const result = await get().rollbackOpenShip(deploymentId);
+      if (result) {
+        appendLocal(
+          set,
+          result.ok
+            ? `ロールバックを開始しました (${deploymentId})。`
+            : `ロールバックに失敗しました。\n${result.stderr || "詳細は Deploy タブを確認してください。"}`,
+          { command: result.command.join(" ") },
+        );
+      }
       return;
     }
 
@@ -776,6 +928,152 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     } catch (error) {
       set({ auditLoading: false, auditError: errorMessage(error) });
     }
+  },
+
+  async refreshOpenShip() {
+    set({ openshipLoading: true, openshipError: null });
+    try {
+      const [settings, status] = await Promise.all([
+        api.openshipConfig(),
+        api.openshipStatus(),
+      ]);
+      set({
+        openship: settings,
+        openshipStatus: status,
+        openshipLoading: false,
+      });
+    } catch (error) {
+      set({ openshipLoading: false, openshipError: errorMessage(error) });
+    }
+  },
+
+  async saveOpenShipConfig(config) {
+    const saved = await api.openshipConfigSet(config);
+    set({ openship: saved, openshipError: null });
+    return saved;
+  },
+
+  async saveOpenShipToken(token) {
+    await api.openshipTokenSet(token);
+    set((state) => ({
+      openship: state.openship
+        ? { ...state.openship, tokenConfigured: true }
+        : state.openship,
+      openshipError: null,
+    }));
+  },
+
+  async deleteOpenShipToken() {
+    await api.openshipTokenDelete();
+    set((state) => ({
+      openship: state.openship
+        ? { ...state.openship, tokenConfigured: false }
+        : state.openship,
+      openshipError: null,
+    }));
+  },
+
+  async refreshOpenShipDeployments() {
+    const config = get().openship;
+    if (!config?.baseUrl || !config.tokenConfigured) {
+      set({ openshipDeployments: [] });
+      return;
+    }
+    try {
+      const deployments = await api.openshipDeployments(
+        config.projectId || undefined,
+        20,
+      );
+      set({ openshipDeployments: deployments, openshipError: null });
+    } catch (error) {
+      set({
+        openshipDeployments: [],
+        openshipError: errorMessage(error),
+      });
+    }
+  },
+
+  async deployOpenShip(projectId) {
+    if (get().openshipBusy) return null;
+    if (get().mode === "passive") {
+      set({
+        openshipError:
+          "Passive モードではデプロイできません。Assistive 以上に切り替えてください。",
+      });
+      return null;
+    }
+    set({
+      openshipBusy: true,
+      openshipError: null,
+      openshipNotice: null,
+      openshipLastResult: null,
+    });
+    try {
+      const result = await api.openshipDeploy(
+        projectId || get().openship?.projectId || undefined,
+      );
+      set({
+        openshipBusy: false,
+        openshipLastResult: result,
+        openshipNotice: result.ok ? "デプロイを開始しました。" : null,
+        openshipError: result.ok
+          ? null
+          : result.stderr || result.stdout || "デプロイに失敗しました。",
+      });
+      await get().refreshOpenShipDeployments();
+      return result;
+    } catch (error) {
+      set({ openshipBusy: false, openshipError: errorMessage(error) });
+      return null;
+    }
+  },
+
+  async loadOpenShipLogs(deploymentId) {
+    set({ openshipBusy: true, openshipError: null });
+    try {
+      const logs = await api.openshipLogs(deploymentId);
+      set((state) => ({
+        openshipBusy: false,
+        openshipLogs: { ...state.openshipLogs, [deploymentId]: logs },
+        openshipError: logs.ok ? null : logs.logs,
+      }));
+      return logs;
+    } catch (error) {
+      set({ openshipBusy: false, openshipError: errorMessage(error) });
+      return null;
+    }
+  },
+
+  async rollbackOpenShip(deploymentId) {
+    if (get().openshipBusy) return null;
+    if (get().mode === "passive") {
+      set({
+        openshipError:
+          "Passive モードではロールバックできません。Assistive 以上に切り替えてください。",
+      });
+      return null;
+    }
+    set({ openshipBusy: true, openshipError: null, openshipNotice: null });
+    try {
+      const result = await api.openshipRollback(deploymentId);
+      set({
+        openshipBusy: false,
+        openshipLastResult: result,
+        openshipNotice: result.ok ? "ロールバックを開始しました。" : null,
+        openshipError: result.ok
+          ? null
+          : result.stderr || result.stdout || "ロールバックに失敗しました。",
+      });
+      await get().refreshOpenShipDeployments();
+      return result;
+    } catch (error) {
+      set({ openshipBusy: false, openshipError: errorMessage(error) });
+      return null;
+    }
+  },
+
+  clearOpenShipNotice() {
+    set({ openshipNotice: null, openshipError: null });
   },
 
   clearMessages() {

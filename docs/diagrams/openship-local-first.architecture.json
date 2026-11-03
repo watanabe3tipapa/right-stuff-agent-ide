@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Right-Stuff Agent IDE × Openship — ローカルファースト構成",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1320,
+      700
+    ],
+    "views": [
+      {
+        "id": "deploy-path",
+        "label": "デプロイ経路",
+        "focus": [
+          "editor",
+          "agent",
+          "rust",
+          "cli",
+          "openship",
+          "target"
+        ],
+        "note": "エディタの意図が Agent Panel から Rust を経由し、CLI 優先で Openship に届く主経路。"
+      },
+      {
+        "id": "local-state",
+        "label": "端末内の状態",
+        "focus": [
+          "rust",
+          "localstate",
+          "audit"
+        ],
+        "note": "設定・PAT・監査ログは端末内に閉じ、Rust だけが読み書きする。"
+      },
+      {
+        "id": "guardrails",
+        "label": "安全装置",
+        "focus": [
+          "rust",
+          "confirm",
+          "audit"
+        ],
+        "note": "変更操作はネイティブ承認と監査ログを必ず通る。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "editor",
+      "type": "frontend",
+      "label": "Monaco Editor",
+      "sublabel": "コード / ファイル",
+      "pos": [
+        24,
+        180
+      ],
+      "size": [
+        150,
+        70
+      ]
+    },
+    {
+      "id": "agent",
+      "type": "frontend",
+      "label": "Agent Panel",
+      "sublabel": "Chat / Plan / Deploy",
+      "pos": [
+        210,
+        180
+      ],
+      "size": [
+        150,
+        70
+      ]
+    },
+    {
+      "id": "rust",
+      "type": "backend",
+      "label": "Tauri / Rust",
+      "sublabel": "openship_* commands",
+      "pos": [
+        400,
+        180
+      ],
+      "size": [
+        150,
+        70
+      ],
+      "tag": "検証と承認"
+    },
+    {
+      "id": "cli",
+      "type": "external",
+      "label": "Openship CLI",
+      "sublabel": "openship --json deploy",
+      "pos": [
+        620,
+        180
+      ],
+      "size": [
+        140,
+        70
+      ]
+    },
+    {
+      "id": "openship",
+      "type": "cloud",
+      "label": "Openship Server",
+      "sublabel": "self-hosted",
+      "pos": [
+        880,
+        180
+      ],
+      "size": [
+        150,
+        70
+      ],
+      "tag": "user-owned"
+    },
+    {
+      "id": "target",
+      "type": "cloud",
+      "label": "Target Runtime",
+      "sublabel": "OpenResty / containers",
+      "pos": [
+        1110,
+        180
+      ],
+      "size": [
+        140,
+        70
+      ]
+    },
+    {
+      "id": "confirm",
+      "type": "security",
+      "label": "Native Dialog",
+      "sublabel": "deploy / rollback 承認",
+      "pos": [
+        200,
+        430
+      ],
+      "size": [
+        150,
+        70
+      ]
+    },
+    {
+      "id": "localstate",
+      "type": "database",
+      "label": "Local State",
+      "sublabel": "SQLite + Keychain",
+      "pos": [
+        390,
+        430
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "tag": "config / PAT"
+    },
+    {
+      "id": "audit",
+      "type": "database",
+      "label": "Audit Log",
+      "sublabel": "SQLite / local only",
+      "pos": [
+        660,
+        430
+      ],
+      "size": [
+        160,
+        70
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Local machine — クラウドアカウント不要",
+      "wraps": [
+        "editor",
+        "agent",
+        "rust",
+        "cli",
+        "confirm",
+        "localstate",
+        "audit"
+      ],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "Self-hosted, user-owned",
+      "wraps": [
+        "openship",
+        "target"
+      ],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "edit-to-agent",
+      "from": "editor",
+      "to": "agent",
+      "label": "仕様・意図",
+      "variant": "emphasis",
+      "labelAt": [
+        192,
+        278
+      ]
+    },
+    {
+      "id": "agent-to-rust",
+      "from": "agent",
+      "to": "rust",
+      "label": "Tauri invoke",
+      "variant": "emphasis",
+      "labelAt": [
+        420,
+        292
+      ]
+    },
+    {
+      "id": "rust-to-cli",
+      "from": "rust",
+      "to": "cli",
+      "label": "CLI 優先",
+      "variant": "emphasis",
+      "labelAt": [
+        585,
+        405
+      ]
+    },
+    {
+      "id": "cli-to-openship",
+      "from": "cli",
+      "to": "openship",
+      "label": "deploy / logs",
+      "variant": "emphasis",
+      "labelAt": [
+        820,
+        278
+      ]
+    },
+    {
+      "id": "openship-to-target",
+      "from": "openship",
+      "to": "target",
+      "label": "build / TLS",
+      "labelAt": [
+        1070,
+        278
+      ]
+    },
+    {
+      "id": "rust-to-openship-rest",
+      "from": "rust",
+      "to": "openship",
+      "label": "REST API（CLI 未検出時）",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "bottom",
+      "via": [
+        [
+          380,
+          215
+        ],
+        [
+          380,
+          560
+        ],
+        [
+          955,
+          560
+        ]
+      ],
+      "labelAt": [
+        665,
+        548
+      ]
+    },
+    {
+      "id": "rust-to-confirm",
+      "from": "rust",
+      "to": "confirm",
+      "label": "変更操作は毎回確認",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [
+        [
+          475,
+          270
+        ],
+        [
+          275,
+          270
+        ]
+      ],
+      "labelAt": [
+        275,
+        345
+      ]
+    },
+    {
+      "id": "rust-to-localstate",
+      "from": "rust",
+      "to": "localstate",
+      "label": "設定 / PAT を読み書き",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "via": [],
+      "labelAt": [
+        475,
+        325
+      ]
+    },
+    {
+      "id": "rust-to-audit",
+      "from": "rust",
+      "to": "audit",
+      "label": "結果を記録",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "top",
+      "via": [
+        [
+          580,
+          215
+        ],
+        [
+          580,
+          380
+        ],
+        [
+          740,
+          380
+        ]
+      ],
+      "labelAt": [
+        660,
+        360
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "端末内で完結",
+      "items": [
+        "設定と監査は SQLite、PAT は OS キーチェーン",
+        "CLI / 自ホスト API 以外へは送信しない",
+        "クラウドアカウントや外部 SaaS に依存しない"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "実行経路",
+      "items": [
+        "CLI があれば openship --json deploy",
+        "未検出時のみ REST POST /api/deployments",
+        "履歴・ログ・ロールバックも同じ経路"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "安全装置",
+      "items": [
+        "deploy / rollback はネイティブ承認",
+        "URL・ID・ブランチを Rust 側で検証",
+        "全実行を監査ログに記録"
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AgentMode, ChatMessage } from "../shared/types";
 import { useAgentStore } from "../stores/agentStore";
 import { AuditPanel } from "./AuditPanel";
+import { DeployPanel } from "./DeployPanel";
 import { Icon } from "./Icon";
 import { PlanPanel } from "./PlanPanel";
 
@@ -195,6 +196,21 @@ function ChatView() {
             >
               /plan
             </button>
+            <button
+              type="button"
+              className="chip"
+              onClick={() => setDraft("/ship")}
+            >
+              /ship
+            </button>
+            <button
+              type="button"
+              className="chip"
+              onClick={() => setDraft("/deploy ")}
+              disabled={mode === "passive"}
+            >
+              /deploy
+            </button>
           </div>
           <span className={`composer-model${llm?.configured ? "" : " unset"}`}>
             {llm?.configured ? llm.model : "LLM 未設定"}
@@ -341,6 +357,13 @@ export function AgentPanel() {
               </button>
               <button
                 type="button"
+                className={tab === "deploy" ? "active" : ""}
+                onClick={() => setTab("deploy")}
+              >
+                Deploy
+              </button>
+              <button
+                type="button"
                 className={tab === "audit" ? "active" : ""}
                 onClick={() => setTab("audit")}
               >
@@ -378,6 +401,8 @@ export function AgentPanel() {
         <PlanPanel />
       ) : tab === "audit" ? (
         <AuditPanel />
+      ) : tab === "deploy" ? (
+        <DeployPanel />
       ) : (
         <RuntimeView />
       )}

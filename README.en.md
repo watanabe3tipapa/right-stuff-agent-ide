@@ -64,10 +64,11 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Markdown preview** — GFM rendering via `react-markdown` + `remark-gfm` in a split pane
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
-- **Agent panel** — Chat, Plan, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, and `/plan` commands
+- **Agent panel** — Chat, Plan, Deploy, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, `/plan`, `/ship`, `/deploy`, `/logs`, and `/rollback` commands
 - **LLM chat** — OpenAI / Ollama / LM Studio / OpenRouter and other OpenAI-compatible APIs, with streaming output, cancellation, and a connection test. API keys are stored in the OS keychain
 - **Plan generation and approval** — describe an intent and the LLM proposes a plan built only from allowlisted Agent Desktop actions. Every step is validated before display; plans are approved as a unit, run step by step in Assistive mode, or run sequentially in Autonomous mode. Invalid actions and arguments from the model are rejected before execution
-- **Approval audit log** — plan creation, approval, rejection, and cancellation, action runs, blocks, and cancellations, and policy changes are recorded in local SQLite. The Audit tab lists entries newest first; records older than the retention period (30 days by default) and entries beyond the latest 5,000 are pruned automatically
+- **Approval audit log** — plan creation, approval, rejection, and cancellation, action runs, blocks, and cancellations, policy changes, and Openship deploys and rollbacks are recorded in local SQLite. The Audit tab lists entries newest first; records older than the retention period (30 days by default) and entries beyond the latest 5,000 are pruned automatically
+- **Openship integration (local-first)** — the Deploy tab handles deployment history, logs, and rollbacks. When the `openship` CLI is detected it is preferred; only when it is missing or fails does the app fall back to the self-hosted REST API. Connection settings live in SQLite, the PAT in the OS keychain, and mutating operations always pass through native approval. See the [architecture diagram](./docs/diagrams/openship-local-first.html)
 - **Agent policy** — read-only actions can be set to allow / ask / block, mutating actions to ask / block. The native approval for mutating actions cannot be skipped, and blocked actions are rejected in Rust before execution
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, and agent commands
@@ -82,7 +83,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Editor**: Monaco Editor 0.52 (`@monaco-editor/react`)
 - **State**: Zustand 5 (workspace / editor / agent)
 - **Desktop shell**: Tauri 2.0 (Rust 2024 edition)
-- **Backend**: Tauri commands (workspace / editor / agent / policy / llm / settings / app), path validation, atomic writes
+- **Backend**: Tauri commands (workspace / editor / agent / policy / llm / openship / settings / app), path validation, atomic writes
 - **Database**: SQLite (WAL, bundled `rusqlite`) for version history, settings, and the audit log
 - **Bridge**: `src/lib/api.ts` wraps `invoke` and falls back to `src/lib/demo.ts` in the browser
 - **Packaging**: `tauri build` (`.app` / `.dmg`)
@@ -97,7 +98,8 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - Agent Desktop enforces an action allowlist plus argument length/shape checks, the agent policy, and a native approval dialog for mutating actions; output is truncated at 200,000 characters
 - The audit log is stored only in local SQLite and is never sent externally. It contains command arguments, output excerpts, and errors, so take care when backing up or sharing it
 - Snapshots are held in memory only and are not persisted to SQLite
-- API keys are stored only in the OS keychain and never in SQLite, logs, or error messages. LLM requests are sent from Rust; the WebView never calls external APIs directly
+- API keys and the Openship PAT are stored only in the OS keychain and never in SQLite, logs, or error messages. LLM and Openship requests are sent from Rust; the WebView never calls external APIs directly
+- Openship REST connections assume a self-hosted server, and `http://` is allowed only for localhost / 127.0.0.1 / ::1. Deploy and rollback are disabled in Passive mode and always require native approval in the other modes
 - CSP is configured with a `default-src 'self'` baseline for both Tauri (separate production and development policies) and Vercel
 
 ## Install and build
@@ -250,6 +252,10 @@ vercel --prod          # Deploy to production
 - [x] Per-step result output (stdout / stderr / exit code)
 - [x] Approval, execution, and policy-change audit log (SQLite, with retention period and row cap)
 - [x] Agent policy settings UI (read-only: allow / ask / block; mutating: ask / block)
+- [x] Openship CLI detection and `openship --json deploy`
+- [x] Self-hosted REST fallback (deploy, history, logs, rollback)
+- [x] Openship settings UI, PAT storage in the OS keychain, and the Deploy tab
+- [x] `/ship`, `/deploy`, `/logs`, and `/rollback` commands with audit logging
 
 ### v0.1.1
 
@@ -307,10 +313,12 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / tabs / Markdown split preview
 │   ├── FileTree.tsx                # Workspace tree and file operations
-│   ├── AgentPanel.tsx              # Chat / Plan / Audit / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Deploy / Audit / Runtime
 │   ├── PlanPanel.tsx               # Plan generation, approval, and execution
+│   ├── DeployPanel.tsx             # Openship history, logs, and deploys
 │   ├── AuditPanel.tsx              # Audit log list
 │   ├── AgentPolicySettings.tsx     # Agent policy settings
+│   ├── OpenShipSettings.tsx        # Openship connection and PAT settings
 │   ├── CommandPalette.tsx          # ⌘K command palette
 │   ├── HistoryDialog.tsx           # Version history
 │   ├── UnsavedChangesDialog.tsx    # Save / discard / cancel unsaved changes
@@ -327,7 +335,7 @@ src/
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / policy / settings / app
+│   ├── commands/                   # workspace / editor / agent / policy / openship / settings / app
 │   ├── db.rs                       # SQLite (WAL) history, settings, and audit log
 │   ├── paths.rs                    # Path validation
 │   ├── state.rs                    # AppState
@@ -337,6 +345,9 @@ src-tauri/
 
 .agents/skills/                     # Skill definitions (JSON)
 docs/                               # Architecture / API / security
+docs/diagrams/                      # archify diagrams (JSON / HTML / PNG)
+public/openship-local-first.png     # Diagram preview for the LP
+public/diagrams/                    # Interactive diagram published with the site
 public/rs-mark.svg                  # App icon source
 right-stuff-agent-ide-implementation-plan.html
 right-stuff-agent-ide-lp.html
@@ -348,8 +359,9 @@ right-stuff-agent-ide-lp.html
 2. [API.md](./docs/API.md) — Tauri commands and types
 3. [SECURITY.md](./docs/SECURITY.md) — path validation, agent permissions, stored data
 4. [Implementation plan (JA)](./right-stuff-agent-ide-implementation-plan.html) — overall design and roadmap
-5. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
-6. [README (Japanese)](./README.md) — 日本語の概要
+5. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
+6. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
+7. [README (Japanese)](./README.md) — 日本語の概要
 
 ## License
 

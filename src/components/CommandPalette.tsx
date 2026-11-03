@@ -181,6 +181,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       run: () => setPanelTab("audit"),
     },
     {
+      id: "agent:deploy",
+      label: "Openship デプロイを開く",
+      hint: "デプロイ履歴・ログ・ロールバック",
+      icon: "send",
+      keywords: "openship deploy deployment ship デプロイ 配備",
+      run: () => setPanelTab("deploy"),
+    },
+    {
       id: "agent:settings",
       label: "設定を開く",
       hint: "プロバイダー・モデル・API キー",

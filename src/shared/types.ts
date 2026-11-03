@@ -68,7 +68,7 @@ export interface AppInfo {
 
 export type AgentMode = "passive" | "assistive" | "autonomous";
 
-export type AgentPanelTab = "chat" | "plan" | "audit" | "runtime";
+export type AgentPanelTab = "chat" | "plan" | "deploy" | "audit" | "runtime";
 
 export type AgentPolicyDecision = "allow" | "ask" | "block";
 
@@ -204,3 +204,59 @@ export type LlmStreamEvent =
   | { type: "done"; finishReason: string | null }
   | { type: "cancelled" }
   | { type: "error"; message: string };
+
+export interface OpenShipConfig {
+  baseUrl: string;
+  organizationId: string;
+  projectId: string;
+  branch: string;
+  cliPath: string;
+}
+
+export interface OpenShipSettings extends OpenShipConfig {
+  tokenConfigured: boolean;
+}
+
+export interface OpenShipStatus {
+  cliAvailable: boolean;
+  cliPath: string | null;
+  cliVersion: string | null;
+  serverConfigured: boolean;
+  serverReachable: boolean;
+  serverMessage: string;
+  tokenConfigured: boolean;
+  baseUrl: string;
+}
+
+export interface OpenShipProject {
+  id: string;
+  name: string;
+  slug: string | null;
+}
+
+export interface OpenShipDeployment {
+  id: string;
+  projectId: string | null;
+  status: string;
+  environment: string | null;
+  branch: string | null;
+  url: string | null;
+  createdAt: number | null;
+  commit: string | null;
+}
+
+export interface OpenShipDeployResult {
+  ok: boolean;
+  code: number | null;
+  stdout: string;
+  stderr: string;
+  command: string[];
+  deployment: OpenShipDeployment | null;
+}
+
+export interface OpenShipLogs {
+  deploymentId: string;
+  ok: boolean;
+  status: number | null;
+  logs: string;
+}

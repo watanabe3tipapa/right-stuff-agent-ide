@@ -164,6 +164,35 @@ OpenAI 互換 API のチャット（ストリーミング・停止・接続テ�
 計画の生成・承認・実行、監査ログまでを実装している。スキル定義
 (`.agents/skills/*.json`) の実行と検証ループは未実装。
 
+## Openship 連携（ローカルファースト）
+
+![Openship ローカルファースト構成図](diagrams/openship-local-first.png)
+
+インタラクティブ版: [diagrams/openship-local-first.html](diagrams/openship-local-first.html)
+
+```
+Agent Panel (Deploy タブ / /deploy / /logs / /rollback)
+  → api.openship_* (Tauri invoke)
+  → Rust: 設定・ID・URL を正規化して検証
+  → CLI を検出できれば openship --json deploy
+      → 失敗または未検出なら REST POST /api/deployments
+  → deploy / rollback は必ずネイティブ承認ダイアログ
+  → 結果と実行コマンドを監査ログへ記録
+  → デプロイ履歴・ログは Rust 経由で取得し UI に表示
+```
+
+- 接続設定は SQLite の `openship_config`、PAT は OS キーチェーン
+  (`com.rightstuff.agentide.openship`) に保存する。WebView へトークンを返さない。
+- CLI は設定されたパス、`PATH`、`OPENSHIP_BIN` の順に検出する。
+- REST はセルフホストの Openship を想定し、`http://` は
+  localhost / 127.0.0.1 / ::1 のみ許可する。
+- 履歴・ログ・ロールバックの REST 経路:
+  `GET /api/health`、`GET /api/projects`、`GET /api/deployments`、
+  `GET /api/deployments/{id}/logs`、`POST /api/deployments/{id}/rollback`。
+- 変更操作は Passive モードでは無効。Assistive / Autonomous でも
+  ネイティブ承認を省略できない。
+- 設定・トークン・監査ログ・デプロイ結果は端末外へ送信しない。
+
 ## ディレクトリ
 
 実際の Rust クレートは Tauri の慣例に合わせて `src-tauri/` に置いている
@@ -171,12 +200,12 @@ OpenAI 互換 API のチャット（ストリーミング・停止・接続テ�
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, AuditPanel, AgentPolicySettings, SettingsDialog, ...)
+├── components/ (AgentPanel, PlanPanel, DeployPanel, AuditPanel, AgentPolicySettings, OpenShipSettings, SettingsDialog, ...)
 ├── lib/{api,demo,llm,plan,policy,monaco}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,policy,llm,settings,app}.rs
+├── commands/{workspace,editor,agent,policy,llm,openship,settings,app}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs

@@ -18,6 +18,13 @@ import type {
   LlmSettings,
   LlmStreamEvent,
   LlmTestResult,
+  OpenShipConfig,
+  OpenShipDeployResult,
+  OpenShipDeployment,
+  OpenShipLogs,
+  OpenShipProject,
+  OpenShipSettings,
+  OpenShipStatus,
   SaveResult,
   VersionContent,
   VersionSummary,
@@ -161,6 +168,78 @@ export const api = {
     return isTauri
       ? call<AuditEntry[]>("audit_log_list", { limit, offset })
       : Promise.resolve([]);
+  },
+
+  openshipConfig(): Promise<OpenShipSettings> {
+    return isTauri
+      ? call<OpenShipSettings>("openship_config_get")
+      : demoApi.openshipConfig();
+  },
+
+  openshipConfigSet(config: OpenShipConfig): Promise<OpenShipSettings> {
+    return isTauri
+      ? call<OpenShipSettings>("openship_config_set", { config })
+      : demoApi.openshipConfigSet();
+  },
+
+  openshipTokenSet(token: string): Promise<void> {
+    return isTauri
+      ? call<void>("openship_token_set", { token })
+      : demoApi.openshipTokenSet();
+  },
+
+  openshipTokenDelete(): Promise<void> {
+    return isTauri
+      ? call<void>("openship_token_delete")
+      : demoApi.openshipTokenDelete();
+  },
+
+  openshipStatus(): Promise<OpenShipStatus> {
+    return isTauri
+      ? call<OpenShipStatus>("openship_status")
+      : demoApi.openshipStatus();
+  },
+
+  openshipProjects(): Promise<OpenShipProject[]> {
+    return isTauri
+      ? call<OpenShipProject[]>("openship_projects")
+      : Promise.resolve([]);
+  },
+
+  openshipDeployments(
+    projectId?: string,
+    limit = 20,
+  ): Promise<OpenShipDeployment[]> {
+    return isTauri
+      ? call<OpenShipDeployment[]>("openship_deployments", {
+          projectId: projectId ?? null,
+          limit,
+        })
+      : Promise.resolve([]);
+  },
+
+  /**
+   * Deploys through the Openship CLI when it is available, otherwise through
+   * the REST API. Rust shows a native confirmation dialog before running.
+   */
+  openshipDeploy(projectId?: string): Promise<OpenShipDeployResult> {
+    return isTauri
+      ? call<OpenShipDeployResult>("openship_deploy", {
+          projectId: projectId ?? null,
+        })
+      : demoApi.openshipDeploy();
+  },
+
+  openshipLogs(deploymentId: string): Promise<OpenShipLogs> {
+    return isTauri
+      ? call<OpenShipLogs>("openship_logs", { deploymentId })
+      : demoApi.openshipLogs();
+  },
+
+  openshipRollback(deploymentId: string): Promise<OpenShipDeployResult> {
+    return isTauri
+      ? call<OpenShipDeployResult>("openship_rollback", { deploymentId })
+      : demoApi.openshipRollback();
   },
 
   llmConfig(): Promise<LlmSettings> {

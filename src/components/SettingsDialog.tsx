@@ -11,6 +11,7 @@ import { DEFAULT_LLM_CONFIG, PROVIDER_ORDER, PROVIDER_PRESETS } from "../lib/llm
 import { useAgentStore } from "../stores/agentStore";
 import { AgentPolicySettings } from "./AgentPolicySettings";
 import { Icon } from "./Icon";
+import { OpenShipSettings } from "./OpenShipSettings";
 
 function configFromSettings(settings: LlmSettings): LlmConfig {
   return {
@@ -37,7 +38,7 @@ export function SettingsDialog() {
   const closeSettings = useAgentStore((state) => state.closeSettings);
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
 
-  const [section, setSection] = useState<"llm" | "agent">("llm");
+  const [section, setSection] = useState<"llm" | "agent" | "openship">("llm");
   const [config, setConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
   const [configured, setConfigured] = useState(false);
   const [savedConfig, setSavedConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
@@ -231,7 +232,8 @@ export function SettingsDialog() {
           <div>
             <h3 id="llm-settings-title">設定</h3>
             <p className="settings-sub">
-              LLM 接続とエージェントの承認ポリシーを管理します。設定はこの端末内に保存されます。
+              LLM 接続、エージェントの承認ポリシー、Openship
+              連携を管理します。設定はこの端末内に保存されます。
             </p>
           </div>
           <button
@@ -263,6 +265,15 @@ export function SettingsDialog() {
           >
             エージェント
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={section === "openship"}
+            className={section === "openship" ? "active" : ""}
+            onClick={() => setSection("openship")}
+          >
+            Openship
+          </button>
         </div>
 
         {demo && section === "llm" && (
@@ -272,6 +283,7 @@ export function SettingsDialog() {
         )}
 
         {section === "agent" && <AgentPolicySettings />}
+        {section === "openship" && <OpenShipSettings />}
 
         {section === "llm" && (
           <>

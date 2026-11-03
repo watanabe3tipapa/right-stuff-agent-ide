@@ -87,6 +87,17 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - 接続テストなどで読み取る HTTP レスポンス本文は 1 MiB で打ち切る。
 - HTTP リダイレクトには追従しない。API キーの送信先を Base URL のホストに固定するため。
 
+## Openship 連携
+
+- 接続設定（Base URL・組織 / プロジェクト ID・ブランチ・CLI パス）は SQLite の `openship_config` に保存する。PAT は OS キーチェーン（`com.rightstuff.agentide.openship`）にのみ保存し、WebView には真偽値だけを返す。
+- 通信は Rust 側で行い、WebView から Openship へ直接接続しない。CSP の `connect-src` は変更しない。
+- Base URL は `https://` を必須とし、`http://` は `localhost` / `127.0.0.1` / `::1` のみ許可する。URL にユーザー名・パスワード・クエリ・フラグメントは含められない。
+- プロジェクト ID・デプロイ ID・ブランチ名は英数字と `-` / `_` に制限する。CLI 実行時は配列引数で渡し、シェルを介さない。
+- `deploy` と `rollback` は変更操作として扱い、Passive モードでは拒否する。Assistive / Autonomous でもネイティブ承認ダイアログを必ず表示し、`agent_policy` で省略できない。
+- 実行したコマンド・終了コード・失敗時の出力抜粋は監査ログに記録する。PAT とレスポンス本文全体は記録しない。
+- CLI は `cliPath`、`PATH`、`OPENSHIP_BIN` の順に検出する。設定された CLI パスは実行ファイルとして存在するか確認する。
+- REST はセルフホストの Openship を想定する。履歴・ログの取得は読み取り操作、デプロイ・ロールバックは承認必須の変更操作として扱う。
+
 ## CSP と HTTP ヘッダー
 
 - Tauri は本番用 `csp` と開発用 `devCsp` を分けて設定する。本番は `default-src 'self'` を基底とし、Monaco の worker 用に `worker-src 'self' blob:`、Google Fonts 用に `font-src`、Tauri IPC 用に `connect-src ipc: http://ipc.localhost` を許可する。
@@ -108,9 +119,9 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 | データ | 場所 |
 | --- | --- |
 | ワークスペースのファイル | ユーザーが選んだフォルダ |
-| バージョン履歴・LLM 設定・エージェントポリシー・監査ログ | OS の app data ディレクトリ内 `right-stuff.db` |
+| バージョン履歴・LLM 設定・エージェントポリシー・Openship 設定・監査ログ | OS の app data ディレクトリ内 `right-stuff.db` |
 | エージェントモード | WebView の `localStorage` |
-| API キー | OS キーチェーン |
+| API キー・Openship PAT | OS キーチェーン |
 
 `right-stuff.db` は WAL モードで開く。履歴にはファイル内容が、監査ログには
 コマンド引数と失敗時のエラー抜粋が含まれるため、バックアップや共有の際は

@@ -7,6 +7,10 @@ import type {
   FileEntry,
   LlmSettings,
   LlmTestResult,
+  OpenShipDeployResult,
+  OpenShipLogs,
+  OpenShipSettings,
+  OpenShipStatus,
   SaveResult,
   VersionContent,
   VersionSummary,
@@ -366,6 +370,67 @@ export const demoApi = {
   async agentPolicySet(): Promise<AgentPolicy> {
     throw new Error(
       "ブラウザデモではエージェントポリシーを保存できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async openshipConfig(): Promise<OpenShipSettings> {
+    return {
+      baseUrl: "",
+      organizationId: "",
+      projectId: "",
+      branch: "main",
+      cliPath: "",
+      tokenConfigured: false,
+    };
+  },
+
+  async openshipConfigSet(): Promise<OpenShipSettings> {
+    throw new Error(
+      "ブラウザデモでは Openship 設定を保存できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async openshipTokenSet(): Promise<void> {
+    throw new Error(
+      "ブラウザデモでは Openship トークンを保存できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async openshipTokenDelete(): Promise<void> {
+    throw new Error(
+      "ブラウザデモでは Openship トークンを削除できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async openshipStatus(): Promise<OpenShipStatus> {
+    return {
+      cliAvailable: false,
+      cliPath: null,
+      cliVersion: null,
+      serverConfigured: false,
+      serverReachable: false,
+      serverMessage:
+        "ブラウザデモでは Openship CLI / API を利用できません。`npm run tauri dev` で起動してください。",
+      tokenConfigured: false,
+      baseUrl: "",
+    };
+  },
+
+  async openshipDeploy(): Promise<OpenShipDeployResult> {
+    throw new Error(
+      "ブラウザデモでは Openship へデプロイできません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async openshipLogs(): Promise<OpenShipLogs> {
+    throw new Error(
+      "ブラウザデモでは Openship のログを取得できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async openshipRollback(): Promise<OpenShipDeployResult> {
+    throw new Error(
+      "ブラウザデモでは Openship をロールバックできません。`npm run tauri dev` で起動してください。",
     );
   },
 

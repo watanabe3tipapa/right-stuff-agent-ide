@@ -41,6 +41,7 @@ export function App() {
   const clearNotice = useEditorStore((state) => state.clearNotice);
   const refreshAgentStatus = useAgentStore((state) => state.refreshStatus);
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
+  const refreshPolicy = useAgentStore((state) => state.refreshPolicy);
 
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -55,6 +56,7 @@ export function App() {
     void initWorkspace();
     void refreshAgentStatus();
     void refreshLlm();
+    void refreshPolicy();
     void api
       .appInfo()
       .then((next) => {
@@ -65,7 +67,7 @@ export function App() {
       .catch(() => {
         document.documentElement.dataset.runtime = api.isTauri ? "tauri" : "browser";
       });
-  }, [initWorkspace, refreshAgentStatus, refreshLlm]);
+  }, [initWorkspace, refreshAgentStatus, refreshLlm, refreshPolicy]);
 
   useEffect(() => {
     if (!api.isTauri) return;

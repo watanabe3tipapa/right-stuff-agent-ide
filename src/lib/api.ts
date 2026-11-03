@@ -4,9 +4,13 @@ import { getCurrentWindow, type CloseRequestedEvent } from "@tauri-apps/api/wind
 import { open } from "@tauri-apps/plugin-dialog";
 
 import type {
+  AgentAuditMeta,
+  AgentPolicy,
   AgentRunResult,
   AgentStatus,
   AppInfo,
+  AuditEntry,
+  AuditInput,
   FileContent,
   FileEntry,
   LlmChatMessage,
@@ -129,13 +133,34 @@ export const api = {
   },
 
   /**
-   * The Rust command validates the action and its arguments, then shows a
-   * native confirmation dialog for mutating actions before spawning the CLI.
+   * The Rust command validates the action and its arguments, applies the
+   * agent policy, then shows a native confirmation dialog when required.
+   * `audit` links the execution to a plan step in the audit log.
    */
-  agentRun(args: string[]): Promise<AgentRunResult> {
+  agentRun(args: string[], audit?: AgentAuditMeta): Promise<AgentRunResult> {
     return isTauri
-      ? call<AgentRunResult>("agent_run", { args })
+      ? call<AgentRunResult>("agent_run", { args, audit: audit ?? null })
       : demoApi.agentSnapshot();
+  },
+
+  agentPolicy(): Promise<AgentPolicy> {
+    return isTauri ? call<AgentPolicy>("agent_policy_get") : demoApi.agentPolicy();
+  },
+
+  agentPolicySet(policy: AgentPolicy): Promise<AgentPolicy> {
+    return isTauri
+      ? call<AgentPolicy>("agent_policy_set", { policy })
+      : demoApi.agentPolicySet();
+  },
+
+  auditLogAdd(input: AuditInput): Promise<void> {
+    return isTauri ? call<void>("audit_log_add", { input }) : Promise.resolve();
+  },
+
+  auditLog(limit = 50, offset = 0): Promise<AuditEntry[]> {
+    return isTauri
+      ? call<AuditEntry[]>("audit_log_list", { limit, offset })
+      : Promise.resolve([]);
   },
 
   llmConfig(): Promise<LlmSettings> {

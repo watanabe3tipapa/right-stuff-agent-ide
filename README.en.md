@@ -64,9 +64,11 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Markdown preview** — GFM rendering via `react-markdown` + `remark-gfm` in a split pane
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
-- **Agent panel** — Chat, Plan, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, and `/plan` commands
+- **Agent panel** — Chat, Plan, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, and `/plan` commands
 - **LLM chat** — OpenAI / Ollama / LM Studio / OpenRouter and other OpenAI-compatible APIs, with streaming output, cancellation, and a connection test. API keys are stored in the OS keychain
 - **Plan generation and approval** — describe an intent and the LLM proposes a plan built only from allowlisted Agent Desktop actions. Every step is validated before display; plans are approved as a unit, run step by step in Assistive mode, or run sequentially in Autonomous mode. Invalid actions and arguments from the model are rejected before execution
+- **Approval audit log** — plan creation, approval, rejection, and cancellation, action runs, blocks, and cancellations, and policy changes are recorded in local SQLite. The Audit tab lists entries newest first; records older than the retention period (30 days by default) and entries beyond the latest 5,000 are pruned automatically
+- **Agent policy** — read-only actions can be set to allow / ask / block, mutating actions to ask / block. The native approval for mutating actions cannot be skipped, and blocked actions are rejected in Rust before execution
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, and agent commands
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
@@ -80,8 +82,8 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Editor**: Monaco Editor 0.52 (`@monaco-editor/react`)
 - **State**: Zustand 5 (workspace / editor / agent)
 - **Desktop shell**: Tauri 2.0 (Rust 2024 edition)
-- **Backend**: Tauri commands (workspace / editor / agent / llm / settings / app), path validation, atomic writes
-- **Database**: SQLite (WAL, bundled `rusqlite`) for version history and settings
+- **Backend**: Tauri commands (workspace / editor / agent / policy / llm / settings / app), path validation, atomic writes
+- **Database**: SQLite (WAL, bundled `rusqlite`) for version history, settings, and the audit log
 - **Bridge**: `src/lib/api.ts` wraps `invoke` and falls back to `src/lib/demo.ts` in the browser
 - **Packaging**: `tauri build` (`.app` / `.dmg`)
 
@@ -92,7 +94,8 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - File operations are validated in Rust; absolute paths, `..`, and writes outside the workspace are rejected
 - Symlinks are not listed in the file tree
 - Writes use a temporary file plus `rename` (atomic write); deletes move entries to trash
-- Agent Desktop enforces an action allowlist plus argument length/shape checks, and mutating actions require a native approval dialog; output is truncated at 200,000 characters
+- Agent Desktop enforces an action allowlist plus argument length/shape checks, the agent policy, and a native approval dialog for mutating actions; output is truncated at 200,000 characters
+- The audit log is stored only in local SQLite and is never sent externally. It contains command arguments, output excerpts, and errors, so take care when backing up or sharing it
 - Snapshots are held in memory only and are not persisted to SQLite
 - API keys are stored only in the OS keychain and never in SQLite, logs, or error messages. LLM requests are sent from Rust; the WebView never calls external APIs directly
 - CSP is configured with a `default-src 'self'` baseline for both Tauri (separate production and development policies) and Vercel
@@ -245,6 +248,8 @@ vercel --prod          # Deploy to production
 - [x] Plan-level approve / reject and per-step execution in Assistive mode
 - [x] Sequential execution of an approved plan in Autonomous mode (stops on failure)
 - [x] Per-step result output (stdout / stderr / exit code)
+- [x] Approval, execution, and policy-change audit log (SQLite, with retention period and row cap)
+- [x] Agent policy settings UI (read-only: allow / ask / block; mutating: ask / block)
 
 ### v0.1.1
 
@@ -275,7 +280,6 @@ vercel --prod          # Deploy to production
 
 ### Next candidates
 
-- [ ] Approval audit log and policy settings UI
 - [ ] Skill execution and verification loop
 - [ ] Terminal (PTY), Git, LSP / DAP
 - [ ] Anthropic-specific API adapter
@@ -288,7 +292,8 @@ vercel --prod          # Deploy to production
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
 - Plans can only run allowlisted Agent Desktop actions. Editor, Git, and terminal skill execution is not implemented yet
-- Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved
+- Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved (the policy cannot set them to allow)
+- The audit log is stored in local SQLite with a default retention of 30 days and a 5,000-row cap. Disabling it leaves existing records in place
 - Snapshots live in memory only and are lost on restart
 - Browser demo changes are not persisted
 - No sync or collaborative editing
@@ -302,8 +307,10 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / tabs / Markdown split preview
 │   ├── FileTree.tsx                # Workspace tree and file operations
-│   ├── AgentPanel.tsx              # Chat / Plan / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Audit / Runtime
 │   ├── PlanPanel.tsx               # Plan generation, approval, and execution
+│   ├── AuditPanel.tsx              # Audit log list
+│   ├── AgentPolicySettings.tsx     # Agent policy settings
 │   ├── CommandPalette.tsx          # ⌘K command palette
 │   ├── HistoryDialog.tsx           # Version history
 │   ├── UnsavedChangesDialog.tsx    # Save / discard / cancel unsaved changes
@@ -313,14 +320,15 @@ src/
 │   ├── demo.ts                     # In-memory browser workspace
 │   ├── llm.ts                      # LLM prompts and request conversion
 │   ├── plan.ts                     # Plan prompt, JSON parsing, argument validation
+│   ├── policy.ts                   # Policy defaults and display labels
 │   └── monaco.ts                   # Monaco themes and worker setup
 ├── shared/types.ts                 # Shared frontend / backend types
 └── stores/                         # Zustand (workspace / editor / agent)
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / settings / app
-│   ├── db.rs                       # SQLite (WAL) history and settings
+│   ├── commands/                   # workspace / editor / agent / policy / settings / app
+│   ├── db.rs                       # SQLite (WAL) history, settings, and audit log
 │   ├── paths.rs                    # Path validation
 │   ├── state.rs                    # AppState
 │   └── lib.rs                      # Command registration

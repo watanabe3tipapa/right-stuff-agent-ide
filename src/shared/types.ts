@@ -68,7 +68,58 @@ export interface AppInfo {
 
 export type AgentMode = "passive" | "assistive" | "autonomous";
 
-export type AgentPanelTab = "chat" | "plan" | "runtime";
+export type AgentPanelTab = "chat" | "plan" | "audit" | "runtime";
+
+export type AgentPolicyDecision = "allow" | "ask" | "block";
+
+export interface AgentPolicy {
+  auditEnabled: boolean;
+  auditRetentionDays: number;
+  actions: Record<string, AgentPolicyDecision>;
+}
+
+export type AuditKind =
+  | "plan_created"
+  | "plan_approved"
+  | "plan_rejected"
+  | "plan_cancelled"
+  | "action_run"
+  | "action_blocked"
+  | "action_cancelled"
+  | "policy_updated";
+
+export type AuditOutcome = "ok" | "error" | "blocked" | "cancelled";
+
+export interface AuditEntry {
+  id: number;
+  createdAt: number;
+  kind: AuditKind;
+  mode: AgentMode | null;
+  planId: string | null;
+  stepId: string | null;
+  title: string | null;
+  command: string[] | null;
+  outcome: AuditOutcome | null;
+  detail: string | null;
+}
+
+export interface AuditInput {
+  kind: AuditKind;
+  mode?: AgentMode | null;
+  planId?: string | null;
+  stepId?: string | null;
+  title?: string | null;
+  command?: string[] | null;
+  outcome?: AuditOutcome | null;
+  detail?: string | null;
+}
+
+export interface AgentAuditMeta {
+  planId?: string;
+  stepId?: string;
+  title?: string;
+  mode?: AgentMode;
+}
 
 export type PlanStepRisk = "read" | "write";
 

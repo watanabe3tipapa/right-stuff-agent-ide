@@ -107,18 +107,44 @@ CSP の `connect-src` に外部オリジンを追加しないため、LLM への
       → JSON 抽出 (コードフェンス許容)
       → 許可アクション・引数個数・長さ・NUL・アプリ名の検証
       → 読み取り / 変更リスクをアクションから決定
-  → agentStore.plan (draft)
-  → ユーザーが計画を承認 / 却下
+  → agentStore.plan (draft) + 監査ログ plan_created
+  → ユーザーが計画を承認 / 却下 (監査ログ plan_approved / plan_rejected / plan_cancelled)
       → Assistive: 承認済みの手順を 1 つずつ実行
       → Autonomous: 承認済みの手順を順に実行し、失敗で停止
-  → agent_run (Rust 側で再検証 + 変更操作はネイティブ承認)
-  → 手順ごとに stdout / stderr / 終了コードを保存
+  → agent_run (Rust 側で再検証 + ポリシー判定 + 必要ならネイティブ承認)
+  → 手順ごとに stdout / stderr / 終了コードを保存し、監査ログ action_*
 ```
 
 モデルが返した計画は信頼しない。`src/lib/plan.ts` が Rust の `agent_run` と
 同じ許可リスト・引数規則で事前検証し、不正な手順を含む計画は表示しない。
 計画の承認は実行可否を決める UI 上の状態であり、Rust の検証とネイティブ承認を
 置き換えない。計画と実行結果はメモリ上にのみ保持する。
+
+## ポリシーと監査ログ
+
+```
+設定 > エージェント
+  → AgentPolicySettings が draft を編集
+  → agent_policy_set (Rust で正規化・検証)
+  → SQLite settings に agent_policy として保存
+  → 監査ログ policy_updated を記録
+
+agent_run / agent_snapshot
+  → SQLite からポリシーを読み直す
+      allow: そのまま実行
+      ask:   ネイティブ承認ダイアログ
+      block: CLI を起動せずエラー
+  → audit_log に action_run / action_blocked / action_cancelled を記録
+
+Audit タブ
+  → audit_log_list (新しい順、50 件ずつ)
+  → 保持期間・件数上限を超えた記録は次の記録時に削除
+```
+
+ポリシーは読み取り専用アクションだけ `allow` を選べる。変更アクションは
+`ask` / `block` のみで、ネイティブ承認を省略できない。監査ログは計画の
+作成・承認・却下・中止、操作の実行・拒否・キャンセル、ポリシー変更を
+ローカルの SQLite に保存し、外部へ送信しない。
 
 ## エージェント操作フロー
 
@@ -133,9 +159,9 @@ CSP の `connect-src` に外部オリジンを追加しないため、LLM への
 ```
 
 `agent_status` / `agent_snapshot` / `agent_run` のブリッジ、引数検証、
-ネイティブ承認ダイアログ、UI からの `/status`・`/snapshot` 実行、
+エージェントポリシー、ネイティブ承認ダイアログ、UI からの `/status`・`/snapshot` 実行、
 OpenAI 互換 API のチャット（ストリーミング・停止・接続テスト）、
-計画の生成・承認・実行までを実装している。スキル定義
+計画の生成・承認・実行、監査ログまでを実装している。スキル定義
 (`.agents/skills/*.json`) の実行と検証ループは未実装。
 
 ## ディレクトリ
@@ -145,12 +171,12 @@ OpenAI 互換 API のチャット（ストリーミング・停止・接続テ�
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, SettingsDialog, ...)
-├── lib/{api,demo,llm,plan,monaco}.ts
+├── components/ (AgentPanel, PlanPanel, AuditPanel, AgentPolicySettings, SettingsDialog, ...)
+├── lib/{api,demo,llm,plan,policy,monaco}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,llm,settings,app}.rs
+├── commands/{workspace,editor,agent,policy,llm,settings,app}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs

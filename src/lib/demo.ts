@@ -1,4 +1,5 @@
 import type {
+  AgentPolicy,
   AgentRunResult,
   AgentStatus,
   AppInfo,
@@ -12,6 +13,7 @@ import type {
   WorkspaceInfo,
 } from "../shared/types";
 import { DEFAULT_LLM_CONFIG } from "./llm";
+import { defaultAgentPolicy } from "./policy";
 
 /**
  * In-browser fallback used by `npm run dev` when the app is not running inside
@@ -354,6 +356,16 @@ export const demoApi = {
   async agentSnapshot(): Promise<AgentRunResult> {
     throw new Error(
       "ブラウザデモではスナップショットを取得できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async agentPolicy(): Promise<AgentPolicy> {
+    return defaultAgentPolicy();
+  },
+
+  async agentPolicySet(): Promise<AgentPolicy> {
+    throw new Error(
+      "ブラウザデモではエージェントポリシーを保存できません。`npm run tauri dev` で起動してください。",
     );
   },
 

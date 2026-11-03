@@ -64,9 +64,11 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **Markdown プレビュー** — `react-markdown` + `remark-gfm` による GFM プレビューを分割表示
 - **バージョン履歴** — 保存のたびに SQLite (WAL) へ記録。ファイルあたり最新 100 版を保持し、任意の版をプレビューしてエディタへ復元
 - **ファイル操作** — 新規作成、名前変更、削除。削除は `.right-stuff/trash/<timestamp>/` へ移動するソフトデリート
-- **エージェントパネル** — Chat / Plan / Runtime の 3 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan` コマンド
+- **エージェントパネル** — Chat / Plan / Audit / Runtime の 4 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan` コマンド
 - **LLM チャット** — OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続。ストリーミング表示、生成停止、接続テストに対応。API キーは OS キーチェーンに保存
 - **計画立案と承認** — 意図を入力すると LLM が Agent Desktop の許可アクションだけを使った実行計画を生成。手順ごとの引数検証、計画単位の承認、Assistive での個別実行、Autonomous での連続実行に対応。モデルが生成した不正なアクションや引数は実行前に拒否
+- **承認監査ログ** — 計画の作成・承認・却下・中止、操作の実行・拒否・キャンセル、ポリシー変更をローカルの SQLite に記録。Audit タブで新しい順に確認でき、保持期間（既定 30 日）を過ぎた記録と最新 5,000 件を超えた記録は自動で削除
+- **エージェントポリシー** — 読み取り専用アクションは「許可 / 確認 / 禁止」、変更アクションは「確認 / 禁止」から選択。変更アクションのネイティブ承認を省略することはできず、ポリシーで禁止した操作は Rust 側で実行前に拒否
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェントの操作を検索して実行
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
@@ -80,8 +82,8 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **エディタ**: Monaco Editor 0.52（`@monaco-editor/react`）
 - **状態管理**: Zustand 5（workspace / editor / agent）
 - **デスクトップ基盤**: Tauri 2.0（Rust 2024 edition）
-- **バックエンド**: Tauri コマンド（workspace / editor / agent / llm / settings / app）、パス検証、atomic write
-- **データベース**: SQLite（WAL、`rusqlite` bundled）。バージョン履歴と設定を保存
+- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / settings / app）、パス検証、atomic write
+- **データベース**: SQLite（WAL、`rusqlite` bundled）。バージョン履歴、設定、監査ログを保存
 - **ブリッジ**: `src/lib/api.ts` が `invoke` を薄くラップし、ブラウザでは `src/lib/demo.ts` にフォールバック
 - **パッケージ**: `tauri build`（`.app` / `.dmg`）
 
@@ -92,7 +94,8 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - ファイル操作は Rust 側で検証し、絶対パス、`..`、ワークスペース外への書き込みを拒否します
 - シンボリックリンクはファイルツリーに列挙しません
 - 書き込みは一時ファイル + `rename` の atomic write。削除はゴミ箱へ退避します
-- Agent Desktop の実行はアクション名の許可リスト、引数の長さ・形式の検証、変更操作のネイティブ承認ダイアログを通し、出力は 200,000 文字で打ち切ります
+- Agent Desktop の実行はアクション名の許可リスト、引数の長さ・形式の検証、エージェントポリシー、変更操作のネイティブ承認ダイアログを通し、出力は 200,000 文字で打ち切ります
+- 監査ログはローカルの SQLite にのみ保存し、外部へ送信しません。コマンド引数・出力・エラーの抜粋を含むため、バックアップや共有の際は注意してください
 - スナップショットはメモリ上にのみ保持し、SQLite へ永続化しません
 - API キーは OS キーチェーンにのみ保存し、SQLite・ログ・エラーメッセージには含めません。LLM への通信は Rust 側で行い、WebView から外部 API を直接呼びません
 - CSP は Tauri（本番 / 開発で別ポリシー）と Vercel の両方に `default-src 'self'` ベースで設定しています
@@ -245,6 +248,8 @@ vercel --prod          # 本番環境へデプロイ
 - [x] 計画単位の承認・却下、Assistive での手順別実行
 - [x] Autonomous での承認済み計画の連続実行（失敗時は停止）
 - [x] 実行結果（stdout / stderr / 終了コード）の手順ごとの表示
+- [x] 承認・実行・ポリシー変更の監査ログ（SQLite、保持期間 / 件数上限つき）
+- [x] エージェントポリシー設定 UI（読み取り専用は許可 / 確認 / 禁止、変更は確認 / 禁止）
 
 ### v0.1.1
 
@@ -275,7 +280,6 @@ vercel --prod          # 本番環境へデプロイ
 
 ### 次の候補
 
-- [ ] 承認履歴の監査ログとポリシー設定 UI
 - [ ] スキル実行と検証ループ
 - [ ] ターミナル (PTY)、Git、LSP / DAP
 - [ ] Anthropic 固有 API のアダプター
@@ -288,7 +292,8 @@ vercel --prod          # 本番環境へデプロイ
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
 - 計画の実行対象は Agent Desktop の許可アクションに限られます。エディタ・Git・ターミナルのスキル実行は未実装です
-- 計画と実行結果はメモリ上にのみ保持され、再起動すると失われます。変更操作は計画承認後も、実行時に OS のネイティブ承認ダイアログで確認します
+- 計画と実行結果はメモリ上にのみ保持され、再起動すると失われます。変更操作は計画承認後も、実行時に OS のネイティブ承認ダイアログで確認します（ポリシーで「許可」にすることはできません）
+- 監査ログはローカルの SQLite に保存され、保持期間の既定は 30 日、上限は 5,000 件です。監査ログを無効にしても既存の記録は残ります
 - スナップショットはメモリ上にのみ保持され、再起動すると失われます
 - ブラウザデモの変更は永続化されません
 - 同期・共同編集は提供していません
@@ -302,8 +307,10 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / タブ / Markdown 分割プレビュー
 │   ├── FileTree.tsx                # ワークスペースツリーとファイル操作
-│   ├── AgentPanel.tsx              # Chat / Plan / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Audit / Runtime
 │   ├── PlanPanel.tsx               # 計画の生成・承認・実行
+│   ├── AuditPanel.tsx              # 監査ログの一覧
+│   ├── AgentPolicySettings.tsx     # エージェントポリシー設定
 │   ├── CommandPalette.tsx          # ⌘K コマンドパレット
 │   ├── HistoryDialog.tsx           # バージョン履歴
 │   ├── UnsavedChangesDialog.tsx    # 未保存変更の保存 / 破棄 / キャンセル
@@ -313,14 +320,15 @@ src/
 │   ├── demo.ts                     # ブラウザ用インメモリワークスペース
 │   ├── llm.ts                      # LLM プロンプト・リクエスト変換
 │   ├── plan.ts                     # 計画プロンプト・JSON 解析・引数検証
+│   ├── policy.ts                   # ポリシー既定値・表示ラベル
 │   └── monaco.ts                   # Monaco テーマ・ワーカー設定
 ├── shared/types.ts                 # フロントエンド / バックエンド共有型
 └── stores/                         # Zustand (workspace / editor / agent)
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / settings / app
-│   ├── db.rs                       # SQLite (WAL) 履歴・設定
+│   ├── commands/                   # workspace / editor / agent / policy / settings / app
+│   ├── db.rs                       # SQLite (WAL) 履歴・設定・監査ログ
 │   ├── paths.rs                    # パス検証
 │   ├── state.rs                    # AppState
 │   └── lib.rs                      # コマンド登録

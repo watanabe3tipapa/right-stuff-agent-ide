@@ -2,9 +2,12 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use serde::Serialize;
+use tauri::State;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
+use crate::commands::policy::{self, AgentAuditMeta};
 use crate::error::{AppError, AppResult};
+use crate::state::AppState;
 
 const MAX_OUTPUT_CHARS: usize = 200_000;
 const MAX_ARG_COUNT: usize = 12;
@@ -12,7 +15,7 @@ const MAX_ARG_CHARS: usize = 16_384;
 const MAX_TOTAL_ARG_CHARS: usize = 32_768;
 const DIALOG_ARG_PREVIEW_CHARS: usize = 240;
 
-const ALLOWED_ACTIONS: &[&str] = &[
+pub(crate) const ALLOWED_ACTIONS: &[&str] = &[
     "snapshot",
     "click",
     "type",
@@ -36,7 +39,7 @@ const ALLOWED_ACTIONS: &[&str] = &[
 
 /// Actions that only read state and never mutate the desktop. Everything else
 /// must be approved by the user through a native dialog before it runs.
-const READ_ONLY_ACTIONS: &[&str] = &[
+pub(crate) const READ_ONLY_ACTIONS: &[&str] = &[
     "snapshot",
     "list-apps",
     "list-windows",
@@ -189,8 +192,12 @@ fn validate_app_name(name: &str) -> AppResult<()> {
     Ok(())
 }
 
-fn requires_approval(action: &str) -> bool {
-    !READ_ONLY_ACTIONS.contains(&action)
+pub(crate) fn default_decision(action: &str) -> &'static str {
+    if READ_ONLY_ACTIONS.contains(&action) {
+        "allow"
+    } else {
+        "ask"
+    }
 }
 
 fn approval_message(args: &[String]) -> String {
@@ -226,6 +233,19 @@ fn confirm_action(app: &tauri::AppHandle, args: &[String]) -> bool {
             "キャンセル".to_string(),
         ))
         .blocking_show()
+}
+
+fn log_action(
+    state: &State<'_, AppState>,
+    policy: &policy::AgentPolicy,
+    meta: Option<&AgentAuditMeta>,
+    args: &[String],
+    outcome: &str,
+    detail: Option<&str>,
+) {
+    if let Ok(conn) = state.db.lock() {
+        let _ = policy::record_action(&conn, policy, meta, args, outcome, detail);
+    }
 }
 
 fn execute(binary: &PathBuf, args: &[String]) -> AppResult<AgentRunResult> {
@@ -287,12 +307,51 @@ pub async fn agent_status() -> AgentStatus {
 }
 
 #[tauri::command]
-pub async fn agent_run(app: tauri::AppHandle, args: Vec<String>) -> AppResult<AgentRunResult> {
+pub async fn agent_run(
+    app: tauri::AppHandle,
+    args: Vec<String>,
+    audit: Option<AgentAuditMeta>,
+    state: State<'_, AppState>,
+) -> AppResult<AgentRunResult> {
     validate_args(&args)?;
 
-    let action = args[0].as_str();
-    if requires_approval(action) && !confirm_action(&app, &args) {
-        return Err(AppError::Other("操作はキャンセルされました".into()));
+    let action = args[0].clone();
+    let policy = {
+        let conn = state
+            .db
+            .lock()
+            .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
+        policy::load_policy(&conn)?
+    };
+
+    match policy::decision(&policy, &action) {
+        "block" => {
+            log_action(
+                &state,
+                &policy,
+                audit.as_ref(),
+                &args,
+                "blocked",
+                Some("ポリシーによりブロックされました"),
+            );
+            return Err(AppError::Other(format!(
+                "ポリシーにより {action} の実行はブロックされています"
+            )));
+        }
+        "ask" => {
+            if !confirm_action(&app, &args) {
+                log_action(
+                    &state,
+                    &policy,
+                    audit.as_ref(),
+                    &args,
+                    "cancelled",
+                    Some("ユーザーが承認をキャンセルしました"),
+                );
+                return Err(AppError::Other("操作はキャンセルされました".into()));
+            }
+        }
+        _ => {}
     }
 
     let binary = find_binary().ok_or_else(|| {
@@ -302,17 +361,52 @@ pub async fn agent_run(app: tauri::AppHandle, args: Vec<String>) -> AppResult<Ag
         )
     })?;
 
-    execute(&binary, &args)
+    let result = execute(&binary, &args);
+    match &result {
+        Ok(output) => {
+            let outcome = if output.ok { "ok" } else { "error" };
+            let detail = if output.ok {
+                None
+            } else {
+                Some(output.stderr.trim())
+            };
+            log_action(
+                &state,
+                &policy,
+                audit.as_ref(),
+                &args,
+                outcome,
+                detail.filter(|value| !value.is_empty()),
+            );
+        }
+        Err(error) => {
+            log_action(
+                &state,
+                &policy,
+                audit.as_ref(),
+                &args,
+                "error",
+                Some(&error.to_string()),
+            );
+        }
+    }
+
+    result
 }
 
 #[tauri::command]
-pub async fn agent_snapshot(app: Option<String>) -> AppResult<AgentRunResult> {
-    let binary = find_binary().ok_or_else(|| {
-        AppError::Other(
-            "Agent Desktop CLI が見つかりません。AGENT_DESKTOP_BIN 環境変数でパスを指定できます。"
-                .into(),
-        )
-    })?;
+pub async fn agent_snapshot(
+    app_handle: tauri::AppHandle,
+    app: Option<String>,
+    state: State<'_, AppState>,
+) -> AppResult<AgentRunResult> {
+    let policy = {
+        let conn = state
+            .db
+            .lock()
+            .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
+        policy::load_policy(&conn)?
+    };
 
     let mut args = vec!["snapshot".to_string(), "--json".to_string()];
     if let Some(app) = app.filter(|value| !value.trim().is_empty()) {
@@ -320,7 +414,74 @@ pub async fn agent_snapshot(app: Option<String>) -> AppResult<AgentRunResult> {
         args.push(app);
     }
 
-    execute(&binary, &args)
+    match policy::decision(&policy, "snapshot") {
+        "block" => {
+            log_action(
+                &state,
+                &policy,
+                None,
+                &args,
+                "blocked",
+                Some("ポリシーによりブロックされました"),
+            );
+            return Err(AppError::Other(
+                "ポリシーにより snapshot の実行はブロックされています".into(),
+            ));
+        }
+        "ask" => {
+            if !confirm_action(&app_handle, &args) {
+                log_action(
+                    &state,
+                    &policy,
+                    None,
+                    &args,
+                    "cancelled",
+                    Some("ユーザーが承認をキャンセルしました"),
+                );
+                return Err(AppError::Other("操作はキャンセルされました".into()));
+            }
+        }
+        _ => {}
+    }
+
+    let binary = find_binary().ok_or_else(|| {
+        AppError::Other(
+            "Agent Desktop CLI が見つかりません。AGENT_DESKTOP_BIN 環境変数でパスを指定できます。"
+                .into(),
+        )
+    })?;
+
+    let result = execute(&binary, &args);
+    match &result {
+        Ok(output) => {
+            let outcome = if output.ok { "ok" } else { "error" };
+            let detail = if output.ok {
+                None
+            } else {
+                Some(output.stderr.trim())
+            };
+            log_action(
+                &state,
+                &policy,
+                None,
+                &args,
+                outcome,
+                detail.filter(|value| !value.is_empty()),
+            );
+        }
+        Err(error) => {
+            log_action(
+                &state,
+                &policy,
+                None,
+                &args,
+                "error",
+                Some(&error.to_string()),
+            );
+        }
+    }
+
+    result
 }
 
 #[cfg(test)]
@@ -381,17 +542,18 @@ mod tests {
     }
 
     #[test]
-    fn read_only_actions_do_not_require_approval() {
+    fn default_policy_allows_reads_and_asks_for_writes() {
         for action in READ_ONLY_ACTIONS {
-            assert!(!requires_approval(action), "{action} should be read-only");
+            assert_eq!(
+                default_decision(action),
+                "allow",
+                "{action} should be read-only"
+            );
         }
-    }
-
-    #[test]
-    fn mutating_actions_require_approval() {
         for action in ["click", "type", "launch", "close-app", "clipboard-set"] {
-            assert!(
-                requires_approval(action),
+            assert_eq!(
+                default_decision(action),
+                "ask",
                 "{action} should require approval"
             );
         }

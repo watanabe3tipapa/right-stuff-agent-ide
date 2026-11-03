@@ -173,8 +173,16 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       run: () => setPanelTab("plan"),
     },
     {
+      id: "agent:audit",
+      label: "監査ログを開く",
+      hint: "計画の承認と操作の実行履歴",
+      icon: "history",
+      keywords: "audit log history 監査 履歴",
+      run: () => setPanelTab("audit"),
+    },
+    {
       id: "agent:settings",
-      label: "LLM 設定を開く",
+      label: "設定を開く",
       hint: "プロバイダー・モデル・API キー",
       icon: "gear",
       keywords: "llm openai ollama model api key settings",

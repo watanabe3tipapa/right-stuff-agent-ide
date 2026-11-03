@@ -38,7 +38,21 @@ pub fn init(conn: &Connection) -> AppResult<()> {
          CREATE TABLE IF NOT EXISTS settings (
              key   TEXT PRIMARY KEY,
              value TEXT NOT NULL
-         );",
+         );
+         CREATE TABLE IF NOT EXISTS audit_log (
+             id         INTEGER PRIMARY KEY AUTOINCREMENT,
+             created_at INTEGER NOT NULL,
+             kind       TEXT    NOT NULL,
+             mode       TEXT,
+             plan_id    TEXT,
+             step_id    TEXT,
+             title      TEXT,
+             command    TEXT,
+             outcome    TEXT,
+             detail     TEXT
+         );
+         CREATE INDEX IF NOT EXISTS idx_audit_log_created
+             ON audit_log(id DESC);",
     )?;
     Ok(())
 }

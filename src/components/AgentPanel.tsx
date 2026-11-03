@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { AgentMode, ChatMessage } from "../shared/types";
 import { useAgentStore } from "../stores/agentStore";
+import { AuditPanel } from "./AuditPanel";
 import { Icon } from "./Icon";
 import { PlanPanel } from "./PlanPanel";
 
@@ -340,6 +341,13 @@ export function AgentPanel() {
               </button>
               <button
                 type="button"
+                className={tab === "audit" ? "active" : ""}
+                onClick={() => setTab("audit")}
+              >
+                Audit
+              </button>
+              <button
+                type="button"
                 className={tab === "runtime" ? "active" : ""}
                 onClick={() => setTab("runtime")}
               >
@@ -368,6 +376,8 @@ export function AgentPanel() {
         <ChatView />
       ) : tab === "plan" ? (
         <PlanPanel />
+      ) : tab === "audit" ? (
+        <AuditPanel />
       ) : (
         <RuntimeView />
       )}

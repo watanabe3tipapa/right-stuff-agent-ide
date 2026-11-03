@@ -9,6 +9,7 @@ import type {
 import { api, errorMessage } from "../lib/api";
 import { DEFAULT_LLM_CONFIG, PROVIDER_ORDER, PROVIDER_PRESETS } from "../lib/llm";
 import { useAgentStore } from "../stores/agentStore";
+import { AgentPolicySettings } from "./AgentPolicySettings";
 import { Icon } from "./Icon";
 
 function configFromSettings(settings: LlmSettings): LlmConfig {
@@ -36,6 +37,7 @@ export function SettingsDialog() {
   const closeSettings = useAgentStore((state) => state.closeSettings);
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
 
+  const [section, setSection] = useState<"llm" | "agent">("llm");
   const [config, setConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
   const [configured, setConfigured] = useState(false);
   const [savedConfig, setSavedConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
@@ -227,9 +229,9 @@ export function SettingsDialog() {
       >
         <div className="modal-head">
           <div>
-            <h3 id="llm-settings-title">LLM 設定</h3>
+            <h3 id="llm-settings-title">設定</h3>
             <p className="settings-sub">
-              OpenAI 互換 API に接続します。設定はこの端末内に保存されます。
+              LLM 接続とエージェントの承認ポリシーを管理します。設定はこの端末内に保存されます。
             </p>
           </div>
           <button
@@ -242,12 +244,37 @@ export function SettingsDialog() {
           </button>
         </div>
 
-        {demo && (
+        <div className="settings-tabs" role="tablist" aria-label="設定セクション">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={section === "llm"}
+            className={section === "llm" ? "active" : ""}
+            onClick={() => setSection("llm")}
+          >
+            LLM
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={section === "agent"}
+            className={section === "agent" ? "active" : ""}
+            onClick={() => setSection("agent")}
+          >
+            エージェント
+          </button>
+        </div>
+
+        {demo && section === "llm" && (
           <div className="dialog-note warn" role="note">
             ブラウザデモでは LLM 設定を保存できません。<code>npm run tauri dev</code> で Tauri 版を起動してください。
           </div>
         )}
 
+        {section === "agent" && <AgentPolicySettings />}
+
+        {section === "llm" && (
+          <>
         <div className="settings-body">
           <label className="field-label" htmlFor="llm-provider">
             プロバイダー
@@ -488,6 +515,8 @@ export function SettingsDialog() {
             {saving ? "保存中…" : "保存"}
           </button>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

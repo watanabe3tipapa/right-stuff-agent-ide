@@ -59,7 +59,7 @@ interface FileEntry {
 | --- | --- | --- |
 | `agent_status` | — | `AgentStatus` |
 | `agent_snapshot` | `{ app?: string }` | `AgentRunResult` |
-| `agent_run` | `{ args: string[] }` | `AgentRunResult` |
+| `agent_run` | `{ args: string[], audit?: AgentAuditMeta }` | `AgentRunResult` |
 
 ```ts
 interface AgentStatus {
@@ -100,7 +100,9 @@ session, trace, --version, --help
 
 引数は個数・長さ・形式を検証する。`launch` / `close-app` はアプリ名 1 つだけを許可し、パス区切り・`..`・先頭 `-` を拒否する。`type` / `set-value` / `clipboard-set` は内容を必須にする。
 
-読み取り専用アクション（`snapshot`, `list-apps`, `list-windows`, `list-notifications`, `--version`, `--help`）以外は、実行前にネイティブ承認ダイアログを表示する。キャンセルされた場合はエラーを返し、CLI は起動しない。
+実行前の扱いはエージェントポリシーで決まる。既定では読み取り専用アクション（`snapshot`, `list-apps`, `list-windows`, `list-notifications`, `--version`, `--help`）を許可し、それ以外はネイティブ承認ダイアログを表示する。ポリシーが `ask` の場合は承認、`block` の場合は CLI を起動せずエラーを返す。変更アクションを `allow` にすることはできない。
+
+`agent_run` の `audit` を指定すると、実行結果を計画の手順（`planId` / `stepId`）へ紐付けて監査ログに記録する。
 
 出力は 200,000 文字で打ち切る。
 
@@ -141,7 +143,71 @@ interface AgentPlan {
 - 読み取り専用アクション以外は `risk: "write"` とし、実行時に `agent_run` の
   ネイティブ承認ダイアログを通す。
 - 計画は `draft` → `approved` → `running` → `completed` / `failed` と遷移する。
-  `cancelled` は却下・中止を表す。計画自体は永続化しない。
+  `cancelled` は却下・中止を表す。計画本体は永続化しないが、作成・承認・却下・中止は監査ログに記録する。
+
+## エージェントポリシーと監査ログ
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `agent_policy_get` | — | `AgentPolicy` |
+| `agent_policy_set` | `{ policy }` | `AgentPolicy` |
+| `audit_log_add` | `{ input: AuditInput }` | — |
+| `audit_log_list` | `{ limit?, offset? }` | `AuditEntry[]` |
+
+```ts
+type AgentPolicyDecision = "allow" | "ask" | "block";
+
+interface AgentPolicy {
+  auditEnabled: boolean;
+  auditRetentionDays: number;             // 1 - 365
+  actions: Record<string, AgentPolicyDecision>;
+}
+
+interface AgentAuditMeta {
+  planId?: string;
+  stepId?: string;
+  title?: string;
+  mode?: "passive" | "assistive" | "autonomous";
+}
+
+type AuditKind =
+  | "plan_created"
+  | "plan_approved"
+  | "plan_rejected"
+  | "plan_cancelled"
+  | "action_run"
+  | "action_blocked"
+  | "action_cancelled"
+  | "policy_updated";
+
+type AuditOutcome = "ok" | "error" | "blocked" | "cancelled";
+
+interface AuditInput {
+  kind: AuditKind;
+  mode?: AgentMode | null;
+  planId?: string | null;
+  stepId?: string | null;
+  title?: string | null;
+  command?: string[] | null;
+  outcome?: AuditOutcome | null;
+  detail?: string | null;
+}
+
+interface AuditEntry extends Omit<AuditInput, "command"> {
+  id: number;
+  createdAt: number;              // Unix ミリ秒
+  command: string[] | null;
+}
+```
+
+- ポリシーは SQLite の `settings` テーブルに `agent_policy` として保存する。
+- 既定値は読み取り専用アクションが `allow`、変更アクションが `ask`。未知のアクションや、変更アクションに対する `allow` は `agent_policy_set` が拒否する。
+- `agent_run` / `agent_snapshot` は実行のたびに SQLite からポリシーを読み直す。`block` は CLI 起動前に拒否し、`ask` はネイティブ承認ダイアログを表示する。
+- `auditEnabled` が `false` の間は新しい記録を追加しない。無効化しても既存の記録は削除しない。
+- 記録時に `auditRetentionDays` を過ぎた行と、最新 5,000 件を超えた行を削除する。
+- `audit_log_list` の `limit` は 1〜200（既定 50）、`offset` は 0 以上（既定 0）。新しい順に返す。
+- 監査ログはローカルの SQLite にのみ保存し、外部へ送信しない。API キーは記録しない。
+- 計画イベントはフロントエンドが `audit_log_add` で記録し、操作の実行・拒否・キャンセルは Rust 側の `agent_run` / `agent_snapshot` が記録する。
 
 ## 設定
 
@@ -150,7 +216,7 @@ interface AgentPlan {
 | `settings_get` | `{ key }` | `string \| null` |
 | `settings_set` | `{ key, value }` | — |
 
-現在は `last_workspace` と LLM 設定 (`llm_config`) を利用する。API キーは SQLite に保存せず、OS キーチェーンにのみ保存する。
+現在は `last_workspace`、LLM 設定 (`llm_config`)、エージェントポリシー (`agent_policy`) を利用する。API キーは SQLite に保存せず、OS キーチェーンにのみ保存する。
 
 ## LLM
 

@@ -1,11 +1,15 @@
 import { create } from "zustand";
 
 import type {
+  AgentAuditMeta,
   AgentMode,
   AgentPanelTab,
   AgentPlan,
+  AgentPolicy,
   AgentRunResult,
   AgentStatus,
+  AuditEntry,
+  AuditInput,
   ChatMessage,
   LlmSettings,
 } from "../shared/types";
@@ -65,6 +69,13 @@ interface AgentState {
   planRaw: string;
   planError: string | null;
   executingStepId: string | null;
+  policy: AgentPolicy | null;
+  policyLoading: boolean;
+  policyError: string | null;
+  audit: AuditEntry[];
+  auditLoading: boolean;
+  auditError: string | null;
+  auditHasMore: boolean;
   setMode: (mode: AgentMode) => void;
   setPanelTab: (tab: AgentPanelTab) => void;
   refreshStatus: () => Promise<void>;
@@ -82,6 +93,10 @@ interface AgentState {
   resetPlan: () => void;
   runPlanStep: (stepId: string) => Promise<void>;
   executePlan: () => Promise<void>;
+  refreshPolicy: () => Promise<void>;
+  savePolicy: (policy: AgentPolicy) => Promise<AgentPolicy>;
+  refreshAudit: () => Promise<void>;
+  loadMoreAudit: () => Promise<void>;
 }
 
 function appendLocal(
@@ -95,6 +110,12 @@ function appendLocal(
       message("agent", text, { ...options, local: true }),
     ],
   }));
+}
+
+function logAudit(input: AuditInput) {
+  void api.auditLogAdd(input).catch(() => {
+    // Audit writes are best-effort; never block the agent action on them.
+  });
 }
 
 export const useAgentStore = create<AgentState>((set, get) => ({
@@ -120,6 +141,13 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   planRaw: "",
   planError: null,
   executingStepId: null,
+  policy: null,
+  policyLoading: false,
+  policyError: null,
+  audit: [],
+  auditLoading: false,
+  auditError: null,
+  auditHasMore: false,
 
   setMode(mode) {
     if (typeof window !== "undefined") {
@@ -494,6 +522,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       };
 
       set({ plan, planLoading: false, planError: null, planRaw: "" });
+      logAudit({
+        kind: "plan_created",
+        mode: get().mode,
+        planId: plan.id,
+        title: plan.goal,
+        outcome: "ok",
+        detail: `${plan.steps.length} 手順`,
+      });
       appendLocal(
         set,
         `計画を作成しました (${plan.steps.length} 手順)。Plan タブで内容を確認し、承認してください。`,
@@ -524,12 +560,21 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         ),
       },
     });
+    logAudit({
+      kind: "plan_approved",
+      mode: get().mode,
+      planId: plan.id,
+      title: plan.goal,
+      outcome: "ok",
+      detail: `${plan.steps.length} 手順を承認`,
+    });
     appendLocal(set, "計画を承認しました。");
   },
 
   rejectPlan() {
     const plan = get().plan;
     if (!plan || plan.status === "cancelled") return;
+    const kind = plan.status === "draft" ? "plan_rejected" : "plan_cancelled";
     set({
       plan: {
         ...plan,
@@ -540,6 +585,13 @@ export const useAgentStore = create<AgentState>((set, get) => ({
             : step,
         ),
       },
+    });
+    logAudit({
+      kind,
+      mode: get().mode,
+      planId: plan.id,
+      title: plan.goal,
+      outcome: "cancelled",
     });
     appendLocal(set, "計画を却下しました。");
   },
@@ -570,8 +622,15 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       },
     });
 
+    const audit: AgentAuditMeta = {
+      planId: plan.id,
+      stepId: step.id,
+      title: step.title,
+      mode,
+    };
+
     try {
-      const result = await api.agentRun(step.command);
+      const result = await api.agentRun(step.command, audit);
       const output = [result.stdout.trim(), result.stderr.trim()]
         .filter(Boolean)
         .join("\n")
@@ -672,6 +731,51 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         },
       };
     });
+  },
+
+  async refreshPolicy() {
+    set({ policyLoading: true, policyError: null });
+    try {
+      const policy = await api.agentPolicy();
+      set({ policy, policyLoading: false });
+    } catch (error) {
+      set({ policyLoading: false, policyError: errorMessage(error) });
+    }
+  },
+
+  async savePolicy(policy) {
+    const saved = await api.agentPolicySet(policy);
+    set({ policy: saved, policyError: null });
+    return saved;
+  },
+
+  async refreshAudit() {
+    set({ auditLoading: true, auditError: null });
+    try {
+      const audit = await api.auditLog(50, 0);
+      set({
+        audit,
+        auditLoading: false,
+        auditHasMore: audit.length === 50,
+      });
+    } catch (error) {
+      set({ auditLoading: false, auditError: errorMessage(error) });
+    }
+  },
+
+  async loadMoreAudit() {
+    if (get().auditLoading || !get().auditHasMore) return;
+    set({ auditLoading: true, auditError: null });
+    try {
+      const page = await api.auditLog(50, get().audit.length);
+      set((state) => ({
+        audit: [...state.audit, ...page],
+        auditLoading: false,
+        auditHasMore: page.length === 50,
+      }));
+    } catch (error) {
+      set({ auditLoading: false, auditError: errorMessage(error) });
+    }
   },
 
   clearMessages() {

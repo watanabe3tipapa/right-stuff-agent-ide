@@ -166,10 +166,10 @@ fn truncate(value: &str, limit: usize) -> String {
 }
 
 fn validate_optional(value: &Option<String>, limit: usize, field: &str) -> AppResult<()> {
-    if let Some(value) = value {
-        if value.chars().count() > limit {
-            return Err(AppError::Other(format!("{field} が長すぎます。")));
-        }
+    if let Some(value) = value
+        && value.chars().count() > limit
+    {
+        return Err(AppError::Other(format!("{field} が長すぎます。")));
     }
     Ok(())
 }
@@ -178,15 +178,15 @@ fn validate_audit_input(input: &AuditInput) -> AppResult<()> {
     if !AUDIT_KINDS.contains(&input.kind.as_str()) {
         return Err(AppError::Other("監査ログの種別が不正です。".into()));
     }
-    if let Some(outcome) = input.outcome.as_deref() {
-        if !AUDIT_OUTCOMES.contains(&outcome) {
-            return Err(AppError::Other("監査ログの結果が不正です。".into()));
-        }
+    if let Some(outcome) = input.outcome.as_deref()
+        && !AUDIT_OUTCOMES.contains(&outcome)
+    {
+        return Err(AppError::Other("監査ログの結果が不正です。".into()));
     }
-    if let Some(mode) = input.mode.as_deref() {
-        if !MODES.contains(&mode) {
-            return Err(AppError::Other("監査ログのモードが不正です。".into()));
-        }
+    if let Some(mode) = input.mode.as_deref()
+        && !MODES.contains(&mode)
+    {
+        return Err(AppError::Other("監査ログのモードが不正です。".into()));
     }
     validate_optional(&input.plan_id, 200, "プラン ID")?;
     validate_optional(&input.step_id, 200, "手順 ID")?;
@@ -452,11 +452,16 @@ mod tests {
 
     #[test]
     fn rejects_invalid_retention() {
-        let mut policy = AgentPolicy::default();
-        policy.audit_retention_days = 0;
-        assert!(normalize_policy(policy.clone()).is_err());
-        policy.audit_retention_days = 366;
-        assert!(normalize_policy(policy).is_err());
+        let zero = AgentPolicy {
+            audit_retention_days: 0,
+            ..Default::default()
+        };
+        assert!(normalize_policy(zero).is_err());
+        let too_long = AgentPolicy {
+            audit_retention_days: 366,
+            ..Default::default()
+        };
+        assert!(normalize_policy(too_long).is_err());
     }
 
     #[test]
@@ -482,8 +487,10 @@ mod tests {
     fn disabled_audit_records_nothing() {
         let conn = Connection::open_in_memory().unwrap();
         db::init(&conn).unwrap();
-        let mut policy = AgentPolicy::default();
-        policy.audit_enabled = false;
+        let policy = AgentPolicy {
+            audit_enabled: false,
+            ..Default::default()
+        };
 
         record_action(&conn, &policy, None, &["snapshot".into()], "ok", None).unwrap();
         assert!(list_audit(&conn, Some(10), Some(0)).unwrap().is_empty());

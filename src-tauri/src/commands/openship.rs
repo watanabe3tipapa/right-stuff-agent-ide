@@ -157,7 +157,9 @@ fn validate_base_url(raw: &str) -> AppResult<String> {
         return Ok(String::new());
     }
     if trimmed.chars().count() > MAX_BASE_URL_CHARS {
-        return Err(AppError::Other("Openship の Base URL が長すぎます。".into()));
+        return Err(AppError::Other(
+            "Openship の Base URL が長すぎます。".into(),
+        ));
     }
     if trimmed
         .chars()
@@ -250,7 +252,10 @@ fn validate_branch(raw: &str) -> AppResult<String> {
         || trimmed.chars().any(|ch| {
             ch.is_control()
                 || ch.is_whitespace()
-                || matches!(ch, '\\' | ':' | '?' | '*' | '[' | ']' | '~' | '^' | '@' | '{' | '}')
+                || matches!(
+                    ch,
+                    '\\' | ':' | '?' | '*' | '[' | ']' | '~' | '^' | '@' | '{' | '}'
+                )
         })
     {
         return Err(AppError::Other("ブランチ名が不正です。".into()));
@@ -328,7 +333,9 @@ fn read_token() -> AppResult<Option<String>> {
 fn validate_token(token: &str) -> AppResult<&str> {
     let trimmed = token.trim();
     if trimmed.is_empty() {
-        return Err(AppError::Other("Openship トークンを入力してください。".into()));
+        return Err(AppError::Other(
+            "Openship トークンを入力してください。".into(),
+        ));
     }
     if trimmed.chars().count() > MAX_TOKEN_CHARS {
         return Err(AppError::Other("Openship トークンが長すぎます。".into()));
@@ -368,7 +375,11 @@ fn detect_cli(config: &OpenShipConfig) -> Option<PathBuf> {
     which("openship")
 }
 
-fn run_cli(binary: &Path, cwd: Option<&Path>, args: &[&str]) -> std::io::Result<std::process::Output> {
+fn run_cli(
+    binary: &Path,
+    cwd: Option<&Path>,
+    args: &[&str],
+) -> std::io::Result<std::process::Output> {
     let mut command = Command::new(binary);
     command.args(args);
     if let Some(cwd) = cwd {
@@ -409,10 +420,10 @@ fn api_request(
     if let Some(token) = token {
         request = request.bearer_auth(token);
     }
-    if !organization_id.is_empty() {
-        if let Ok(value) = HeaderValue::from_str(organization_id) {
-            request = request.header("X-Organization-Id", value);
-        }
+    if !organization_id.is_empty()
+        && let Ok(value) = HeaderValue::from_str(organization_id)
+    {
+        request = request.header("X-Organization-Id", value);
     }
     request
 }
@@ -472,19 +483,17 @@ fn select_array<'a>(value: &'a Value, keys: &[&str]) -> Option<&'a Vec<Value>> {
     if let Some(array) = value.as_array() {
         return Some(array);
     }
-    keys.iter().find_map(|key| {
-        value
-            .get(*key)
-            .and_then(Value::as_array)
-    })
+    keys.iter()
+        .find_map(|key| value.get(*key).and_then(Value::as_array))
 }
 
 fn parse_project(value: &Value) -> Option<OpenShipProject> {
     let id = text_field(value, &["id", "_id", "projectId", "project_id", "uuid"])
         .or_else(|| text_field(value, &["name", "slug"]))?;
-    if !id.chars().all(|ch| {
-        ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | ':')
-    }) {
+    if !id
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | ':'))
+    {
         return None;
     }
     let name = text_field(value, &["name", "title", "slug"]).unwrap_or_else(|| id.clone());
@@ -496,20 +505,28 @@ fn parse_project(value: &Value) -> Option<OpenShipProject> {
 }
 
 fn parse_deployment(value: &Value) -> Option<OpenShipDeployment> {
-    let id = text_field(value, &["id", "_id", "deploymentId", "deployment_id", "uuid"])?;
-    if !id.chars().all(|ch| {
-        ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | ':')
-    }) {
+    let id = text_field(
+        value,
+        &["id", "_id", "deploymentId", "deployment_id", "uuid"],
+    )?;
+    if !id
+        .chars()
+        .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | ':'))
+    {
         return None;
     }
     Some(OpenShipDeployment {
         id,
         project_id: text_field(value, &["projectId", "project_id", "project"]),
-        status: text_field(value, &["status", "state", "phase"]).unwrap_or_else(|| "unknown".into()),
+        status: text_field(value, &["status", "state", "phase"])
+            .unwrap_or_else(|| "unknown".into()),
         environment: text_field(value, &["environment", "env"]),
         branch: text_field(value, &["branch", "ref"]),
         url: text_field(value, &["url", "deploymentUrl", "domain", "previewUrl"]),
-        created_at: timestamp_field(value, &["createdAt", "created_at", "timestamp", "deployedAt"]),
+        created_at: timestamp_field(
+            value,
+            &["createdAt", "created_at", "timestamp", "deployedAt"],
+        ),
         commit: text_field(value, &["commit", "sha", "commitSha", "commit_sha"]),
     })
 }
@@ -573,19 +590,13 @@ fn require_server(config: &OpenShipConfig, token: Option<&str>) -> AppResult<(St
     }
     let Some(token) = token else {
         return Err(AppError::Other(
-            "Openship のトークンが設定されていません。設定画面から PAT を登録してください。"
-                .into(),
+            "Openship のトークンが設定されていません。設定画面から PAT を登録してください。".into(),
         ));
     };
     Ok((config.base_url.clone(), token.to_string()))
 }
 
-fn audit(
-    state: &State<'_, AppState>,
-    outcome: &str,
-    command: Vec<String>,
-    detail: Option<String>,
-) {
+fn audit(state: &State<'_, AppState>, outcome: &str, command: Vec<String>, detail: Option<String>) {
     let kind = match outcome {
         "blocked" => "action_blocked",
         "cancelled" => "action_cancelled",
@@ -619,10 +630,7 @@ fn confirm(app: &tauri::AppHandle, title: &str, message: String) -> bool {
         .blocking_show()
 }
 
-fn cli_deploy(
-    config: &OpenShipConfig,
-    root: &Path,
-) -> AppResult<OpenShipDeployResult> {
+fn cli_deploy(config: &OpenShipConfig, root: &Path) -> AppResult<OpenShipDeployResult> {
     let Some(binary) = detect_cli(config) else {
         return Err(AppError::Other(
             "Openship CLI が見つかりません。CLI をインストールするか、Base URL とトークンを設定してください。".into(),
@@ -639,11 +647,7 @@ fn cli_deploy(
     let deployment = serde_json::from_str::<Value>(&stdout)
         .ok()
         .and_then(|value| {
-            parse_deployment(&value).or_else(|| {
-                value
-                    .get("deployment")
-                    .and_then(parse_deployment)
-            })
+            parse_deployment(&value).or_else(|| value.get("deployment").and_then(parse_deployment))
         });
 
     Ok(OpenShipDeployResult {
@@ -686,11 +690,7 @@ async fn rest_deploy(
     .json(&body)
     .send()
     .await
-    .map_err(|error| {
-        AppError::Other(format!(
-            "Openship API に接続できませんでした: {error}"
-        ))
-    })?;
+    .map_err(|error| AppError::Other(format!("Openship API に接続できませんでした: {error}")))?;
 
     let status = response.status();
     let bytes = read_body_limited(response, MAX_HTTP_BODY_BYTES).await;
@@ -782,7 +782,7 @@ pub async fn openship_status(state: State<'_, AppState>) -> AppResult<OpenShipSt
     let server_configured = !base_url.is_empty();
 
     let mut server_reachable = false;
-    let mut server_message: String;
+    let server_message: String;
 
     if let Some(binary) = cli.as_deref() {
         match run_cli(binary, None, &["status"]) {
@@ -811,9 +811,15 @@ pub async fn openship_status(state: State<'_, AppState>) -> AppResult<OpenShipSt
     } else if server_configured {
         let url = format!("{base_url}/api/health");
         let token_value = token.as_deref();
-        match api_request(&state, Method::GET, &url, token_value, &config.organization_id)
-            .send()
-            .await
+        match api_request(
+            &state,
+            Method::GET,
+            &url,
+            token_value,
+            &config.organization_id,
+        )
+        .send()
+        .await
         {
             Ok(response) => {
                 server_reachable = response.status().is_success();
@@ -883,8 +889,9 @@ pub async fn openship_projects(state: State<'_, AppState>) -> AppResult<Vec<Open
         )));
     }
 
-    let value: Value = serde_json::from_str(&text)
-        .map_err(|_| AppError::Other("Openship のプロジェクト一覧を解析できませんでした。".into()))?;
+    let value: Value = serde_json::from_str(&text).map_err(|_| {
+        AppError::Other("Openship のプロジェクト一覧を解析できませんでした。".into())
+    })?;
     Ok(parse_projects(&value))
 }
 
@@ -969,7 +976,12 @@ pub async fn openship_deploy(
         format!("{target}\n\n本番環境へデプロイします。内容を確認して承認してください。"),
     );
     if !confirmed {
-        audit(&state, "cancelled", vec!["openship".into(), "deploy".into()], Some("ユーザーが承認をキャンセルしました".into()));
+        audit(
+            &state,
+            "cancelled",
+            vec!["openship".into(), "deploy".into()],
+            Some("ユーザーが承認をキャンセルしました".into()),
+        );
         return Err(AppError::Other("操作はキャンセルされました".into()));
     }
 
@@ -978,7 +990,12 @@ pub async fn openship_deploy(
         cli_deploy(&config, &root)?
     } else {
         if project_id.trim().is_empty() {
-            audit(&state, "blocked", vec!["openship".into(), "deploy".into()], Some("Project ID が未設定です".into()));
+            audit(
+                &state,
+                "blocked",
+                vec!["openship".into(), "deploy".into()],
+                Some("Project ID が未設定です".into()),
+            );
             return Err(AppError::Other(
                 "Project ID を入力するか、設定画面で既定のプロジェクトを登録してください。".into(),
             ));
@@ -1065,7 +1082,12 @@ pub async fn openship_rollback(
         ),
     );
     if !confirmed {
-        audit(&state, "cancelled", vec!["openship".into(), "rollback".into(), deployment_id.clone()], Some("ユーザーが承認をキャンセルしました".into()));
+        audit(
+            &state,
+            "cancelled",
+            vec!["openship".into(), "rollback".into(), deployment_id.clone()],
+            Some("ユーザーが承認をキャンセルしました".into()),
+        );
         return Err(AppError::Other("操作はキャンセルされました".into()));
     }
 

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Openship 詳細解説</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b1020;
+  --surface: #111827;
+  --surface-2: #1a2332;
+  --ink: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #38bdf8;
+  --accent-weak: color-mix(in oklab, var(--accent) 15%, var(--surface));
+  --accent-glow: color-mix(in oklab, var(--accent) 40%, transparent);
+  --line: color-mix(in oklab, var(--ink) 12%, transparent);
+  --danger: #f87171;
+  --danger-bg: color-mix(in oklab, var(--danger) 12%, var(--surface));
+  --success: #34d399;
+  --step-0: clamp(0.95rem, 0.92rem + 0.2vw, 1.05rem);
+  --step-1: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
+  --step-2: clamp(1.4rem, 1.1rem + 1.2vw, 2rem);
+  --step-3: clamp(2rem, 1.4rem + 2.5vw, 3.2rem);
+  --space: clamp(1.2rem, 1rem + 0.8vw, 2rem);
+  --radius: 10px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.25), 0 12px 32px -8px rgba(0,0,0,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-size: var(--step-0);
+  line-height: 1.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* Header */
+header {
+  position: relative;
+  padding: calc(var(--space)*2.5) var(--space);
+  text-align: center;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+
+header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1200px 500px at 20% 0%, var(--accent-glow), transparent 60%),
+    radial-gradient(800px 400px at 80% 10%, color-mix(in oklab, #818cf8 30%, transparent), transparent 55%);
+  pointer-events: none;
+}
+
+header .eyebrow {
+  position: relative;
+  display: inline-block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+}
+
+header h1 {
+  position: relative;
+  font-family: "JetBrains Mono", "Noto Sans JP", sans-serif;
+  font-size: var(--step-3);
+  font-weight: 700;
+  margin: 0 auto 0.8rem;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  max-width: 900px;
+}
+
+header .subtitle {
+  position: relative;
+  color: var(--muted);
+  max-width: 720px;
+  margin: 0 auto;
+  font-size: var(--step-1);
+  line-height: 1.65;
+}
+
+/* Layout */
+main {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: calc(var(--space)*1.5) var(--space);
+}
+
+section {
+  margin-bottom: calc(var(--space)*2.2);
+}
+
+section h2 {
+  font-family: "JetBrains Mono", "Noto Sans JP", sans-serif;
+  font-size: var(--step-2);
+  font-weight: 700;
+  margin: 0 0 var(--space) 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+section h2 .num {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.65em;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+section h3 {
+  font-family: "JetBrains Mono", "Noto Sans JP", sans-serif;
+  font-size: var(--step-1);
+  font-weight: 600;
+  margin: calc(var(--space)*1.2) 0 0.6rem;
+  color: #f3f4f6;
+}
+
+p { margin: 0.6rem 0; }
+
+/* Cards / Surface */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: calc(var(--space)*0.9);
+  box-shadow: var(--shadow);
+}
+
+.card + .card { margin-top: calc(var(--space)*0.8); }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.95em;
+}
+
+th, td {
+  padding: 0.7rem 0.8rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+tr:last-child td { border-bottom: none; }
+
+code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9em;
+  background: var(--surface-2);
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  color: #e2e8f0;
+  border: 1px solid var(--line);
+}
+
+pre {
+  background: #0d1117;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.88em;
+  line-height: 1.6;
+  color: #c9d1d9;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* Lists */
+ul, ol {
+  padding-left: 1.4rem;
+  margin: 0.6rem 0;
+}
+
+li { margin: 0.35rem 0; }
+
+/* Typo check box */
+.typo-box {
+  background: var(--danger-bg);
+  border: 1px solid color-mix(in oklab, var(--danger) 30%, transparent);
+  border-radius: var(--radius);
+  padding: calc(var(--space)*0.8);
+  margin: 1.2rem 0;
+}
+
+.typo-box h3 {
+  margin-top: 0;
+  color: var(--danger);
+  font-family: "JetBrains Mono", "Noto Sans JP", sans-serif;
+}
+
+.typo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.92em;
+}
+
+.typo-wrong {
+  color: var(--danger);
+  text-decoration: line-through;
+  text-decoration-color: var(--danger);
+}
+
+.typo-arrow { color: var(--muted); }
+
+.typo-right { color: var(--success); font-weight: 600; }
+
+/* Inline badges */
+.badge {
+  display: inline-block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent-weak);
+  color: var(--accent);
+  border: 1px solid var(--accent-glow);
+  vertical-align: middle;
+  margin-left: 0.3rem;
+}
+
+/* Source chips area */
+.source-note {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.88em;
+}
+
+.source-note a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.source-note a:hover { text-decoration: underline; }
+
+/* Print */
+@media print {
+  body { background: #fff; color: #111; }
+  header::before, .reveal { display: none; }
+  .card, pre, table, th, td, code {
+    border-color: #ccc !important;
+    box-shadow: none !important;
+  }
+  th { background: #f3f4f6 !important; }
+  :root {
+    --bg: #fff; --surface: #f9fafb; --surface-2: #f3f4f6;
+    --ink: #111827; --muted: #4b5563; --accent: #0369a1;
+    --line: #d1d5db;
+  }
+}
+@page { size: A4; margin: 16mm; }
+
+/* Small motion enhancement */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">GitHub Repository Deep Dive</div>
+  <h1>Openship 詳細解説</h1>
+  <p class="subtitle">
+    オープンソースのセルフホスト型デプロイメントプラットフォーム。<br>
+    リポジトリを指定するだけで、ビルド・デプロイ・ルーティング・TLS終端までを一気通貫で実行する。
+  </p>
+</header>
+
+<main>
+
+<section class="reveal">
+  <h2><span class="num">01</span> プロジェクト概要</h2>
+  <div class="card">
+    <p><strong>Openship</strong> は、oblien によって開発されているオープンソースのセルフホスト型デプロイメントプラットフォームです。GitHub リポジトリ、ローカルフォルダ、またはビルド済みアーティファクトをソースとして指定すると、自動検出・ビルド・実行・リバースプロキシ・TLS設定までを自動化する CI/CD 機能を内包しています。</p>
+    <p>デスクップアプリ、Web ダッシュボード、CLI、SDK（JavaScript/TypeScript）の4つのインターフェースから操作でき、個人開発者からチーム運用まで幅広く対応します。</p>
+    <ul>
+      <li><strong>リポジトリ:</strong> <code>oblien/openship</code></li>
+      <li><strong>ライセンス:</strong> Apache License 2.0</li>
+      <li><strong>最新バージョン:</strong> v0.9.7（2026年11月1日時点）</li>
+      <li><strong>主要スタック:</strong> Bun / Node.js 22+ / Docker / OpenResty / Postgres / Redis</li>
+    </ul>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">02</span> 主な機能と特徴</h2>
+  <div class="card">
+    <h3>自動検出（Zero Config）</h3>
+    <p><code>package.json</code>、フレームワク設定ファイル、ロックファイル、<code>docker-compose.yml</code> / <code>openship.json</code> を読み取り、スタック・パッケージマネージャー・ビルド/起動コマンド・ポートを自動判定します。設定ファイルがなくても動作し、必要に応じて <code>openship.json</code> で上書き可能です。</p>
+
+    <h3>ビルドとスナップショット</h3>
+    <p>ターゲットサーバー上またはオーケストレータ上で Docker イメージまたはベアリリースとしてビルドします。解決された設定はスナップショットとして凍結されるため、再デプロイやロールバック時に「その時点の完全同一の構成」が再現されます。</p>
+
+    <h3>ルーティングと TLS</h3>
+    <p>OpenResty ベースのエッジサーバーがリバースプロキシ用 vhost を自動生成し、Let's Encrypt（HTTP-01）で証明書を発行します。ルーティングと TLS はアプリ起動後に行われるため、DNS や証明書の問題がデプロイ失敗を引き起こすことはありません。</p>
+
+    <h3>Push-to-Deploy</h3>
+    <p>GitHub Webhook と連携し、追跡中のブランチへのプッシュごとにパイプラインを再実行します。モノレポの場合、変更のあったサービスのみ再ビルドします。</p>
+
+    <h3>統合管理</h3>
+    <p>データベース、ドメイン、SSL、CDN、メール、ックアップを同一ダッシュボードから管理できます。</p>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">03</span> 動作モードの比較</h2>
+  <div class="card">
+    <p>Openship 自身の「コントロールプレーン」をどこで動かすかで、3つの形態が選べます。</p>
+    <table>
+      <thead>
+        <tr><th>形態</th><th>対象ユーザー</th><th>特徴</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Desktop app</strong></td>
+          <td>個人 / 単一マシン</td>
+          <td>ローカルでコントロールプレーンが動作。SSH でサーバーを操作。公開ポートなし。アプリ起動中のみ有効。</td>
+        </tr>
+        <tr>
+          <td><strong>Self-hosted server</strong></td>
+          <td>チーム / 常時稼働が必要</td>
+          <td>Linux サーバー上で常時稼働。公開 URL + ログイン必須。CI/CD、チーム招待、同一ボックスでのホスティングが可能。</td>
+        </tr>
+        <tr>
+          <td><strong>Openship Cloud</strong></td>
+          <td>運用を任せたい場合</td>
+          <td>マネージドサービス。ゼロセットアップで用可能。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">04</span> デプロイメントパイプライン</h2>
+  <div class="card">
+    <p>Openship は、ソースを指定すると以下の5段階を自動実行します。</p>
+    <ol>
+      <li><strong>Detect（検出）:</strong> プロジェクト構成を自動解析し、フレームワーク・コマンド・ポートを決定。</li>
+      <li><strong>Build（ビルド）:</strong> Docker イメージまたはベアリリースとしてビルド。構成はスナップショット化。</li>
+      <li><strong>Run（実行）:</strong> コンテナ（ループバックのみ公開）または監視下ホストプロセスとして起動。</li>
+      <li><strong>Route + Secure（ルーティングと保）:</strong> OpenResty エッジがドメイン用 vhost と Let's Encrypt 証明書を自動設定。</li>
+      <li><strong>Push-to-Deploy:</strong> GitHub プッシュをトリガーにパイプライン再実行。モノレポ差分に応じた部分ビルド。</li>
+    </ol>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">05</span> インターフェース</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>インターフェース</th><th>特徴</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Desktop app</td>
+          <td>フル GUI。リアルタイムログ。ワンクリック操作。個人開発に最適。</td>
+        </tr>
+        <tr>
+          <td>Web dashboard</td>
+          <td>ブラウザで動作する同一 UI。チーム向け。</td>
+        </tr>
+        <tr>
+          <td>CLI</td>
+          <td>スクリプト化・CI 対応。インストールとサーバー管理も CLI 経由。</td>
+        </tr>
+        <tr>
+          <td>Ship SDK</td>
+          <td>JavaScript / TypeScript からデプロイ・リソース管理。<code>npm install openship</code>（v0.8.0+ / Node.js 22+）</td>
+        </tr>
+        <tr>
+          <td>MCP</td>
+          <td>Model Context Protocol エンドポイントを提供。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">06</span> インストール方法</h2>
+  <div class="card">
+    <h3>A. デスクトップアプリ（推奨: 個人利用）</h3>
+    <p>OS ごとのバイナリをダウンロードするか、CLI で <code>openship install</code> を実行します。</p>
+    <ul>
+      <li>macOS (Apple Silicon): <code>Openship-arm64.dmg</code></li>
+      <li>macOS (Intel): <code>Openship-x64.dmg</code></li>
+      <li>Windows: <code>Openship-win32-x64.zip</code></li>
+      <li>Linux: <code>Openship.AppImage</code></li>
+    </ul>
+
+    <h3>B. セルフホストサーバー（チーム / 常時稼働）</h3>
+    <p>CLI をインストール後、対話式ウィザードでセットアップします。</p>
+    <pre><code># インストール
+curl -fsSL https://get.openship.io | sh
+
+# 対話式セットアップ + コントロールパネル起動
+openship
+
+# またはワンライナーでバックグラウンドサービスとして起動
+openship up --public-url https://openship.example.com --managed-edge</code></pre>
+
+    <h3>C. Docker Compose（CLI なし）</h3>
+    <p>ビルド不要で公開済みイメージをプルして起動します。</p>
+    <pre><code>git clone https://github.com/oblien/openship.git && cd openship
+cp .env.example .env
+# .env を編集後
+docker compose --env-file .env -f docker/docker-compose.yml up -d</code></pre>
+    <p>スタック構成: Postgres + Redis + API + Dashboard + OpenResty Edge（:80/:443）。Linux のみ対応（host networking 使用）。</p>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">07</span> CLI リファレンス（主要コマンド）</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>コマンド</th><th>内容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>openship up</code></td><td>サービスとして起動（ブート時自動起動 + 自動再起動）</td></tr>
+        <tr><td><code>openship up --foreground</code></td><td>フォアグラウンドで起動</td></tr>
+        <tr><td><code>openship stop</code></td><td>サービス停止</td></tr>
+        <tr><td><code>openship status</code></td><td>稼働状況・ポート・API ヘルス確認</td></tr>
+        <tr><td><code>openship open</code></td><td>ダッシュボードをブラウザで開く</td></tr>
+        <tr><td><code>openship update</code></td><td>CLI とバンドルサーバーの更新</td></tr>
+        <tr><td><code>openship init</code></td><td>現在のディレクトリをプロジェクトに紐付け</td></tr>
+        <tr><td><code>openship deploy</code></td><td>現在のプロジェクトをデプロイ</td></tr>
+        <tr><td><code>openship logs -f</code></td><td>デプロイログのリアルタイム表示</td></tr>
+        <tr><td><code>openship server</code></td><td>SSH サーバー管理</td></tr>
+        <tr><td><code>openship backup</code></td><td>バックアップポリシー管理</td></tr>
+        <tr><td><code>openship reset-admin-password</code></td><td>管理者パスワードのリセット（ローカルトークン使用）</td></tr>
+        <tr><td><code>openship doctor</code></td><td>CLI セットアップの診断</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">08</span> タイポチェック結果</h2>
+  <div class="typo-box">
+    <h3>検出されたタイポと修正案</h3>
+    <p>リポジトリ内のコミットメッセージ・ファイル名・コードコメントを対象にチェックした結果、以下のタイポが見つかりました。</p>
+
+    <div class="typo-item">
+      <span class="typo-wrong">assests</span>
+      <span class="typo-arrow">→</span>
+      <span class="typo-right">assets</span>
+      <span style="color:var(--muted);margin-left:auto;">fixtures/deploy コミットメッセージ</span>
+    </div>
+    <div class="typo-item">
+      <span class="typo-wrong">mulit</span>
+      <span class="typo-arrow">→</span>
+      <span class="typo-right">multi</span>
+      <span style="color:var(--muted);margin-left:auto;">.nvmrc コミットメッセージ</span>
+    </div>
+    <div class="typo-item">
+      <span class="typo-wrong">intial</span>
+      <span class="typo-arrow">→</span>
+      <span class="typo-right">initial</span>
+      <span style="color:var(--muted);margin-left:auto;">pnpm-workspace.yaml コミットメッセージ</span>
+    </div>
+    <div class="typo-item">
+      <span class="typo-wrong">appache</span>
+      <span class="typo-arrow">→</span>
+      <span class="typo-right">apache</span>
+      <span style="color:var(--muted);margin-left:auto;">LICENSE コミットメッセージ</span>
+    </div>
+    <div class="typo-item">
+      <span class="typo-wrong">fr</span>
+      <span class="typo-arrow">→</span>
+      <span class="typo-right">for</span>
+      <span style="color:var(--muted);margin-left:auto;">openship.code-workspace コミットメッセージ</span>
+    </div>
+    <div class="typo-item">
+      <span class="typo-wrong">bro</span>
+      <span class="typo-arrow">→</span>
+      <span class="typo-right">（口語表現のため修正推奨）</span>
+      <span style="color:var(--muted);margin-left:auto;">tsconfig.base.json コミットメッセージ</span>
+    </div>
+
+    <p style="margin-top:1rem; color:var(--muted); font-size:0.9em;">
+      ※ これらは主に過去のコミットメッセージに含まれるものであり、現在の README やドキュメント本文には大きな影響はありません。<br>
+      ※ ブランド名表記については、リポジトリ内で <code>Openship</code> と <code>OpenShip</code> が混在する箇所がありました。公式表記は <code>Openship</code>（先頭大文字のキャメルケース、S は大文字）と推定されます。
+    </p>
+  </div>
+</section>
+
+<section class="reveal">
+  <h2><span class="num">09</span> まとめ</h2>
+  <div class="card">
+    <p>Openship は、「リポジトリを指定するだけ」で本番環境の構築から TLS 設定までを自動化する、現代的なセルフホスト型 PaaS です。特に以下の点が優れています。</p>
+    <ul>
+      <li><strong>運用形態の柔軟性:</strong> デスクトップアプリからフルマネージド Cloud まで、利用規模に応じて3形態から選択可能。</li>
+      <li><strong>Zero Config:</strong> 既存プロジェクトに設定ファイルを追加せずとも、フレームワークを自動検出してデプロイ可能。</li>
+      <li><strong>安全性の設計:</strong> TLS や DNS の問題がデプロイ失敗を引き起こさない「事後ルーティング」設計。</li>
+      <li><strong>モノレポ対応:</strong> 変更のあったサービスのみ再ビルドする効率的な Push-to-Deploy。</li>
+    </ul>
+    <p>個人開発者にはデスクトップアプリ、チーム運用には <code>openship up</code> によるセルフホスト、手軽さを重視する場合には Cloud と、用途に応じた選択肢を提供している点が大きな魅力です。</p>
+  </div>
+</section>
+
+<div class="source-note">
+  <p>本解説は以下のソースに基づいて作成しました。</p>
+  <ul>
+    <li><a href="https://github.com/oblien/openship" target="_blank" rel="noopener">oblien/openship - GitHub</a></li>
+    <li><a href="https://raw.githubusercontent.com/oblien/openship/main/README.md" target="_blank" rel="noopener">README.md（main）</a></li>
+    <li><a href="https://raw.githubusercontent.com/oblien/openship/main/docs/installation.md" target="_blank" rel="noopener">docs/installation.md</a></li>
+    <li><a href="https://raw.githubusercontent.com/oblien/openship/main/docs/documentation.md" target="_blank" rel="noopener">docs/documentation.md</a></li>
+  </ul>
+  <p style="margin-top:0.8rem;">ブラウザで開くことで閲覧可能です。印刷 → PDF に保存すると、PDF として保存できます。</p>
+</div>
+
+</main>
+
+<script>
+// Minimal scroll reveal
+if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('is-visible');
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  // Hero is visible immediately
+  document.querySelector('header').classList.add('is-visible');
+}
+</script>
+</body>
+</html>

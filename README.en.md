@@ -11,10 +11,10 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 > **Files stay local. Actions stay visible.** Drafts remain in the folder you choose, and every command an agent runs is shown with its output in the UI. No accounts, telemetry, or cloud sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.1.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
-[![Phase](https://img.shields.io/badge/phase-1%20llm%20chat-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Phase](https://img.shields.io/badge/phase-2%20openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
@@ -22,10 +22,10 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 
 ## Download
 
-v0.1.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.2.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.1.1_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.1.1_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.2.0_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.2.0_x64.dmg`
 
 > The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
 
@@ -213,7 +213,7 @@ Detection order:
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.1.1 is available both as a DMG on GitHub Releases and as a build from source
+- v0.2.0 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned)
 - Targets macOS (Apple Silicon and Intel)
 
@@ -243,7 +243,7 @@ vercel --prod          # Deploy to production
 
 ## Known limitations and roadmap
 
-### Unreleased
+### v0.2.0
 
 - [x] LLM plan generation (Plan tab, `/plan <intent>`)
 - [x] Client-side action and argument validation with risk labels

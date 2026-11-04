@@ -6,7 +6,7 @@
 
 right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. It combines the writing experience of [Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) with the OS-level control of [Agent Desktop](https://github.com/vercel-labs/agent-desktop), so Markdown editing and agent-driven app operations live in the same workspace.
 
-> **Status:** The Tauri 2.0 native app is the main development target. The landing page and browser demo on Vercel are a sample (reference implementation) published until the Tauri version is ready for release.
+> **Status:** The Tauri 2.0 native app is the main development target and is available as a DMG on GitHub Releases. The landing page and browser demo on Vercel are a sample (reference implementation) for trying the UI without installing the app.
 
 > **Files stay local. Actions stay visible.** Drafts remain in the folder you choose, and every command an agent runs is shown with its output in the UI. No accounts, telemetry, or cloud sync.
 
@@ -14,7 +14,7 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 [![Version](https://img.shields.io/badge/version-v0.2.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
-[![Phase](https://img.shields.io/badge/phase-2%20openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
@@ -35,7 +35,7 @@ v0.2.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3ti
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation, and plan-level approval.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -73,7 +73,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, and agent commands
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
-- **Browser demo (sample)** — run the in-memory demo workspace with `npm run dev` without Tauri. On Vercel it is published as a sample until the Tauri version is ready
+- **Browser demo (sample)** — run the in-memory demo workspace with `npm run dev` without Tauri. On Vercel it is published as a sample for trying the UI without installing the app
 - **Skill definitions** — agent action definitions live in `.agents/skills/*.json` (skill execution is not implemented yet)
 - **Theme** — dark theme, overlay title bar, native macOS window
 
@@ -110,10 +110,10 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 |---|---:|---|
 | macOS | 11 or later | `sw_vers` |
 | Node.js | `^20.19.0 \|\| >=22.12.0` (`.nvmrc` pins 24) | `node --version` |
-| Rust | >= 1.85 (edition 2024) | `rustc --version` |
+| Rust | >= 1.88 (edition 2024, let chains) | `rustc --version` |
 | Xcode Command Line Tools | — | `xcode-select -p` |
 
-Verified on macOS 27 with Node.js 26.9 (CI uses Node.js 24) and Rust 1.94–1.98.
+Verified on macOS 27 with Node.js 26.9 (CI uses Node.js 24) and Rust 1.99.
 
 ### Basic steps
 
@@ -219,7 +219,7 @@ Detection order:
 
 ## Sample deployment (Vercel)
 
-The landing page and browser demo are live on Vercel as a sample until the Tauri version is ready for release. The native Tauri 2.0 app remains the main development target.
+The landing page and browser demo are live on Vercel as a sample for trying the UI without installing the app. The native Tauri 2.0 app is distributed as a DMG on GitHub Releases and remains the main development target.
 
 | URL | Content |
 |---|---|

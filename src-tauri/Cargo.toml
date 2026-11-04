@@ -4,6 +4,7 @@ version = "0.2.1"
 description = "Agent-driven IDE built on Right-Stuff Editor and Agent Desktop"
 authors = ["watanabe3tipapa"]
 edition = "2024"
+rust-version = "1.88"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

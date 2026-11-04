@@ -443,8 +443,8 @@ footer {
     <div class="card-title"><span class="icon">&#9670;</span> 本書の位置付け</div>
     <p style="margin-bottom:0">
       本書は Right-Stuff Agent IDE の構想をまとめた実装設計書です。Phase 0 の実装は、Lexical ベースの既存コードを移行したものではなく、
-      <strong>Tauri 2.0 + React 18 + Monaco</strong> で新規に構築しています。Lexical、LSP、統合ターミナル、Apple Notes 連携、
-      AI プロバイダー接続は今後の候補であり、現時点の実装範囲は README の「既知の制約とロードマップ」を参照してください。
+      <strong>Tauri 2.0 + React 18 + Monaco</strong> で新規に構築しています。Lexical、LSP、統合ターミナル、Apple Notes 連携は今後の候補です。
+      OpenAI 互換 LLM 接続、計画立案と承認、監査ログ、Openship 連携は実装済みで、現時点の実装範囲は README の「既知の制約とロードマップ」を参照してください。
     </p>
   </div>
 </header>
@@ -788,8 +788,9 @@ footer {
     <div class="flow-node green">結果返却</div>
   </div>
   <p style="color:var(--ink-muted);font-size:0.9em;">
-    ※ 現時点では <code>agent_status</code> / <code>agent_snapshot</code> / <code>agent_run</code> のブリッジと、
-    UI からの <code>/status</code>・<code>/snapshot</code> 実行までを実装しています。LLM 推論、スキル選択、検証ループは Phase 1 以降です。
+    ※ 現時点では <code>agent_status</code> / <code>agent_snapshot</code> / <code>agent_run</code> のブリッジ、
+    LLM による計画立案と計画単位の承認、エージェントポリシー、監査ログ、Openship 連携を実装しています。
+    スキル選択と検証ループは今後追加します。
   </p>
 
   <h3>ファイル保存フロー</h3>
@@ -850,13 +851,22 @@ interface EditorStateUpdate {
         SQLite のバージョン履歴、Agent Desktop ブリッジを実装し、macOS で動作を確認。
       </p>
     </div>
-    <div class="phase-item">
+    <div class="phase-item done">
       <div class="phase-title">Phase 1: Agent Desktop 統合基盤</div>
       <div class="phase-meta">期間: 3週間 / 優先度: 最高</div>
       <p>
         Agent Desktop CLI を Rust レイヤーから呼び出すラッパーを実装。
         スナップショット取得、アクション実行、エラーハンドリング、セッション管理を構築。
         エージェントチャット UI に「外部アプリ操作」モードを追加。
+      </p>
+    </div>
+    <div class="phase-item done">
+      <div class="phase-title">追加: Openship 連携 (v0.2.0)</div>
+      <div class="phase-meta">ローカルファースト / 優先度: 高</div>
+      <p>
+        設計書のフェーズには含まれていなかったが、v0.2.0 で先行実装。
+        Deploy タブ、<code>openship</code> CLI の検出と REST フォールバック、デプロイ履歴・ログ・ロールバック、
+        PAT の OS キーチェーン保存、変更操作のネイティブ承認、監査ログ記録を追加。
       </p>
     </div>
     <div class="phase-item">

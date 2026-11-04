@@ -867,7 +867,7 @@ footer .footer-links a:hover { color: var(--accent); }
 
 <div class="sample-banner">
   <strong>Sample</strong>
-  <span>Tauri 版が公開できるまでのサンプルです。開発の主力は Tauri 2.0 のネイティブアプリで、この LP とブラウザデモは参考実装として公開しています。</span>
+  <span>Tauri 版は GitHub Releases の DMG で配布中です。この LP とブラウザデモは、インストールせずに UI を試すための参考実装として公開しています。</span>
   <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide">GitHub</a>
 </div>
 
@@ -900,7 +900,7 @@ footer .footer-links a:hover { color: var(--accent); }
 <header class="hero">
   <div class="badge"><span class="dot"></span> Sample Preview</div>
   <h1>エージェントが IDE を<span class="highlight block-line">直接操作する</span></h1>
-  <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。Tauri 2.0 で開発中のネイティブ IDE を、公開前のサンプルとして紹介します。</p>
+  <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。Tauri 2.0 のネイティブ IDE を、ブラウザで試せるサンプルとともに紹介します。</p>
   <div class="cta-group">
     <a href="/app/" class="cta-btn cta-primary">ブラウザデモを試す</a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary">Tauri 版の構成を見る</a>
@@ -953,8 +953,8 @@ footer .footer-links a:hover { color: var(--accent); }
 <section id="features">
   <div class="section-header">
     <div class="section-label">Sample Scope</div>
-    <h2>サンプルが目指す構成</h2>
-    <p class="section-desc">Tauri 版の設計を紹介するためのサンプルです。実装済みの範囲は README を参照してください。</p>
+    <h2>Tauri 版の構成と実装</h2>
+    <p class="section-desc">Tauri 版は GitHub Releases の DMG で配布中です。ブラウザデモは、インストールせずに UI を試すためのサンプルです。実装済みの範囲は README を参照してください。</p>
   </div>
   <div class="feature-grid">
     <div class="feature-card">
@@ -965,7 +965,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon" style="background:var(--accent2-weak)">&#9670;</div>
       <div class="feature-title">エージェントによる直接操作</div>
-      <div class="feature-desc">Agent Desktop の OS アクセシビリティツリー API を統合し、エディタ UI と外部アプリの両方をエージェントが操作できる構成を目指します（Phase 1 後半）。</div>
+      <div class="feature-desc">Agent Desktop の OS アクセシビリティツリー API を統合し、エディタ UI と外部アプリの両方をエージェントが操作できます。許可アクションと引数の検証、計画単位の承認、ネイティブ承認ダイアログを経て実行します。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#9881;</div>
@@ -975,7 +975,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon">&#128274;</div>
       <div class="feature-title">安全な承認フロー</div>
-      <div class="feature-desc">LLM が生成した計画は許可アクションと引数を検証した上で承認制で実行します。変更操作は計画承認後も、実行直前に OS のネイティブ承認ダイアログで確認します。承認履歴の監査ログと機密ウィンドウの自動マスクは今後追加します。</div>
+      <div class="feature-desc">LLM が生成した計画は許可アクションと引数を検証した上で承認制で実行します。変更操作は計画承認後も、実行直前に OS のネイティブ承認ダイアログで確認します。承認履歴の監査ログはローカル SQLite に記録し、機密ウィンドウの自動マスクは今後追加します。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon" style="background:var(--accent2-weak)">&#128260;</div>
@@ -1017,7 +1017,7 @@ footer .footer-links a:hover { color: var(--accent); }
   <div class="section-header">
     <div class="section-label">Evaluation</div>
     <h2>特徴・良い点・注意点</h2>
-    <p class="section-desc">サンプル公開時点の率直な評価です。機能の全体像は上の「サンプルが目指す構成」に、実装済みの範囲は README にまとめています。</p>
+    <p class="section-desc">現在の実装を率直に評価したものです。機能の全体像は上の「Tauri 版の構成と実装」に、実装済みの範囲は README にまとめています。</p>
   </div>
   <div class="eval-grid">
     <div class="eval-card good">
@@ -1036,7 +1036,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <ul>
         <li><strong>LLM は OpenAI 互換 API に対応</strong> — Tauri 版では OpenAI / Ollama / LM Studio / OpenRouter などに接続できます。ブラウザデモでは利用できません。Anthropic 固有 API は今後対応</li>
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か <code>AGENT_DESKTOP_BIN</code> で指定する</li>
-        <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案と計画単位の承認は実装済みですが、実行できるのは Agent Desktop の許可アクションだけです。エディタ・Git・ターミナルのスキル実行と、承認履歴の監査ログは今後対応</li>
+        <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みですが、実行できるのは Agent Desktop の許可アクションだけです。エディタ・Git・ターミナルのスキル実行と検証ループは今後対応</li>
         <li><strong>macOS のみ検証</strong> — 配布用 DMG は Developer ID 署名・公証なし。Intel 実機での起動確認は未実施。Windows / Linux は未検証</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
         <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は今後対応</li>
@@ -1049,7 +1049,7 @@ footer .footer-links a:hover { color: var(--accent); }
   <div class="section-header">
     <div class="section-label">Roadmap</div>
     <h2>実装ロードマップ</h2>
-    <p class="section-desc">Phase 0 は完了済みです。以降の期間・優先度・内容は実装設計書に基づく目安で、進捗に応じて更新します。</p>
+    <p class="section-desc">Phase 0 と Phase 1 は完了済みです。以降の期間・優先度・内容は実装設計書に基づく目安で、進捗に応じて更新します。</p>
   </div>
   <div class="roadmap-grid">
     <div class="roadmap-item done">
@@ -1058,11 +1058,17 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="roadmap-meta">2週間 / 優先度: 最高</div>
       <p>Tauri 2.0 + React 18、Monaco、ワークスペース、SQLite 履歴、Agent Desktop ブリッジ。</p>
     </div>
-    <div class="roadmap-item current">
+    <div class="roadmap-item done">
       <div class="roadmap-phase">Phase 1</div>
-      <div class="roadmap-title">Agent Desktop 統合基盤 <span class="roadmap-status">進行中</span></div>
+      <div class="roadmap-title">Agent Desktop 統合基盤 <span class="roadmap-status">完了</span></div>
       <div class="roadmap-meta">3週間 / 優先度: 最高</div>
-      <p>OpenAI 互換 LLM 接続、ストリーミングチャット、API キーのキーチェーン保存、計画立案、計画単位の承認フローは実装済み。検証ループと承認履歴の監査ログを追加中。</p>
+      <p>OpenAI 互換 LLM 接続、ストリーミングチャット、API キーのキーチェーン保存、計画立案、計画単位の承認フロー、エージェントポリシー、監査ログを実装済み。</p>
+    </div>
+    <div class="roadmap-item done">
+      <div class="roadmap-phase">v0.2.0</div>
+      <div class="roadmap-title">Openship 連携 <span class="roadmap-status">完了</span></div>
+      <div class="roadmap-meta">ローカルファースト / 優先度: 高</div>
+      <p>Deploy タブ、CLI 検出と REST フォールバック、デプロイ履歴・ログ・ロールバック、PAT のキーチェーン保存、変更操作のネイティブ承認、監査ログ記録。</p>
     </div>
     <div class="roadmap-item">
       <div class="roadmap-phase">Phase 2</div>
@@ -1114,7 +1120,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="step-num">02</div>
       <div class="step-content">
         <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.2.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.85 以上が必要です。</div>
+        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.2.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
         <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
 cd right-stuff-agent-ide
 npm ci</pre>
@@ -1289,7 +1295,7 @@ Base URL: http://localhost:11434/v1
   <div class="section-header">
     <div class="section-label">About this sample</div>
     <h2>このサイトについて</h2>
-    <p class="section-desc">Vercel の LP とブラウザデモは、Tauri 版が公開できるまでのサンプルです。製品版の開発は Tauri 2.0 のネイティブアプリが中心です。</p>
+    <p class="section-desc">Vercel の LP とブラウザデモは、インストールせずに UI を試すためのサンプルです。製品版は GitHub Releases の DMG で配布しています。</p>
   </div>
   <div class="install-box">
     <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Windows / Linux は未検証）</p>
@@ -1320,7 +1326,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>このサイトは製品版ですか？</summary>
     <div class="faq-answer">
-      いいえ。Tauri 版が公開できるまでのサンプルです。開発の主力は Tauri 2.0 のネイティブアプリで、この LP とブラウザデモは構成と UI の参考実装として公開しています。
+      いいえ。Tauri 版は GitHub Releases の DMG で配布中です。この LP とブラウザデモは、インストールせずに構成と UI を試すための参考実装として公開しています。
     </div>
   </details>
   <details class="faq-item">
@@ -1332,7 +1338,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>どの機能が実装済みですか？</summary>
     <div class="faq-answer">
-      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存に加え、計画立案と計画単位の承認フローを追加しました。検証ループと承認履歴の監査ログは今後追加します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
+      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存、計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。v0.2.0 ではローカルファーストの Openship 連携（Deploy タブ、CLI / REST、履歴・ログ・ロールバック）も追加しています。検証ループとスキル実行は今後追加します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
     </div>
   </details>
   <details class="faq-item">
@@ -1363,7 +1369,7 @@ agent-desktop permissions --guide</pre>
 
 <div class="footer-cta">
   <h2>サンプルから、<span class="highlight block-line" style="background: linear-gradient(90deg, var(--accent), var(--accent2));-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text;">自分の IDE へ</span></h2>
-  <p>Tauri 版は開発中です。構成とソースは GitHub で公開しています。</p>
+  <p>Tauri 版は GitHub Releases の DMG で配布中です。構成とソースは GitHub で公開しています。</p>
   <div class="cta-group" style="justify-content:center;">
     <a href="/app/" class="cta-btn cta-primary">ブラウザデモを試す</a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary">GitHub を見る</a>

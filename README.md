@@ -6,7 +6,7 @@
 
 right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けのデスクトップ IDE です。[Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) の執筆体験と [Agent Desktop](https://github.com/vercel-labs/agent-desktop) の OS レベル操作を統合し、Markdown の編集からエージェントによるアプリ操作までを同じワークスペースで扱います。
 
-> **位置付け:** 開発の主力は Tauri 2.0 のネイティブアプリです。Vercel で公開している LP とブラウザデモは、Tauri 版が公開できるまでのサンプル（参考実装）です。
+> **位置付け:** 開発の主力は Tauri 2.0 のネイティブアプリで、GitHub Releases の DMG からインストールできます。Vercel で公開している LP とブラウザデモは、インストールせずに UI を試すためのサンプル（参考実装）です。
 
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
@@ -14,7 +14,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 [![Version](https://img.shields.io/badge/version-v0.2.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
-[![Phase](https://img.shields.io/badge/phase-2%20openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
@@ -35,7 +35,7 @@ v0.2.1 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フローを追加しました。
+Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -73,7 +73,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェントの操作を検索して実行
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
-- **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリのデモワークスペースを操作可能。Vercel では Tauri 版が公開できるまでのサンプルとして公開
+- **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリのデモワークスペースを操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
 - **スキル定義** — `.agents/skills/*.json` にエージェント向けの操作定義を配置（スキル実行は未実装）
 - **テーマ** — ダークテーマ、Overlay タイトルバー、macOS ネイティブウィンドウ
 
@@ -110,10 +110,10 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 |---|---:|---|
 | macOS | 11 以降 | `sw_vers` |
 | Node.js | `^20.19.0 \|\| >=22.12.0`（`.nvmrc` は 24） | `node --version` |
-| Rust | >= 1.85（edition 2024） | `rustc --version` |
+| Rust | >= 1.88（edition 2024、let chains） | `rustc --version` |
 | Xcode Command Line Tools | — | `xcode-select -p` |
 
-検証環境は macOS 27 / Node.js 26.9（CI は Node.js 24）/ Rust 1.94–1.98 です。
+検証環境は macOS 27 / Node.js 26.9（CI は Node.js 24）/ Rust 1.99 です。
 
 ### 基本的な手順
 
@@ -220,7 +220,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 
 ## サンプル公開（Vercel）
 
-ランディングページとブラウザデモは、Tauri 版が公開できるまでのサンプルとして Vercel で公開中です。製品版の開発は Tauri 2.0 のネイティブアプリが中心です。
+ランディングページとブラウザデモは、インストールせずに UI を試せるサンプルとして Vercel で公開中です。製品版は GitHub Releases の DMG で配布しており、開発の主力は Tauri 2.0 のネイティブアプリです。
 
 | URL | 内容 |
 |---|---|

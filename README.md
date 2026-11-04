@@ -11,7 +11,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.2.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/phase-2%20openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -22,10 +22,10 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 
 ## ダウンロード
 
-v0.2.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.2.1 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.2.0_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.2.0_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.2.1_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.2.1_x64.dmg`
 
 > DMG は Apple Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。
 
@@ -214,7 +214,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.2.0 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
+- v0.2.1 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - macOS（Apple Silicon / Intel）を対象としています
 
@@ -243,6 +243,12 @@ vercel --prod          # 本番環境へデプロイ
 `vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内のメモリ上で動作し、変更は保存されません。
 
 ## 既知の制約とロードマップ
+
+### v0.2.1
+
+- [x] Rust 1.99 の `clippy::collapsible_match` に対応
+- [x] Frontend / Rust の CI を green に回復
+- [x] v0.2.0 リリース後の CI 修正を反映するメンテナンスリリース
 
 ### v0.2.0
 

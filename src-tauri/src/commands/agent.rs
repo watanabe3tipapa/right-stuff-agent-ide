@@ -338,18 +338,16 @@ pub async fn agent_run(
                 "ポリシーにより {action} の実行はブロックされています"
             )));
         }
-        "ask" => {
-            if !confirm_action(&app, &args) {
-                log_action(
-                    &state,
-                    &policy,
-                    audit.as_ref(),
-                    &args,
-                    "cancelled",
-                    Some("ユーザーが承認をキャンセルしました"),
-                );
-                return Err(AppError::Other("操作はキャンセルされました".into()));
-            }
+        "ask" if !confirm_action(&app, &args) => {
+            log_action(
+                &state,
+                &policy,
+                audit.as_ref(),
+                &args,
+                "cancelled",
+                Some("ユーザーが承認をキャンセルしました"),
+            );
+            return Err(AppError::Other("操作はキャンセルされました".into()));
         }
         _ => {}
     }
@@ -428,18 +426,16 @@ pub async fn agent_snapshot(
                 "ポリシーにより snapshot の実行はブロックされています".into(),
             ));
         }
-        "ask" => {
-            if !confirm_action(&app_handle, &args) {
-                log_action(
-                    &state,
-                    &policy,
-                    None,
-                    &args,
-                    "cancelled",
-                    Some("ユーザーが承認をキャンセルしました"),
-                );
-                return Err(AppError::Other("操作はキャンセルされました".into()));
-            }
+        "ask" if !confirm_action(&app_handle, &args) => {
+            log_action(
+                &state,
+                &policy,
+                None,
+                &args,
+                "cancelled",
+                Some("ユーザーが承認をキャンセルしました"),
+            );
+            return Err(AppError::Other("操作はキャンセルされました".into()));
         }
         _ => {}
     }

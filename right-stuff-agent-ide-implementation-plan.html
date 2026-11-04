@@ -443,7 +443,7 @@ footer {
     <div class="card-title"><span class="icon">&#9670;</span> 本書の位置付け</div>
     <p style="margin-bottom:0">
       本書は Right-Stuff Agent IDE の構想をまとめた実装設計書です。Phase 0 の実装は、Lexical ベースの既存コードを移行したものではなく、
-      <strong>Tauri 2.0 + React 18 + Monaco</strong> で新規に構築しています。Lexical、LSP、統合ターミナル、Apple Notes 連携は今後の候補です。
+      <strong>Tauri 2.0 + React 18 + Monaco</strong> で新規に構築しています。LSP、DAP、Apple Notes 連携は今後の候補です。
       OpenAI 互換 LLM 接続、計画立案と承認、監査ログ、Openship 連携は実装済みで、現時点の実装範囲は README の「既知の制約とロードマップ」を参照してください。
     </p>
   </div>
@@ -808,7 +808,7 @@ footer {
     <div class="flow-node">Git 差分更新</div>
   </div>
   <p style="color:var(--ink-muted);font-size:0.9em;">
-    ※ 現時点は <code>⌘S</code> / <code>⌘⇧S</code> による手動保存です。自動保存、競合検知、Git 差分更新は Phase 2 以降で追加します。
+    ※ 現時点は <code>⌘S</code> / <code>⌘⇧S</code> による手動保存です。Git 差分の表示は Git パネルで実装済み。自動保存と競合検知は今後追加します。
   </p>
 
   <h3>エージェント・エディタ連携プロトコル</h3>
@@ -869,12 +869,21 @@ interface EditorStateUpdate {
         PAT の OS キーチェーン保存、変更操作のネイティブ承認、監査ログ記録を追加。
       </p>
     </div>
+    <div class="phase-item done">
+      <div class="phase-title">追加: IDE コア機能 (v0.3.0)</div>
+      <div class="phase-meta">クイックオープン / Git / ターミナル / 優先度: 高</div>
+      <p>
+        設計書の Phase 2 のうち、クイックオープン (⌘P)、Git パネル、統合ターミナル (⌘J、portable-pty + xterm.js)、
+        ファイル検索を先行実装。ステータスバーの Git ブランチ表示と、ターミナル終了時の PTY クリーンアップも追加。
+        LSP / DAP は次の増分で実装する。
+      </p>
+    </div>
     <div class="phase-item">
-      <div class="phase-title">Phase 2: IDE コア機能</div>
+      <div class="phase-title">Phase 2: IDE コア機能（LSP / DAP）</div>
       <div class="phase-meta">期間: 4週間 / 優先度: 高</div>
       <p>
-        Monaco Editor の編集機能を拡張し、LSP クライアント、Git 統合、統合ターミナル、ファイル検索を実装。
-        Markdown プレビューとコード編集の切り替えを拡張。コマンドパレット、ステータスバーも拡張する。
+        LSP クライアントとデバッガ連携を実装し、補完・定義ジャンプ・診断・ブレークポイントを追加。
+        Markdown プレビューとコード編集の切り替えを拡張し、コマンドパレット、ステータスバーも拡張する。
       </p>
     </div>
     <div class="phase-item">

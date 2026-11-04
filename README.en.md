@@ -11,7 +11,7 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 > **Files stay local. Actions stay visible.** Drafts remain in the folder you choose, and every command an agent runs is shown with its output in the UI. No accounts, telemetry, or cloud sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -22,10 +22,10 @@ right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. 
 
 ## Download
 
-v0.2.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.2.1_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.2.1_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.0_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.0_x64.dmg`
 
 > The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
 
@@ -35,7 +35,7 @@ v0.2.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3ti
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -45,7 +45,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 | Protect | Atomic writes, path validation, trash-based soft delete |
 | Connect | Agent Desktop CLI detection, snapshots, allowlisted actions |
 | Delegate | LLM chat over OpenAI-compatible APIs, plan generation, and plan-level approval |
-| Extend | Terminal, Git, LSP / DAP (Phase 2+) |
+| Extend | Quick Open, Git panel, integrated terminal (PTY), LSP / DAP (planned) |
 
 ### Design principles
 
@@ -64,14 +64,17 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Markdown preview** — GFM rendering via `react-markdown` + `remark-gfm` in a split pane
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
-- **Agent panel** — Chat, Plan, Deploy, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, `/plan`, `/ship`, `/deploy`, `/logs`, and `/rollback` commands
+- **Agent panel** — Chat, Plan, Git, Deploy, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, `/plan`, `/ship`, `/deploy`, `/logs`, and `/rollback` commands
+- **Quick Open** — press `⌘P` to filter workspace files by name and open one without leaving the keyboard
+- **Git panel** — shows the current branch, ahead / behind counts, changes, staged files, and untracked files. Stage / unstage individual files or everything, preview diffs, commit, and browse recent history. Folders that are not repositories can run `git init`
+- **Integrated terminal** — press `⌘J` to open a PTY rooted at the workspace and interact through xterm.js. Resize, restart, and clear are supported; the shell resolves from `RIGHT_STUFF_SHELL` → `SHELL` → `/bin/zsh`
 - **LLM chat** — OpenAI / Ollama / LM Studio / OpenRouter and other OpenAI-compatible APIs, with streaming output, cancellation, and a connection test. API keys are stored in the OS keychain
 - **Plan generation and approval** — describe an intent and the LLM proposes a plan built only from allowlisted Agent Desktop actions. Every step is validated before display; plans are approved as a unit, run step by step in Assistive mode, or run sequentially in Autonomous mode. Invalid actions and arguments from the model are rejected before execution
 - **Approval audit log** — plan creation, approval, rejection, and cancellation, action runs, blocks, and cancellations, policy changes, and Openship deploys and rollbacks are recorded in local SQLite. The Audit tab lists entries newest first; records older than the retention period (30 days by default) and entries beyond the latest 5,000 are pruned automatically
 - **Openship integration (local-first)** — the Deploy tab handles deployment history, logs, and rollbacks. When the `openship` CLI is detected it is preferred; only when it is missing or fails does the app fall back to the self-hosted REST API. Connection settings live in SQLite, the PAT in the OS keychain, and mutating operations always pass through native approval. See the [architecture diagram](./docs/diagrams/openship-local-first.html)
 - **Agent policy** — read-only actions can be set to allow / ask / block, mutating actions to ask / block. The native approval for mutating actions cannot be skipped, and blocked actions are rejected in Rust before execution
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
-- **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, and agent commands
+- **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, agent, Git, and terminal commands. `⌘P` opens Quick Open and `⌘J` toggles the terminal
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
 - **Browser demo (sample)** — run the in-memory demo workspace with `npm run dev` without Tauri. On Vercel it is published as a sample for trying the UI without installing the app
 - **Skill definitions** — agent action definitions live in `.agents/skills/*.json` (skill execution is not implemented yet)
@@ -81,9 +84,10 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 
 - **Frontend**: Vite 8 + React 18.3 + TypeScript 6
 - **Editor**: Monaco Editor 0.52 (`@monaco-editor/react`)
-- **State**: Zustand 5 (workspace / editor / agent)
+- **State**: Zustand 5 (workspace / editor / agent / git)
 - **Desktop shell**: Tauri 2.0 (Rust 2024 edition)
-- **Backend**: Tauri commands (workspace / editor / agent / policy / llm / openship / settings / app), path validation, atomic writes
+- **Backend**: Tauri commands (workspace / editor / agent / policy / llm / openship / git / terminal / settings / app), path validation, atomic writes
+- **Git / terminal**: the `git` CLI runs through `std::process::Command` without shell string construction. The terminal allocates a PTY with `portable-pty` and streams output to xterm.js through Tauri events
 - **Database**: SQLite (WAL, bundled `rusqlite`) for version history, settings, and the audit log
 - **Bridge**: `src/lib/api.ts` wraps `invoke` and falls back to `src/lib/demo.ts` in the browser
 - **Packaging**: `tauri build` (`.app` / `.dmg`)
@@ -96,6 +100,8 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - Symlinks are not listed in the file tree
 - Writes use a temporary file plus `rename` (atomic write); deletes move entries to trash
 - Agent Desktop enforces an action allowlist plus argument length/shape checks, the agent policy, and a native approval dialog for mutating actions; output is truncated at 200,000 characters
+- Git operations run the `git` CLI without a shell, and staged paths are limited to relative paths inside the workspace. Diffs and command output are capped before display
+- The integrated terminal only launches an absolute shell path and fixes the working directory to the workspace root. PTY input and output stay local and are never sent off-device
 - The audit log is stored only in local SQLite and is never sent externally. It contains command arguments, output excerpts, and errors, so take care when backing up or sharing it
 - Snapshots are held in memory only and are not persisted to SQLite
 - API keys and the Openship PAT are stored only in the OS keychain and never in SQLite, logs, or error messages. LLM and Openship requests are sent from Rust; the WebView never calls external APIs directly
@@ -206,14 +212,16 @@ Detection order:
 4. Press `⌘S` to save or `⌘⇧S` to save all
 5. Toggle the split preview for Markdown from the toolbar
 6. Open history to inspect past versions and restore one into the editor (save with `⌘S`)
-7. Press `⌘K` to search and run commands from the palette
-8. Run `/status` in the agent panel to check whether Agent Desktop was detected
-9. Run `/snapshot` to capture a desktop snapshot
+7. Press `⌘K` to search and run commands from the palette, or `⌘P` to open a file by name
+8. Use the Git tab in the agent panel to review changes and stage, commit, inspect diffs, and browse history
+9. Press `⌘J` to open the integrated terminal at the workspace root
+10. Run `/status` in the agent panel to check whether Agent Desktop was detected
+11. Run `/snapshot` to capture a desktop snapshot
 
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.2.1 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.0 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned)
 - Targets macOS (Apple Silicon and Intel)
 
@@ -242,6 +250,14 @@ vercel --prod          # Deploy to production
 `vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
 
 ## Known limitations and roadmap
+
+### v0.3.0
+
+- [x] Quick Open (`⌘P`) — search workspace files by name and open them
+- [x] Git panel — branch / ahead / behind, changes, staged and untracked files, stage / unstage, diffs, commits, history, and `git init`
+- [x] Integrated terminal (`⌘J`) — interactive shell via `portable-pty` and xterm.js with resize, restart, and clear
+- [x] Real Git branch in the status bar; clicking it opens the Git tab
+- [x] PTY cleanup on terminal close and shutdown of all sessions on app exit
 
 ### v0.2.1
 
@@ -293,7 +309,7 @@ vercel --prod          # Deploy to production
 ### Next candidates
 
 - [ ] Skill execution and verification loop
-- [ ] Terminal (PTY), Git, LSP / DAP
+- [ ] LSP / DAP
 - [ ] Anthropic-specific API adapter
 - [ ] Release packaging (Developer ID signing and notarization)
 - [ ] Windows / Linux support
@@ -304,6 +320,9 @@ vercel --prod          # Deploy to production
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
 - Plans can only run allowlisted Agent Desktop actions. Editor, Git, and terminal skill execution is not implemented yet
+- The Git panel uses the local `git` CLI. If `git` is missing, the panel reports an error. Merge, rebase, push, and other history operations are not implemented
+- The integrated terminal is Tauri-only. Git and the terminal are disabled in the browser demo. PTYs stop when the app exits
+- The terminal shell can be changed with `RIGHT_STUFF_SHELL` or `SHELL`. Only an existing executable at an absolute path is launched
 - Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved (the policy cannot set them to allow)
 - The audit log is stored in local SQLite with a default retention of 30 days and a 5,000-row cap. Disabling it leaves existing records in place
 - Snapshots live in memory only and are lost on restart
@@ -319,8 +338,11 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / tabs / Markdown split preview
 │   ├── FileTree.tsx                # Workspace tree and file operations
-│   ├── AgentPanel.tsx              # Chat / Plan / Deploy / Audit / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Git / Deploy / Audit / Runtime
 │   ├── PlanPanel.tsx               # Plan generation, approval, and execution
+│   ├── GitPanel.tsx                # Git status, diffs, and commits
+│   ├── QuickOpen.tsx               # ⌘P Quick Open
+│   ├── TerminalDock.tsx            # ⌘J integrated terminal (xterm.js)
 │   ├── DeployPanel.tsx             # Openship history, logs, and deploys
 │   ├── AuditPanel.tsx              # Audit log list
 │   ├── AgentPolicySettings.tsx     # Agent policy settings
@@ -337,11 +359,11 @@ src/
 │   ├── policy.ts                   # Policy defaults and display labels
 │   └── monaco.ts                   # Monaco themes and worker setup
 ├── shared/types.ts                 # Shared frontend / backend types
-└── stores/                         # Zustand (workspace / editor / agent)
+└── stores/                         # Zustand (workspace / editor / agent / git)
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / policy / openship / settings / app
+│   ├── commands/                   # workspace / editor / agent / policy / llm / openship / git / terminal / settings / app
 │   ├── db.rs                       # SQLite (WAL) history, settings, and audit log
 │   ├── paths.rs                    # Path validation
 │   ├── state.rs                    # AppState

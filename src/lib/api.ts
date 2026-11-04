@@ -13,6 +13,10 @@ import type {
   AuditInput,
   FileContent,
   FileEntry,
+  GitCommandResult,
+  GitCommit,
+  GitDiff,
+  GitStatus,
   LlmChatMessage,
   LlmConfig,
   LlmSettings,
@@ -26,6 +30,9 @@ import type {
   OpenShipSettings,
   OpenShipStatus,
   SaveResult,
+  TerminalExit,
+  TerminalOutput,
+  TerminalStart,
   VersionContent,
   VersionSummary,
   WorkspaceInfo,
@@ -240,6 +247,83 @@ export const api = {
     return isTauri
       ? call<OpenShipDeployResult>("openship_rollback", { deploymentId })
       : demoApi.openshipRollback();
+  },
+
+  gitStatus(): Promise<GitStatus> {
+    return isTauri ? call<GitStatus>("git_status") : demoApi.gitStatus();
+  },
+
+  gitInit(): Promise<GitCommandResult> {
+    return isTauri ? call<GitCommandResult>("git_init") : demoApi.gitCommand();
+  },
+
+  gitDiff(path: string, staged: boolean): Promise<GitDiff> {
+    return isTauri
+      ? call<GitDiff>("git_diff", { path, staged })
+      : demoApi.gitDiff();
+  },
+
+  gitStage(path: string): Promise<GitCommandResult> {
+    return isTauri
+      ? call<GitCommandResult>("git_stage", { path })
+      : demoApi.gitCommand();
+  },
+
+  gitUnstage(path: string): Promise<GitCommandResult> {
+    return isTauri
+      ? call<GitCommandResult>("git_unstage", { path })
+      : demoApi.gitCommand();
+  },
+
+  gitStageAll(): Promise<GitCommandResult> {
+    return isTauri ? call<GitCommandResult>("git_stage_all") : demoApi.gitCommand();
+  },
+
+  gitUnstageAll(): Promise<GitCommandResult> {
+    return isTauri ? call<GitCommandResult>("git_unstage_all") : demoApi.gitCommand();
+  },
+
+  gitCommit(message: string): Promise<GitCommandResult> {
+    return isTauri
+      ? call<GitCommandResult>("git_commit", { message })
+      : demoApi.gitCommand();
+  },
+
+  gitLog(limit = 20): Promise<GitCommit[]> {
+    return isTauri
+      ? call<GitCommit[]>("git_log", { limit })
+      : demoApi.gitLog();
+  },
+
+  terminalStart(cols: number, rows: number): Promise<TerminalStart> {
+    if (!isTauri) return Promise.reject(new Error("ターミナルは Tauri 版でのみ利用できます。"));
+    return call<TerminalStart>("terminal_start", { cols, rows });
+  },
+
+  terminalWrite(id: string, data: string): Promise<void> {
+    return isTauri
+      ? call<void>("terminal_write", { id, data })
+      : Promise.resolve();
+  },
+
+  terminalResize(id: string, cols: number, rows: number): Promise<void> {
+    return isTauri
+      ? call<void>("terminal_resize", { id, cols, rows })
+      : Promise.resolve();
+  },
+
+  terminalKill(id: string): Promise<void> {
+    return isTauri ? call<void>("terminal_kill", { id }) : Promise.resolve();
+  },
+
+  onTerminalOutput(handler: (payload: TerminalOutput) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<TerminalOutput>("terminal://output", (event) => handler(event.payload));
+  },
+
+  onTerminalExit(handler: (payload: TerminalExit) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<TerminalExit>("terminal://exit", (event) => handler(event.payload));
   },
 
   llmConfig(): Promise<LlmSettings> {

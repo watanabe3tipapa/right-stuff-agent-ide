@@ -970,7 +970,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#9881;</div>
       <div class="feature-title">本格的 IDE 機能</div>
-      <div class="feature-desc">Monaco Editor を中心に、LSP クライアント、Git 統合、統合ターミナル、デバッガ連携を Phase 2 以降で追加します。</div>
+      <div class="feature-desc">Monaco Editor を中心に、クイックオープン、Git 統合、統合ターミナル (PTY) を実装済みです。LSP クライアントとデバッガ連携は今後追加します。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">&#128274;</div>
@@ -1070,11 +1070,11 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="roadmap-meta">ローカルファースト / 優先度: 高</div>
       <p>Deploy タブ、CLI 検出と REST フォールバック、デプロイ履歴・ログ・ロールバック、PAT のキーチェーン保存、変更操作のネイティブ承認、監査ログ記録。</p>
     </div>
-    <div class="roadmap-item">
+    <div class="roadmap-item done">
       <div class="roadmap-phase">Phase 2</div>
-      <div class="roadmap-title">IDE コア機能</div>
+      <div class="roadmap-title">IDE コア機能 <span class="roadmap-status">完了</span></div>
       <div class="roadmap-meta">4週間 / 優先度: 高</div>
-      <p>LSP クライアント、Git 統合、統合ターミナル、ファイル検索、プレビュー拡張。</p>
+      <p>クイックオープン、Git 統合、統合ターミナル (PTY)、ファイル検索を実装済み。LSP / DAP は次の増分で追加します。</p>
     </div>
     <div class="roadmap-item">
       <div class="roadmap-phase">Phase 3</div>
@@ -1120,7 +1120,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="step-num">02</div>
       <div class="step-content">
         <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.2.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
+        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.0" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
         <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
 cd right-stuff-agent-ide
 npm ci</pre>
@@ -1299,7 +1299,7 @@ Base URL: http://localhost:11434/v1
   </div>
   <div class="install-box">
     <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Windows / Linux は未検証）</p>
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.2.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。</p>
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.0" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。</p>
     <p style="color:var(--ink-muted);margin-bottom:0.5em;">ソースからビルドする場合</p>
     <pre>npm ci
 npm run tauri build

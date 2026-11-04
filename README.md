@@ -11,7 +11,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -22,10 +22,10 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 向けの
 
 ## ダウンロード
 
-v0.2.1 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.3.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.2.1_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.2.1_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.0_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.0_x64.dmg`
 
 > DMG は Apple Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。
 
@@ -35,7 +35,7 @@ v0.2.1 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。
+Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。Phase 2 では、クイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -45,7 +45,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 | 守る | atomic write、パス検証、ゴミ箱へのソフトデリート |
 | つなぐ | Agent Desktop CLI の検出、スナップショット、許可アクションの実行 |
 | 任せる | LLM チャット（OpenAI 互換）、計画立案と計画単位の承認 |
-| 広げる | ターミナル、Git、LSP / DAP（Phase 2 以降） |
+| 広げる | クイックオープン、Git パネル、統合ターミナル (PTY)、LSP / DAP（今後） |
 
 ### 設計方針
 
@@ -64,14 +64,17 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **Markdown プレビュー** — `react-markdown` + `remark-gfm` による GFM プレビューを分割表示
 - **バージョン履歴** — 保存のたびに SQLite (WAL) へ記録。ファイルあたり最新 100 版を保持し、任意の版をプレビューしてエディタへ復元
 - **ファイル操作** — 新規作成、名前変更、削除。削除は `.right-stuff/trash/<timestamp>/` へ移動するソフトデリート
-- **エージェントパネル** — Chat / Plan / Deploy / Audit / Runtime の 5 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan`・`/ship`・`/deploy`・`/logs`・`/rollback` コマンド
+- **エージェントパネル** — Chat / Plan / Git / Deploy / Audit / Runtime の 6 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan`・`/ship`・`/deploy`・`/logs`・`/rollback` コマンド
+- **クイックオープン** — `⌘P` でワークスペース内のファイルを名前から絞り込み、キーボードだけで開けます
+- **Git パネル** — 現在のブランチ、ahead / behind、変更・ステージ済み・未追跡を表示。ステージ / アンステージ、一括操作、差分プレビュー、コミット、直近の履歴に対応。Git リポジトリでないフォルダでは `git init` を実行できます
+- **統合ターミナル** — `⌘J` でワークスペース直下に PTY を開き、xterm.js で対話的に操作。リサイズ、再起動、クリアに対応し、シェルは `RIGHT_STUFF_SHELL` → `SHELL` → `/bin/zsh` の順で解決します
 - **LLM チャット** — OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続。ストリーミング表示、生成停止、接続テストに対応。API キーは OS キーチェーンに保存
 - **計画立案と承認** — 意図を入力すると LLM が Agent Desktop の許可アクションだけを使った実行計画を生成。手順ごとの引数検証、計画単位の承認、Assistive での個別実行、Autonomous での連続実行に対応。モデルが生成した不正なアクションや引数は実行前に拒否
 - **承認監査ログ** — 計画の作成・承認・却下・中止、操作の実行・拒否・キャンセル、ポリシー変更、Openship のデプロイ・ロールバックをローカルの SQLite に記録。Audit タブで新しい順に確認でき、保持期間（既定 30 日）を過ぎた記録と最新 5,000 件を超えた記録は自動で削除
 - **Openship 連携（ローカルファースト）** — Deploy タブからデプロイ履歴・ログ・ロールバックを操作。`openship` CLI を検出できれば CLI を優先し、未検出または失敗時のみセルフホスト REST API にフォールバック。接続設定は SQLite、PAT は OS キーチェーンに保存し、変更操作は必ずネイティブ承認ダイアログを通ります。構成図は [docs/diagrams/openship-local-first.html](./docs/diagrams/openship-local-first.html)
 - **エージェントポリシー** — 読み取り専用アクションは「許可 / 確認 / 禁止」、変更アクションは「確認 / 禁止」から選択。変更アクションのネイティブ承認を省略することはできず、ポリシーで禁止した操作は Rust 側で実行前に拒否
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
-- **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェントの操作を検索して実行
+- **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェント、Git、ターミナルの操作を検索して実行。`⌘P` はクイックオープン、`⌘J` はターミナルの表示切替
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
 - **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリのデモワークスペースを操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
 - **スキル定義** — `.agents/skills/*.json` にエージェント向けの操作定義を配置（スキル実行は未実装）
@@ -81,9 +84,10 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 
 - **フロントエンド**: Vite 8 + React 18.3 + TypeScript 6
 - **エディタ**: Monaco Editor 0.52（`@monaco-editor/react`）
-- **状態管理**: Zustand 5（workspace / editor / agent）
+- **状態管理**: Zustand 5（workspace / editor / agent / git）
 - **デスクトップ基盤**: Tauri 2.0（Rust 2024 edition）
-- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / openship / settings / app）、パス検証、atomic write
+- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / openship / git / terminal / settings / app）、パス検証、atomic write
+- **Git / ターミナル**: `git` CLI を `std::process::Command` 経由で実行（シェル文字列を組み立てない）。ターミナルは `portable-pty` で PTY を確保し、出力を Tauri イベントで xterm.js へストリーミング
 - **データベース**: SQLite（WAL、`rusqlite` bundled）。バージョン履歴、設定、監査ログを保存
 - **ブリッジ**: `src/lib/api.ts` が `invoke` を薄くラップし、ブラウザでは `src/lib/demo.ts` にフォールバック
 - **パッケージ**: `tauri build`（`.app` / `.dmg`）
@@ -96,6 +100,8 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - シンボリックリンクはファイルツリーに列挙しません
 - 書き込みは一時ファイル + `rename` の atomic write。削除はゴミ箱へ退避します
 - Agent Desktop の実行はアクション名の許可リスト、引数の長さ・形式の検証、エージェントポリシー、変更操作のネイティブ承認ダイアログを通し、出力は 200,000 文字で打ち切ります
+- Git 操作は `git` CLI をシェル経由せずに実行し、ステージ対象のパスはワークスペース内の相対パスに限定します。差分・コマンド出力は上限付きで UI に表示します
+- 統合ターミナルは絶対パスのシェルのみを起動し、作業ディレクトリをワークスペース直下に固定します。PTY の入出力はローカルで完結し、外部へ送信しません
 - 監査ログはローカルの SQLite にのみ保存し、外部へ送信しません。コマンド引数・出力・エラーの抜粋を含むため、バックアップや共有の際は注意してください
 - スナップショットはメモリ上にのみ保持し、SQLite へ永続化しません
 - API キーと Openship の PAT は OS キーチェーンにのみ保存し、SQLite・ログ・エラーメッセージには含めません。LLM と Openship への通信は Rust 側で行い、WebView から外部 API を直接呼びません
@@ -206,15 +212,17 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 4. `⌘S` で保存、`⌘⇧S` ですべて保存します
 5. Markdown はツールバーのプレビュー切替で分割表示できます
 6. 履歴ボタンから過去の版を確認し、必要ならエディタへ復元します（保存は `⌘S`）
-7. `⌘K` でコマンドパレットを開き、操作を検索して実行します
-8. エージェントパネルで `/status` を実行し、Agent Desktop の検出状態を確認します
-9. `/snapshot` でデスクトップのスナップショットを取得できます
-10. Openship を使う場合は「設定 > Openship」で Base URL と PAT を登録するか、`openship` CLI を `PATH` に配置します。Deploy タブの「デプロイ」はネイティブ承認を経て実行され、履歴・ログ・ロールバックも同じ画面から操作できます
+7. `⌘K` でコマンドパレットを開き、操作を検索して実行します。`⌘P` のクイックオープンでファイル名から直接開けます
+8. エージェントパネルの Git タブで変更を確認し、ステージ・コミット・差分・履歴を操作します
+9. `⌘J` で統合ターミナルを開き、ワークスペース直下でコマンドを実行します
+10. エージェントパネルで `/status` を実行し、Agent Desktop の検出状態を確認します
+11. `/snapshot` でデスクトップのスナップショットを取得できます
+12. Openship を使う場合は「設定 > Openship」で Base URL と PAT を登録するか、`openship` CLI を `PATH` に配置します。Deploy タブの「デプロイ」はネイティブ承認を経て実行され、履歴・ログ・ロールバックも同じ画面から操作できます
 
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.2.1 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
+- v0.3.0 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - macOS（Apple Silicon / Intel）を対象としています
 
@@ -243,6 +251,14 @@ vercel --prod          # 本番環境へデプロイ
 `vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内のメモリ上で動作し、変更は保存されません。
 
 ## 既知の制約とロードマップ
+
+### v0.3.0
+
+- [x] クイックオープン（`⌘P`）— ワークスペース内のファイルを名前で検索して開く
+- [x] Git パネル — ブランチ / ahead・behind、変更・ステージ・未追跡、ステージ / アンステージ、差分、コミット、履歴、`git init`
+- [x] 統合ターミナル（`⌘J`）— `portable-pty` と xterm.js による対話シェル、リサイズ・再起動・クリア
+- [x] ステータスバーに実際の Git ブランチを表示し、クリックで Git タブを開く
+- [x] ターミナル終了時の PTY クリーンアップと、アプリ終了時の全セッション停止
 
 ### v0.2.1
 
@@ -294,7 +310,7 @@ vercel --prod          # 本番環境へデプロイ
 ### 次の候補
 
 - [ ] スキル実行と検証ループ
-- [ ] ターミナル (PTY)、Git、LSP / DAP
+- [ ] LSP / DAP
 - [ ] Anthropic 固有 API のアダプター
 - [ ] リリースパッケージング（Developer ID 署名・公証）
 - [ ] Windows / Linux 対応
@@ -305,6 +321,9 @@ vercel --prod          # 本番環境へデプロイ
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
 - 計画の実行対象は Agent Desktop の許可アクションに限られます。エディタ・Git・ターミナルのスキル実行は未実装です
+- Git パネルはローカルの `git` CLI を利用します。`git` がインストールされていない場合はエラーを表示します。マージ・リベース・プッシュなどの履歴操作は未対応です
+- 統合ターミナルは Tauri 版でのみ利用できます。ブラウザデモでは Git とターミナルは無効です。PTY はアプリ終了時に停止します
+- ターミナルのシェルは `RIGHT_STUFF_SHELL` または `SHELL` で変更できます。絶対パスで存在する実行ファイルのみ起動します
 - 計画と実行結果はメモリ上にのみ保持され、再起動すると失われます。変更操作は計画承認後も、実行時に OS のネイティブ承認ダイアログで確認します（ポリシーで「許可」にすることはできません）
 - 監査ログはローカルの SQLite に保存され、保持期間の既定は 30 日、上限は 5,000 件です。監査ログを無効にしても既存の記録は残ります
 - スナップショットはメモリ上にのみ保持され、再起動すると失われます
@@ -320,8 +339,11 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / タブ / Markdown 分割プレビュー
 │   ├── FileTree.tsx                # ワークスペースツリーとファイル操作
-│   ├── AgentPanel.tsx              # Chat / Plan / Deploy / Audit / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Git / Deploy / Audit / Runtime
 │   ├── PlanPanel.tsx               # 計画の生成・承認・実行
+│   ├── GitPanel.tsx                # Git の状態・差分・コミット
+│   ├── QuickOpen.tsx               # ⌘P クイックオープン
+│   ├── TerminalDock.tsx            # ⌘J 統合ターミナル (xterm.js)
 │   ├── DeployPanel.tsx             # Openship の履歴・ログ・デプロイ
 │   ├── AuditPanel.tsx              # 監査ログの一覧
 │   ├── AgentPolicySettings.tsx     # エージェントポリシー設定
@@ -338,11 +360,11 @@ src/
 │   ├── policy.ts                   # ポリシー既定値・表示ラベル
 │   └── monaco.ts                   # Monaco テーマ・ワーカー設定
 ├── shared/types.ts                 # フロントエンド / バックエンド共有型
-└── stores/                         # Zustand (workspace / editor / agent)
+└── stores/                         # Zustand (workspace / editor / agent / git)
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / policy / openship / settings / app
+│   ├── commands/                   # workspace / editor / agent / policy / llm / openship / git / terminal / settings / app
 │   ├── db.rs                       # SQLite (WAL) 履歴・設定・監査ログ
 │   ├── paths.rs                    # パス検証
 │   ├── state.rs                    # AppState

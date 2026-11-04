@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -7,6 +8,7 @@ use rusqlite::Connection;
 use tauri::{AppHandle, Manager};
 use tokio::sync::Notify;
 
+use crate::commands::terminal::TerminalHandle;
 use crate::db;
 
 /// Cooperative cancellation flag shared between the UI command and an
@@ -44,6 +46,7 @@ pub struct AppState {
     pub db: Mutex<Connection>,
     pub http: reqwest::Client,
     pub llm_cancel: Mutex<Option<Arc<CancelFlag>>>,
+    pub terminals: Mutex<HashMap<String, TerminalHandle>>,
 }
 
 impl AppState {
@@ -66,6 +69,7 @@ impl AppState {
             db: Mutex::new(conn),
             http,
             llm_cancel: Mutex::new(None),
+            terminals: Mutex::new(HashMap::new()),
         })
     }
 

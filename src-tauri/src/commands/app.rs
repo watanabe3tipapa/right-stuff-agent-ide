@@ -25,5 +25,8 @@ pub fn app_info() -> AppInfo {
 /// Kept as a command so the exit only happens after the in-app dialog resolves.
 #[tauri::command]
 pub fn app_quit(app: tauri::AppHandle) {
+    use tauri::Manager;
+    let state = app.state::<crate::state::AppState>();
+    crate::commands::terminal::shutdown_terminals(&state.terminals);
     app.exit(0);
 }

@@ -68,7 +68,7 @@ export interface AppInfo {
 
 export type AgentMode = "passive" | "assistive" | "autonomous";
 
-export type AgentPanelTab = "chat" | "plan" | "deploy" | "audit" | "runtime";
+export type AgentPanelTab = "chat" | "plan" | "git" | "deploy" | "audit" | "runtime";
 
 export type AgentPolicyDecision = "allow" | "ask" | "block";
 
@@ -259,4 +259,57 @@ export interface OpenShipLogs {
   ok: boolean;
   status: number | null;
   logs: string;
+}
+
+export interface GitFile {
+  path: string;
+  status: string;
+}
+
+export interface GitStatus {
+  repo: boolean;
+  branch: string | null;
+  ahead: number;
+  behind: number;
+  staged: GitFile[];
+  unstaged: GitFile[];
+  untracked: GitFile[];
+  clean: boolean;
+  message: string | null;
+}
+
+export interface GitDiff {
+  path: string;
+  staged: boolean;
+  diff: string;
+  truncated: boolean;
+}
+
+export interface GitCommandResult {
+  ok: boolean;
+  code: number | null;
+  stdout: string;
+  stderr: string;
+  command: string[];
+}
+
+export interface GitCommit {
+  hash: string;
+  author: string;
+  date: string;
+  subject: string;
+}
+
+export interface TerminalStart {
+  id: string;
+  shell: string;
+}
+
+export interface TerminalOutput {
+  id: string;
+  data: number[];
+}
+
+export interface TerminalExit {
+  id: string;
 }

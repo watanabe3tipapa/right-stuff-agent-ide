@@ -266,6 +266,73 @@ interface OpenShipDeployResult {
 - `deploy` と `rollback` は変更操作として扱い、Passive モードでは拒否する。Assistive / Autonomous でもネイティブ承認ダイアログを必ず表示し、ポリシーで省略できない。実行結果は監査ログ (`action_run` / `action_blocked`) に記録する。
 - プロジェクト ID・デプロイ ID・ブランチは英数字と `-` / `_` に制限し、シェル引数へ直接展開しない。
 
+## Git
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `git_status` | — | `GitStatus` |
+| `git_init` | — | `GitCommandResult` |
+| `git_diff` | `{ path, staged }` | `GitDiff` |
+| `git_stage` | `{ path }` | `GitCommandResult` |
+| `git_unstage` | `{ path }` | `GitCommandResult` |
+| `git_stage_all` | — | `GitCommandResult` |
+| `git_unstage_all` | — | `GitCommandResult` |
+| `git_commit` | `{ message }` | `GitCommandResult` |
+| `git_log` | `{ limit? }` | `GitCommit[]` |
+
+```ts
+interface GitStatus {
+  repo: boolean;
+  branch: string | null;
+  ahead: number;
+  behind: number;
+  staged: GitFile[];
+  unstaged: GitFile[];
+  untracked: GitFile[];
+  clean: boolean;
+  message: string | null;
+}
+
+interface GitFile { path: string; status: string; }
+interface GitDiff { path: string; staged: boolean; diff: string; truncated: boolean; }
+interface GitCommandResult {
+  ok: boolean;
+  code: number | null;
+  stdout: string;
+  stderr: string;
+  command: string[];
+}
+interface GitCommit { hash: string; author: string; date: string; subject: string; }
+```
+
+- すべての操作はワークスペースルートで `git` CLI を `std::process::Command` から直接実行する。シェル文字列は組み立てない。
+- `git_status` は `git status --porcelain=v2 --branch --untracked-files=all` を解析する。リポジトリでない場合は `repo: false` とメッセージを返し、エラーにしない。
+- `path` は `paths::validate_relative` で正規化し、絶対パスと `..` を拒否する。`git_stage` は `git add --`、`git_unstage` は `git restore --staged --` を使う。
+- `git_diff` は `--no-color --unified=3` で取得し、未追跡ファイルは `git diff --no-index -- /dev/null <path>` にフォールバックする。出力は 200,000 文字で打ち切る。
+- `git_commit` は空メッセージと 5,000 文字超を拒否する。`git_log` の `limit` は 1–50（既定 20）。
+- コマンド出力は `stdout` / `stderr` をそれぞれ 200,000 文字で打ち切る。
+
+## 統合ターミナル
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `terminal_start` | `{ cols, rows }` | `{ id, shell }` |
+| `terminal_write` | `{ id, data }` | — |
+| `terminal_resize` | `{ id, cols, rows }` | — |
+| `terminal_kill` | `{ id }` | — |
+
+- `portable-pty` で PTY を開き、ワークスペースルートを作業ディレクトリにしてシェルを起動する。シェルは `RIGHT_STUFF_SHELL` → `SHELL` → `/bin/zsh` の順で解決し、絶対パスかつ存在するファイルのみ許可する。
+- `cols` は 1–400、`rows` は 1–200 にクランプする。`TERM=xterm-256color`、`COLORTERM=truecolor` を設定する。
+- 出力は Tauri イベントで送る。バイト列のため `number[]` として渡し、フロントエンドで `Uint8Array` に戻す。
+
+```ts
+interface TerminalOutput { id: string; data: number[]; }
+interface TerminalExit { id: string; }
+```
+
+- イベント名は `terminal://output` と `terminal://exit`。読み取りスレッドは PTY が閉じると終了イベントを送る。
+- `terminal_kill` とアプリ終了時 (`app_quit`) は子プロセスを kill し、セッションを破棄する。
+
 ## 設定
 
 | コマンド | 引数 | 戻り値 |

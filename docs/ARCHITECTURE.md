@@ -26,6 +26,8 @@
 - WebView が UI を描画し、`invoke` で Rust 側のコマンドを呼び出す。
 - ファイル I/O と SQLite は Rust プロセス内で完結する。
 - Agent Desktop は Rust から子プロセスとして起動する。stdout / stderr はそのまま UI に返す。
+- Git は Rust から `git` CLI を子プロセスとして起動する。シェルを介さず、引数を配列で渡す。
+- 統合ターミナルは Rust 内で PTY を確保し、読み取り専用スレッドが出力を `terminal://output` イベントで WebView へ流す。
 - ブラウザで `npm run dev` した場合、`src/lib/demo.ts` の仮想ワークスペースに切り替わる。
 
 ## 状態
@@ -34,9 +36,11 @@
 | --- | --- |
 | `AppState.root` | 現在のワークスペース (canonical path) |
 | `AppState.db` | SQLite 接続 (履歴・設定) |
+| `AppState.terminals` | 起動中の PTY セッション (writer / master / child) |
 | `workspaceStore` | ツリー、選択、展開状態 |
 | `editorStore` | 開いているタブ、未保存内容、履歴モーダル |
 | `agentStore` | モード、Agent Desktop の検出状態、チャット、計画と実行状態 |
+| `gitStore` | Git の状態、差分、ログ、実行中フラグ |
 
 `localStorage` に保存するのはエージェントモードのみ。それ以外の永続データは
 SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
@@ -193,6 +197,37 @@ Agent Panel (Deploy タブ / /deploy / /logs / /rollback)
   ネイティブ承認を省略できない。
 - 設定・トークン・監査ログ・デプロイ結果は端末外へ送信しない。
 
+## Git 連携フロー
+
+```
+GitPanel (マウント / 更新)
+  → gitStore.refresh
+  → git_status (porcelain=v2 --branch --untracked-files=all)
+  → ブランチ・ahead/behind・ステージ済み/変更/未追跡に分解
+  → ステージ / アンステージ / 差分 / コミット / 履歴をコマンドで実行
+  → 成功時に status と log を再取得
+```
+
+- `git` はワークスペースルートで実行し、パスは相対パス検証を通す。
+- ステータスが取得できない場合も UI を壊さず、`repo: false` とメッセージを表示する。
+- ブラウザデモでは Git を無効化し、Tauri 版の利用を案内する。
+
+## 統合ターミナルフロー
+
+```
+TerminalDock (⌘J)
+  → xterm.js を初期化し、出力/終了イベントを先に購読
+  → terminal_start (cols, rows)
+  → portable-pty がシェルを起動し、読み取りスレッドを開始
+  → terminal://output (number[]) を xterm へ書き込み
+  → 入力は terminal_write、リサイズは terminal_resize
+  → 閉じる / 再起動 / アプリ終了時に terminal_kill
+```
+
+- シェル起動直後のプロンプトを取りこぼさないよう、フロントエンドは
+  `terminal_start` の前にイベントを登録し、ID 確定までの出力をバッファする。
+- PTY はワークスペースごとではなくアプリ全体で保持し、終了時に全セッションを停止する。
+
 ## ディレクトリ
 
 実際の Rust クレートは Tauri の慣例に合わせて `src-tauri/` に置いている
@@ -200,12 +235,12 @@ Agent Panel (Deploy タブ / /deploy / /logs / /rollback)
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, DeployPanel, AuditPanel, AgentPolicySettings, OpenShipSettings, SettingsDialog, ...)
+├── components/ (AgentPanel, PlanPanel, GitPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, OpenShipSettings, SettingsDialog, ...)
 ├── lib/{api,demo,llm,plan,policy,monaco}.ts
 ├── shared/types.ts
-└── stores/{workspace,editor,agent}Store.ts
+└── stores/{workspace,editor,agent,git}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,policy,llm,openship,settings,app}.rs
+├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,settings,app}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs
@@ -216,4 +251,5 @@ src-tauri/src/
 
 - 大きなツリーの列挙は `spawn_blocking` + ページングに移行する。
 - Monaco と Agent パネルは動的 import でチャンク分割する (現在は単一バンドル)。
-- ターミナルは PTY (portable-pty) を別スレッドで管理し、イベントで差分を流す。
+- ターミナルは複数セッションのタブ化と、スクロールバックの永続化を検討する。
+- Git は merge / rebase / push などの履歴操作を追加する。

@@ -1,6 +1,7 @@
 import type { AgentMode, AppInfo } from "../shared/types";
 import { isDirty, useEditorStore } from "../stores/editorStore";
 import { useAgentStore } from "../stores/agentStore";
+import { useGitStore } from "../stores/gitStore";
 import { useWorkspaceStore } from "../stores/workspaceStore";
 import { Icon } from "./Icon";
 
@@ -22,6 +23,8 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
   const mode = useAgentStore((state) => state.mode);
   const setMode = useAgentStore((state) => state.setMode);
   const status = useAgentStore((state) => state.status);
+  const setPanelTab = useAgentStore((state) => state.setPanelTab);
+  const gitStatus = useGitStore((state) => state.status);
 
   const dirtyCount = order.filter((path) => {
     const file = files[path];
@@ -38,9 +41,14 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
   return (
     <footer className="statusbar">
       <div className="status-left">
-        <span className="status-item">
-          <Icon name="branch" size={12} /> main
-        </span>
+        <button
+          type="button"
+          className="status-item status-branch"
+          onClick={() => setPanelTab("git")}
+          title="Git パネルを開く"
+        >
+          <Icon name="branch" size={12} /> {gitStatus?.branch ?? "no git"}
+        </button>
         {info && <span className="status-item status-workspace">{info.name}</span>}
         {(activePath || selectedPath) && (
           <span className="status-item status-path" title={activePath ?? selectedPath ?? ""}>
@@ -73,7 +81,7 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
           {modeLabels[mode]}
         </button>
         <span className="status-item status-version">
-          v{appInfo?.version ?? "0.2.1"}
+          v{appInfo?.version ?? "0.3.0"}
         </span>
       </div>
     </footer>

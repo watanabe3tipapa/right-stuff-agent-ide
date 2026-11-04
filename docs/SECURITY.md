@@ -98,6 +98,24 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - CLI は `cliPath`、`PATH`、`OPENSHIP_BIN` の順に検出する。設定された CLI パスは実行ファイルとして存在するか確認する。
 - REST はセルフホストの Openship を想定する。履歴・ログの取得は読み取り操作、デプロイ・ロールバックは承認必須の変更操作として扱う。
 
+## Git 連携
+
+- `git` CLI をワークスペースルートから `std::process::Command` で直接実行する。シェルを介さず、ユーザー入力をコマンド文字列へ連結しない。
+- ステージ / アンステージ / 差分の対象パスは `paths::validate_relative` で検証し、絶対パスと `..` を拒否する。ワークスペース外のファイルは操作できない。
+- コミットメッセージは空文字と 5,000 文字超を拒否する。改行はそのまま 1 つの引数として渡す。
+- `git_status` は `--porcelain=v2 --branch --untracked-files=all`、差分は `--no-color --unified=3` を使い、出力は 200,000 文字で打ち切る。
+- `GIT_TERMINAL_PROMPT=0` を設定し、認証待ちでアプリが停止しないようにする。Git の通信・認証情報は OS / Git の設定に従う。
+- ステータス・差分・履歴はローカルでのみ扱い、外部へ送信しない。
+
+## 統合ターミナル
+
+- 起動するシェルは `RIGHT_STUFF_SHELL` → `SHELL` → `/bin/zsh` の順で解決し、絶対パスかつ存在する実行ファイルのみ許可する。相対パスや存在しないパスは拒否する。
+- 作業ディレクトリはワークスペースルートに固定する。ユーザーがシェル内で移動した後の挙動は通常のシェルと同じ。
+- PTY の出力は Tauri イベント (`terminal://output`) で WebView へ渡すだけで、ネットワークへ送信しない。
+- ターミナルは Tauri 版でのみ有効。ブラウザデモでは起動しない。
+- セッションは `AppState.terminals` で管理し、ターミナルを閉じたとき、再起動したとき、アプリ終了時に子プロセスを kill する。
+- PTY はユーザーが起動したシェルであり、シェル内で実行されるコマンドはアプリの承認フローや監査ログの対象外である。
+
 ## CSP と HTTP ヘッダー
 
 - Tauri は本番用 `csp` と開発用 `devCsp` を分けて設定する。本番は `default-src 'self'` を基底とし、Monaco の worker 用に `worker-src 'self' blob:`、Google Fonts 用に `font-src`、Tauri IPC 用に `connect-src ipc: http://ipc.localhost` を許可する。
@@ -122,6 +140,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 | バージョン履歴・LLM 設定・エージェントポリシー・Openship 設定・監査ログ | OS の app data ディレクトリ内 `right-stuff.db` |
 | エージェントモード | WebView の `localStorage` |
 | API キー・Openship PAT | OS キーチェーン |
+| ターミナルの PTY | メモリ上のみ（再起動で消滅） |
 
 `right-stuff.db` は WAL モードで開く。履歴にはファイル内容が、監査ログには
 コマンド引数と失敗時のエラー抜粋が含まれるため、バックアップや共有の際は
@@ -135,3 +154,5 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - 計画本体と stdout 全体はメモリ上にのみ保持され、再起動すると失われる。監査ログに残るのは状態遷移と実行メタデータのみ。
 - 監査ログのエクスポート・改ざん検知・外部 SIEM 連携は未実装。
 - API キーのローテーションや複数キーの管理は未実装。
+- Git の merge / rebase / push と認証情報の管理は未実装。Git 操作の監査ログ記録は未対応。
+- 統合ターミナル内のコマンドはアプリのポリシー・承認・監査ログの対象外。信頼できる作業ディレクトリでのみ利用する。

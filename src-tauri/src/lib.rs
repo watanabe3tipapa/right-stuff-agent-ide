@@ -144,6 +144,19 @@ pub fn run() {
             commands::llm::llm_test,
             commands::llm::llm_chat,
             commands::llm::llm_cancel,
+            commands::git::git_status,
+            commands::git::git_init,
+            commands::git::git_diff,
+            commands::git::git_stage,
+            commands::git::git_unstage,
+            commands::git::git_stage_all,
+            commands::git::git_unstage_all,
+            commands::git::git_commit,
+            commands::git::git_log,
+            commands::terminal::terminal_start,
+            commands::terminal::terminal_write,
+            commands::terminal::terminal_resize,
+            commands::terminal::terminal_kill,
         ])
         .run(tauri::generate_context!())
         .expect("error while running right-stuff-agent-ide");

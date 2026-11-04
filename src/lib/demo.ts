@@ -5,6 +5,10 @@ import type {
   AppInfo,
   FileContent,
   FileEntry,
+  GitCommandResult,
+  GitCommit,
+  GitDiff,
+  GitStatus,
   LlmSettings,
   LlmTestResult,
   OpenShipDeployResult,
@@ -55,7 +59,7 @@ npm run tauri dev
   "package.json": `{
   "name": "right-stuff-agent-ide",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -240,7 +244,7 @@ export const demoApi = {
   async appInfo(): Promise<AppInfo> {
     return {
       name: "Right-Stuff Agent IDE",
-      version: "0.2.1-demo",
+      version: "0.3.0-demo",
       tauriVersion: "browser",
       platform: "browser",
       arch: "web",
@@ -432,6 +436,37 @@ export const demoApi = {
     throw new Error(
       "ブラウザデモでは Openship をロールバックできません。`npm run tauri dev` で起動してください。",
     );
+  },
+
+  async gitStatus(): Promise<GitStatus> {
+    return {
+      repo: false,
+      branch: null,
+      ahead: 0,
+      behind: 0,
+      staged: [],
+      unstaged: [],
+      untracked: [],
+      clean: true,
+      message:
+        "ブラウザデモでは Git を利用できません。`npm run tauri dev` で起動してください。",
+    };
+  },
+
+  async gitDiff(): Promise<GitDiff> {
+    throw new Error(
+      "ブラウザデモでは Git の差分を表示できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async gitCommand(): Promise<GitCommandResult> {
+    throw new Error(
+      "ブラウザデモでは Git を操作できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async gitLog(): Promise<GitCommit[]> {
+    return [];
   },
 
   async llmConfig(): Promise<LlmSettings> {

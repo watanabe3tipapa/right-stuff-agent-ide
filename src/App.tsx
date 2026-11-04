@@ -4,6 +4,7 @@ import type { AppInfo, FileEntry } from "./shared/types";
 import { api, errorMessage } from "./lib/api";
 import { useAgentStore } from "./stores/agentStore";
 import { confirmUnsavedChanges, useEditorStore } from "./stores/editorStore";
+import { useGitStore } from "./stores/gitStore";
 import { useWorkspaceStore } from "./stores/workspaceStore";
 import { AgentPanel } from "./components/AgentPanel";
 import { CommandPalette } from "./components/CommandPalette";
@@ -11,8 +12,10 @@ import { EditorPane } from "./components/EditorPane";
 import { FileTree } from "./components/FileTree";
 import { HistoryDialog } from "./components/HistoryDialog";
 import { Icon } from "./components/Icon";
+import { QuickOpen } from "./components/QuickOpen";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { StatusBar } from "./components/StatusBar";
+import { TerminalDock } from "./components/TerminalDock";
 import { TopBar } from "./components/TopBar";
 import { UnsavedChangesDialog } from "./components/UnsavedChangesDialog";
 import { Welcome } from "./components/Welcome";
@@ -42,9 +45,12 @@ export function App() {
   const refreshAgentStatus = useAgentStore((state) => state.refreshStatus);
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
   const refreshPolicy = useAgentStore((state) => state.refreshPolicy);
+  const refreshGit = useGitStore((state) => state.refresh);
 
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(false);
   const booted = useRef(false);
   const openedWorkspace = useRef<string | null>(null);
   const quitting = useRef(false);
@@ -145,6 +151,22 @@ export function App() {
   }, [info?.root, tree]);
 
   useEffect(() => {
+    if (!info?.root) return;
+    void refreshGit();
+  }, [info?.root, refreshGit]);
+
+  useEffect(() => {
+    const openQuick = () => setQuickOpen(true);
+    const toggleTerminal = () => setTerminalOpen((value) => !value);
+    window.addEventListener("rsai:quick-open", openQuick);
+    window.addEventListener("rsai:toggle-terminal", toggleTerminal);
+    return () => {
+      window.removeEventListener("rsai:quick-open", openQuick);
+      window.removeEventListener("rsai:toggle-terminal", toggleTerminal);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!notice) return;
     const timer = window.setTimeout(clearNotice, 6000);
     return () => window.clearTimeout(timer);
@@ -152,7 +174,10 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const mod = event.metaKey || event.ctrlKey;
+      // On macOS, Ctrl belongs to the shell and text fields; only Command is
+      // the global modifier. Other platforms use Ctrl.
+      const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+      const mod = isMac ? event.metaKey : event.ctrlKey;
       const key = event.key.toLowerCase();
 
       if (mod && key === "k") {
@@ -161,9 +186,19 @@ export function App() {
         return;
       }
 
-      if (mod && event.shiftKey && key === "p") {
+      if (mod && key === "p") {
         event.preventDefault();
-        setPaletteOpen(true);
+        if (event.shiftKey) {
+          setPaletteOpen(true);
+        } else {
+          setQuickOpen((value) => !value);
+        }
+        return;
+      }
+
+      if (mod && key === "j") {
+        event.preventDefault();
+        setTerminalOpen((value) => !value);
         return;
       }
 
@@ -179,6 +214,7 @@ export function App() {
 
       if (event.key === "Escape") {
         setPaletteOpen(false);
+        setQuickOpen(false);
       }
     };
 
@@ -207,6 +243,7 @@ export function App() {
         <FileTree />
         <main className="main-area">
           {info ? <EditorPane /> : <Welcome />}
+          <TerminalDock open={terminalOpen} onClose={() => setTerminalOpen(false)} />
         </main>
         <AgentPanel />
       </div>
@@ -214,6 +251,7 @@ export function App() {
       <StatusBar appInfo={appInfo} />
 
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
+      {quickOpen && <QuickOpen onClose={() => setQuickOpen(false)} />}
       <HistoryDialog />
       <SettingsDialog />
       <UnsavedChangesDialog />

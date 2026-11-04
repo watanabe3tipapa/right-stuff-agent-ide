@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 
 import type { AgentMode, ChatMessage } from "../shared/types";
 import { useAgentStore } from "../stores/agentStore";
+import { useGitStore } from "../stores/gitStore";
 import { AuditPanel } from "./AuditPanel";
 import { DeployPanel } from "./DeployPanel";
+import { GitPanel } from "./GitPanel";
 import { Icon } from "./Icon";
 import { PlanPanel } from "./PlanPanel";
 
@@ -325,6 +327,7 @@ export function AgentPanel() {
   const status = useAgentStore((state) => state.status);
   const plan = useAgentStore((state) => state.plan);
   const openSettings = useAgentStore((state) => state.openSettings);
+  const gitStaged = useGitStore((state) => state.status?.staged.length ?? 0);
 
   return (
     <aside className="agent-panel">
@@ -354,6 +357,15 @@ export function AgentPanel() {
                 onClick={() => setTab("plan")}
               >
                 Plan
+              </button>
+              <button
+                type="button"
+                className={`${tab === "git" ? "active" : ""}${
+                  gitStaged > 0 ? " has-plan" : ""
+                }`}
+                onClick={() => setTab("git")}
+              >
+                Git
               </button>
               <button
                 type="button"
@@ -403,6 +415,8 @@ export function AgentPanel() {
         <AuditPanel />
       ) : tab === "deploy" ? (
         <DeployPanel />
+      ) : tab === "git" ? (
+        <GitPanel />
       ) : (
         <RuntimeView />
       )}

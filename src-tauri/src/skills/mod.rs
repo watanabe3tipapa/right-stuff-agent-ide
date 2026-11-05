@@ -1,6 +1,10 @@
+pub mod debug;
 pub mod editor;
+pub mod exec;
+pub mod git;
 pub mod params;
 pub mod policy;
+pub mod terminal;
 pub mod verify;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -19,10 +23,42 @@ pub const MAX_MANIFEST_FILES: usize = 64;
 
 /// Handlers registered by the Rust runtime. A manifest cannot name anything
 /// outside this set, so a malicious JSON file cannot add behavior.
-pub const IMPLEMENTED_HANDLERS: &[&str] =
-    &["editor.readFile", "editor.replaceText", "editor.createFile"];
+pub const IMPLEMENTED_HANDLERS: &[&str] = &[
+    "editor.readFile",
+    "editor.replaceText",
+    "editor.createFile",
+    "git.status",
+    "git.diff",
+    "git.branches",
+    "git.stage",
+    "git.stageAll",
+    "git.commit",
+    "terminal.run",
+    "debug.start",
+    "debug.stop",
+    "debug.continue",
+    "debug.next",
+    "debug.stepIn",
+    "debug.pause",
+    "debug.setBreakpoint",
+    "debug.evaluate",
+];
 
-const ALLOWED_PROGRAMS: &[&str] = &["npm", "pnpm", "yarn", "cargo"];
+/// Result of one skill handler. `stdout` is shown in the UI, while `detail`
+/// is the short summary stored in the audit log.
+#[derive(Debug, Default)]
+pub struct HandlerOutcome {
+    pub changed_files: Vec<String>,
+    pub stdout: String,
+    pub detail: String,
+    /// Set when the handler ran but the underlying process failed.
+    pub failed: bool,
+    pub exit_code: Option<i32>,
+}
+
+const ALLOWED_PROGRAMS: &[&str] = &[
+    "npm", "pnpm", "yarn", "cargo", "node", "python3", "pytest", "make",
+];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

@@ -52,6 +52,13 @@ pub struct GitCommandResult {
     pub command: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitBranch {
+    pub name: String,
+    pub current: bool,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GitCommit {
@@ -197,10 +204,8 @@ fn parse_status(text: &str) -> GitStatus {
     status
 }
 
-#[tauri::command]
-pub fn git_status(state: State<'_, AppState>) -> AppResult<GitStatus> {
-    let root = state.root()?;
-    let probe = run_git(&root, &["rev-parse", "--is-inside-work-tree"])?;
+pub(crate) fn status_at(root: &Path) -> AppResult<GitStatus> {
+    let probe = run_git(root, &["rev-parse", "--is-inside-work-tree"])?;
     if !probe.status.success() {
         return Ok(GitStatus {
             repo: false,
@@ -216,7 +221,7 @@ pub fn git_status(state: State<'_, AppState>) -> AppResult<GitStatus> {
     }
 
     let output = run_git(
-        &root,
+        root,
         &[
             "status",
             "--porcelain=v2",
@@ -242,31 +247,35 @@ pub fn git_status(state: State<'_, AppState>) -> AppResult<GitStatus> {
 }
 
 #[tauri::command]
+pub fn git_status(state: State<'_, AppState>) -> AppResult<GitStatus> {
+    let root = state.root()?;
+    status_at(&root)
+}
+
+#[tauri::command]
 pub fn git_init(state: State<'_, AppState>) -> AppResult<GitCommandResult> {
     let root = state.root()?;
     let output = run_git(&root, &["init"])?;
     Ok(command_result("git init", output))
 }
 
-#[tauri::command]
-pub fn git_diff(state: State<'_, AppState>, path: String, staged: bool) -> AppResult<GitDiff> {
-    let root = state.root()?;
-    paths::validate_relative(&path)?;
+pub(crate) fn diff_at(root: &Path, path: &str, staged: bool) -> AppResult<GitDiff> {
+    paths::validate_relative(path)?;
 
     let mut args = vec!["diff", "--no-color", "--unified=3"];
     if staged {
         args.push("--cached");
     }
-    args.extend(["--", path.as_str()]);
-    let output = run_git(&root, &args)?;
+    args.extend(["--", path]);
+    let output = run_git(root, &args)?;
 
     let mut diff = String::from_utf8_lossy(&output.stdout).to_string();
     if diff.trim().is_empty() && !staged {
         // Untracked files do not show up in `git diff`; compare against an
         // empty file instead so the panel can still preview the contents.
         let output = run_git(
-            &root,
-            &["diff", "--no-color", "--no-index", "--", "/dev/null", &path],
+            root,
+            &["diff", "--no-color", "--no-index", "--", "/dev/null", path],
         )?;
         if !output.stdout.is_empty() {
             diff = String::from_utf8_lossy(&output.stdout).to_string();
@@ -279,7 +288,7 @@ pub fn git_diff(state: State<'_, AppState>, path: String, staged: bool) -> AppRe
 
     let (diff, truncated) = truncate(&diff, MAX_OUTPUT_CHARS);
     Ok(GitDiff {
-        path,
+        path: path.to_string(),
         staged,
         diff,
         truncated,
@@ -287,11 +296,21 @@ pub fn git_diff(state: State<'_, AppState>, path: String, staged: bool) -> AppRe
 }
 
 #[tauri::command]
+pub fn git_diff(state: State<'_, AppState>, path: String, staged: bool) -> AppResult<GitDiff> {
+    let root = state.root()?;
+    diff_at(&root, &path, staged)
+}
+
+pub(crate) fn stage_at(root: &Path, path: &str) -> AppResult<GitCommandResult> {
+    paths::validate_relative(path)?;
+    let output = run_git(root, &["add", "--", path])?;
+    Ok(command_result(&format!("git add {path}"), output))
+}
+
+#[tauri::command]
 pub fn git_stage(state: State<'_, AppState>, path: String) -> AppResult<GitCommandResult> {
     let root = state.root()?;
-    paths::validate_relative(&path)?;
-    let output = run_git(&root, &["add", "--", path.as_str()])?;
-    Ok(command_result(&format!("git add {path}"), output))
+    stage_at(&root, &path)
 }
 
 #[tauri::command]
@@ -305,11 +324,15 @@ pub fn git_unstage(state: State<'_, AppState>, path: String) -> AppResult<GitCom
     ))
 }
 
+pub(crate) fn stage_all_at(root: &Path) -> AppResult<GitCommandResult> {
+    let output = run_git(root, &["add", "-A"])?;
+    Ok(command_result("git add -A", output))
+}
+
 #[tauri::command]
 pub fn git_stage_all(state: State<'_, AppState>) -> AppResult<GitCommandResult> {
     let root = state.root()?;
-    let output = run_git(&root, &["add", "-A"])?;
-    Ok(command_result("git add -A", output))
+    stage_all_at(&root)
 }
 
 #[tauri::command]
@@ -319,9 +342,7 @@ pub fn git_unstage_all(state: State<'_, AppState>) -> AppResult<GitCommandResult
     Ok(command_result("git reset", output))
 }
 
-#[tauri::command]
-pub fn git_commit(state: State<'_, AppState>, message: String) -> AppResult<GitCommandResult> {
-    let root = state.root()?;
+pub(crate) fn commit_at(root: &Path, message: &str) -> AppResult<GitCommandResult> {
     let message = message.trim();
     if message.is_empty() {
         return Err(AppError::Other(
@@ -334,8 +355,14 @@ pub fn git_commit(state: State<'_, AppState>, message: String) -> AppResult<GitC
         )));
     }
 
-    let output = run_git(&root, &["commit", "-m", message])?;
+    let output = run_git(root, &["commit", "-m", message])?;
     Ok(command_result("git commit", output))
+}
+
+#[tauri::command]
+pub fn git_commit(state: State<'_, AppState>, message: String) -> AppResult<GitCommandResult> {
+    let root = state.root()?;
+    commit_at(&root, &message)
 }
 
 #[tauri::command]
@@ -365,6 +392,34 @@ pub fn git_log(state: State<'_, AppState>, limit: Option<usize>) -> AppResult<Ve
                 author,
                 date,
                 subject,
+            })
+        })
+        .collect())
+}
+
+pub(crate) fn branches_at(root: &Path) -> AppResult<Vec<GitBranch>> {
+    let output = run_git(
+        root,
+        &[
+            "branch",
+            "--format=%(refname:short)%09%(HEAD)",
+            "--no-color",
+        ],
+    )?;
+    if !output.status.success() {
+        return Ok(Vec::new());
+    }
+    Ok(String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter_map(|line| {
+            let mut parts = line.splitn(2, '\t');
+            let name = parts.next()?.trim();
+            if name.is_empty() {
+                return None;
+            }
+            Some(GitBranch {
+                name: name.to_string(),
+                current: parts.next().map(str::trim) == Some("*"),
             })
         })
         .collect())

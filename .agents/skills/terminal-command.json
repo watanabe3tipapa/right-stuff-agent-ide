@@ -1,16 +1,62 @@
 {
-  "name": "terminal-command",
-  "description": "統合ターミナルでのコマンド実行",
+  "schemaVersion": 1,
+  "id": "terminal-command",
+  "name": "Terminal Command",
+  "description": "許可されたプログラムをシェル文字列なしで直接実行する",
+  "version": "0.1.0",
+  "category": "terminal",
+  "risk": "write",
   "actions": [
-    "terminal.create",
-    "terminal.write",
-    "terminal.read",
-    "terminal.resize",
-    "terminal.kill"
+    {
+      "id": "terminal.run",
+      "handler": "terminal.run",
+      "description": "許可リストのプログラムを引数付きで実行する",
+      "risk": "write",
+      "params": {
+        "program": {
+          "type": "string",
+          "description": "実行するプログラム",
+          "required": true,
+          "maxLength": 64,
+          "enum": ["npm", "pnpm", "yarn", "cargo", "node", "python3", "pytest", "make"]
+        },
+        "args": {
+          "type": "string[]",
+          "description": "プログラムに渡す引数。シェル展開は行わない",
+          "required": false,
+          "maxItems": 32
+        }
+      },
+      "timeoutMs": 300000,
+      "maxOutputChars": 50000
+    }
   ],
-  "approval": {
-    "required": ["terminal.write:destructive"],
-    "blocked": ["rm -rf /", "curl | sh", "wget | sh"]
+  "permissions": {
+    "paths": {
+      "read": [],
+      "write": []
+    },
+    "commands": [
+      { "program": "npm", "args": [] },
+      { "program": "pnpm", "args": [] },
+      { "program": "yarn", "args": [] },
+      { "program": "cargo", "args": [] },
+      { "program": "node", "args": [] },
+      { "program": "python3", "args": [] },
+      { "program": "pytest", "args": [] },
+      { "program": "make", "args": [] }
+    ]
   },
-  "verification": "output_after_action"
+  "verification": {
+    "mode": "none",
+    "checks": [],
+    "timeoutMs": 300000,
+    "stopOnFailure": true
+  },
+  "limits": {
+    "maxFiles": 20,
+    "maxBytes": 1048576,
+    "timeoutMs": 300000,
+    "maxOutputChars": 50000
+  }
 }

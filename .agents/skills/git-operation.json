@@ -1,17 +1,111 @@
 {
-  "name": "git-operation",
-  "description": "Git の状態確認とコミット操作",
+  "schemaVersion": 1,
+  "id": "git-operation",
+  "name": "Git Operation",
+  "description": "Git の状態確認、差分取得、ステージ、ブランチ一覧、コミットを行う",
+  "version": "0.1.0",
+  "category": "git",
+  "risk": "write",
   "actions": [
-    "git.status",
-    "git.diff",
-    "git.stage",
-    "git.commit",
-    "git.branches",
-    "git.checkout",
-    "git.stash"
+    {
+      "id": "git.status",
+      "handler": "git.status",
+      "description": "作業ツリーの状態と現在のブランチを取得する",
+      "risk": "read",
+      "params": {},
+      "timeoutMs": 10000
+    },
+    {
+      "id": "git.diff",
+      "handler": "git.diff",
+      "description": "指定ファイルの差分を取得する",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        },
+        "staged": {
+          "type": "boolean",
+          "description": "ステージ済みの差分を取得する",
+          "required": false
+        }
+      },
+      "timeoutMs": 30000
+    },
+    {
+      "id": "git.branches",
+      "handler": "git.branches",
+      "description": "ローカルブランチの一覧を取得する",
+      "risk": "read",
+      "params": {},
+      "timeoutMs": 10000
+    },
+    {
+      "id": "git.stage",
+      "handler": "git.stage",
+      "description": "指定ファイルをステージする",
+      "risk": "write",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      },
+      "timeoutMs": 30000
+    },
+    {
+      "id": "git.stageAll",
+      "handler": "git.stageAll",
+      "description": "すべての変更をステージする",
+      "risk": "write",
+      "params": {},
+      "timeoutMs": 30000
+    },
+    {
+      "id": "git.commit",
+      "handler": "git.commit",
+      "description": "ステージ済みの変更をコミットする",
+      "risk": "write",
+      "params": {
+        "message": {
+          "type": "string",
+          "description": "コミットメッセージ",
+          "required": true,
+          "maxLength": 4000
+        }
+      },
+      "timeoutMs": 60000
+    }
   ],
-  "approval": {
-    "required": ["git.push", "git.forcePush", "git.resetHard"]
+  "permissions": {
+    "paths": {
+      "read": ["**/*"],
+      "write": []
+    }
   },
-  "verification": "status_after_action"
+  "approval": {
+    "default": "ask",
+    "overrides": {
+      "git.status": "allow",
+      "git.diff": "allow",
+      "git.branches": "allow"
+    }
+  },
+  "verification": {
+    "mode": "none",
+    "checks": [],
+    "timeoutMs": 300000,
+    "stopOnFailure": true
+  },
+  "limits": {
+    "maxFiles": 20,
+    "maxBytes": 1048576,
+    "timeoutMs": 60000,
+    "maxOutputChars": 50000
+  }
 }

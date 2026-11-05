@@ -76,7 +76,7 @@ fn debugpy_command() -> Option<Vec<String>> {
     ])
 }
 
-fn adapter_command(adapter: &str) -> Option<Vec<String>> {
+pub(crate) fn adapter_command(adapter: &str) -> Option<Vec<String>> {
     match adapter {
         "lldb-dap" => lldb_dap_command(),
         "debugpy" => debugpy_command(),
@@ -117,7 +117,7 @@ pub fn dap_adapters() -> Vec<DapAdapterInfo> {
 
 /// Accept an absolute executable, or a workspace-relative one. The result is
 /// canonicalized so `..` cannot escape the workspace for relative inputs.
-fn validate_program(root: &Path, program: &str) -> AppResult<PathBuf> {
+pub(crate) fn validate_program(root: &Path, program: &str) -> AppResult<PathBuf> {
     let candidate = if Path::new(program).is_absolute() {
         PathBuf::from(program)
     } else {
@@ -135,41 +135,32 @@ fn validate_program(root: &Path, program: &str) -> AppResult<PathBuf> {
     Ok(canonical)
 }
 
-#[tauri::command]
-pub fn dap_start(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    adapter: String,
-    program: Option<String>,
+pub(crate) fn start_at(
+    app: &AppHandle,
+    state: &AppState,
+    root: &Path,
+    adapter: &str,
+    program: Option<&str>,
 ) -> AppResult<DapStart> {
-    let root = state.root()?;
-    let command = adapter_command(&adapter).ok_or_else(|| {
+    let command = adapter_command(adapter).ok_or_else(|| {
         AppError::Other(format!(
             "デバッグアダプター {adapter} が見つかりません。対応するツールを導入してください。"
         ))
     })?;
 
-    let program = match program
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    {
-        Some(value) => Some(
-            validate_program(&root, value)?
-                .to_string_lossy()
-                .to_string(),
-        ),
+    let program = match program.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(value) => Some(validate_program(root, value)?.to_string_lossy().to_string()),
         None => None,
     };
 
     let id = format!("dap-{}", NEXT_DAP_ID.fetch_add(1, Ordering::Relaxed));
     let session = rpc::spawn(
-        &app,
+        app,
         "dap",
         &id,
         SpawnOptions {
             command: &command,
-            cwd: &root,
+            cwd: root,
         },
     )?;
 
@@ -181,11 +172,22 @@ pub fn dap_start(
 
     Ok(DapStart {
         id,
-        adapter,
+        adapter: adapter.to_string(),
         command,
         program,
         root: root.to_string_lossy().to_string(),
     })
+}
+
+#[tauri::command]
+pub fn dap_start(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    adapter: String,
+    program: Option<String>,
+) -> AppResult<DapStart> {
+    let root = state.root()?;
+    start_at(&app, &state, &root, &adapter, program.as_deref())
 }
 
 #[tauri::command]

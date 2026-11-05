@@ -1,6 +1,6 @@
 # スキル実行と検証ループの設計
 
-v0.4.0 の実装前に、スキーマ・実行ポリシー・承認・検証・監査の設計を確定する。本書は実装の契約として使う。マニフェストの型・ローダー・バリデータ・ポリシー・`editor.*` の実行と承認は実装済みで、検証ループは v0.3.5 で追加した。
+v0.4.0 の実装前に、スキーマ・実行ポリシー・承認・検証・監査の設計を確定する。本書は実装の契約として使う。マニフェストの型・ローダー・バリデータ・ポリシー・`editor.*` の実行と承認は実装済みで、検証ループは v0.3.5、Git / ターミナル / デバッグのハンドラは v0.3.6 で追加した。
 
 - 機械可読スキーマ: [`skills.schema.json`](./skills.schema.json)
 - 関連: [ARCHITECTURE.md](./ARCHITECTURE.md) / [SECURITY.md](./SECURITY.md) / [API.md](./API.md)
@@ -19,16 +19,16 @@ v0.4.0 の最小垂直スライスは `code-edit` とする。LLM の計画に�
 
 - サードパーティ製スキルの配布・マーケットプレイス
 - スキルからのネットワークアクセス
-- 検証失敗時に LLM が自動で修正を繰り返すループ（v0.3.6 以降）
+- 検証失敗時に LLM が自動で修正を繰り返すループ（v0.4.x 以降）
 - 統合ターミナルへの直接入力（PTY）をスキルから操作すること
-- デバッガ（DAP）連携をスキルから操作すること（v0.3.1 で IDE の Debug タブとして実装済み。スキルからの操作は対象外）
+- デバッガのアダプター追加や任意コマンドの起動（v0.3.6 で `lldb-dap` / `debugpy` の操作は実装済み）
 - Windows / Linux 対応、署名・公証
 
 ## 3. 現状の整理
 
 | 領域 | 現状 | v0.4.0 で追加するもの |
 |---|---|---|
-| スキル定義 | `code-edit` は v1 マニフェスト。Git / ターミナル / デバッグは v0 のまま | Git / ターミナル / デバッグの v1 化 |
+| スキル定義 | `code-edit` / `git-operation` / `terminal-command` / `debug-control` が v1 マニフェスト | 追加スキルの v1 化 |
 | 計画 | `src/lib/plan.ts` が Agent Desktop の許可アクションだけを検証 | `kind: "skill"` の手順とパラメータ検証 |
 | 実行 | `agent_run` が許可リスト・引数検証・ネイティブ承認を行う | `skill_run`、プレビュー、承認、キャンセル |
 | ポリシー | `AgentPolicy` が Agent Desktop のアクション単位で保持 | `SkillPolicy`（スキル / アクション / 検証） |
@@ -332,15 +332,17 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 - 変更前後の差分（追加・削除行数と unified diff）
 - 警告（ブロック、受動モードでの書き込み拒否）
 
-実行するコマンド、作業ディレクトリ、タイムアウト、dirty buffer の警告は、
-コマンド系ハンドラとフロントエンドの事前チェックを追加する v0.4.x 以降で扱う。
+コマンド系ハンドラ（`terminal.run`）は v0.3.6 で追加し、実行するプログラム・引数・
+作業ディレクトリ・タイムアウトを Rust 側で固定する。dirty buffer の警告は引き続き
+フロントエンドの事前チェックで扱う。
 
 承認は既存の `agent_run` と同じネイティブダイアログで行う。ダイアログの文言は Rust が生成し、WebView の表示だけに依存しない。`write` / `destructive` は「この手順のみ許可」とし、永続的な `allow` にはしない。
 
 ### 7.2 キャンセルとタイムアウト
 
-> v0.4.0 の `editor.*` ハンドラは同期処理で、子プロセスを起動しない。
-> `runId` は監査用に発行するが、`skill_cancel` とタイムアウトは v0.4.x 以降で追加する。
+> `editor.*` は同期処理で子プロセスを起動しない。`terminal.run` は子プロセスを起動するが、
+> ハンドラ内でタイムアウトとプロセスグループの終了まで完結する。
+> `runId` は監査用に発行し、非同期の `skill_cancel` は v0.4.x 以降で追加する。
 
 - 実行ごとに `runId` を発行する
 - `skill_cancel(runId)` で子プロセスを終了する
@@ -360,10 +362,10 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 | `code-edit` | `editor.readFile` | read | 相対パスのファイルを読む |
 | `code-edit` | `editor.replaceText` | write | 一意に一致する文字列を置換し、保存する |
 | `code-edit` | `editor.createFile` | write | 存在しないファイルを作成する |
-| `git-operation` | `git.status` / `git.diff` / `git.branches` | read | 既存の Git コマンドを再利用 |
-| `git-operation` | `git.stage` / `git.commit` | write | v0.4.x で追加 |
-| `terminal-command` | `terminal.run` | destructive | v0.3.6 以降。許可プログラムのみ |
-| `debug-control` | `debug.*` | — | DAP 実装後 |
+| `git-operation` | `git.status` / `git.diff` / `git.branches` | read | 既存の Git コマンドを `*_at` ヘルパー経由で再利用 |
+| `git-operation` | `git.stage` / `git.stageAll` / `git.commit` | write | `git add` / `git commit` を固定引数で実行 |
+| `terminal-command` | `terminal.run` | write | 許可プログラムのみを `program + args` で直接実行 |
+| `debug-control` | `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` | write / read | DAP の request/response とイベント購読 |
 
 `editor.replaceText` は unified diff を解析せず、`oldText` がファイル内で 1 回だけ一致することを必須にする。0 回または 2 回以上なら失敗し、モデルに再試行を促す。これによりパーサの複雑さと部分適用の危険を避ける。
 
@@ -415,6 +417,25 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 - 承認は `verification.autoRun` と `allowChecks` で決める。`test` は `allowChecks` から除外されるため、
   常にネイティブ承認を求める。
 - 結果は `passed` / `failed` / `skipped` / `timeout` を返し、監査ログの `verification_run` に記録する。
+
+### 9.5 実装メモ（v0.3.6）
+
+Git / ターミナル / デバッグのハンドラは、マニフェストの `handler` 名から Rust の固定関数へ
+ディスパッチする。マニフェストから任意のコマンド文字列やシェルを受け取らない。
+
+- Git は既存の `commands/git.rs` を `status_at` / `diff_at` / `stage_at` / `stage_all_at` /
+  `commit_at` / `branches_at` に切り出し、Tauri コマンドとスキルの両方から呼ぶ。
+- ターミナルは `skills/exec.rs` の共通実行基盤を使う。許可プログラムは
+  `npm` / `pnpm` / `yarn` / `cargo` / `node` / `python3` / `pytest` / `make` のみで、
+  引数は 32 件・各 512 文字まで。シェル文字列、パイプ、リダイレクトは組み立てない。
+- 実行は `process_group(0)` で独立したプロセスグループに入れ、マニフェストの `limits.timeoutMs`
+  を超えたらグループごと SIGKILL する。出力は `limits.maxOutputChars` で打ち切る。
+- 非ゼロ終了とタイムアウトは `HandlerOutcome.failed` として返し、`SkillRunStatus::Failed` と
+  `errorCode: "handler_failed"` になる。監査ログの outcome は `error` とする。
+- デバッグは DAP の `request_seq` と応答を相関させ、`initialized` などのイベントを購読する。
+  `debug.start` は initialize → launch → initialized → configurationDone の順で進み、
+  失敗時はセッションを kill して state から削除する。
+- `debug.*` は `sessionId` を受け取り、Debug タブとスキルの両方から同じセッションを操作する。
 
 ## 10. 計画スキーマの拡張
 
@@ -629,10 +650,10 @@ interface VerificationResult {
 
 - マニフェストはリポジトリ内のみ。実行は Rust の閉じたハンドラ
 - v0.4.0 は `code-edit` の最小垂直スライス
-- 置換は一意一致の文字列置換。unified diff は v0.3.6 以降
+- 置換は一意一致の文字列置換。unified diff は v0.3.6 以降で Git 差分として実装済み
 - 書き込みは承認必須。`allow` は読み取り専用のみ
-- 検証は「実行して報告して停止」。自動修正は v0.3.6 以降
-- ターミナルとデバッガは v0.4.0 の対象外
+- 検証は「実行して報告して停止」。自動修正は v0.4.x 以降
+- ターミナルとデバッガのスキル操作は v0.3.6 で実装済み（PTY への直接入力と任意アダプターは対象外）
 
 ### 実装前に決めること
 
@@ -657,12 +678,16 @@ interface VerificationResult {
 | スキル監査（`skill_id` / `action_id`） | 実装済み | `src-tauri/src/commands/policy.rs` |
 | 検証ループ | 実装済み（v0.3.5） | `src-tauri/src/skills/verify.rs` |
 | `skill_verify` | 実装済み（v0.3.5） | `src-tauri/src/commands/skills.rs` |
+| Git ハンドラ | 実装済み（v0.3.6） | `src-tauri/src/skills/git.rs` |
+| ターミナルハンドラ | 実装済み（v0.3.6） | `src-tauri/src/skills/terminal.rs` |
+| デバッグハンドラ | 実装済み（v0.3.6） | `src-tauri/src/skills/debug.rs` |
+| 共通プロセス実行 | 実装済み（v0.3.6） | `src-tauri/src/skills/exec.rs` |
 | `skill_cancel` / タイムアウト | 未実装（v0.4.x） | — |
 | フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |
 | フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |
 | 人間向けスキルライブラリ / ショーケース窓（v0.3.4） | 実装済み | `src/lib/skillLibrary.ts` / `src/components/SkillLibrary.tsx` |
 
-v0.4.0 の `skill_run` は `editor.*` の同期ハンドラだけを実行する。`allow` は読み取り専用に限り、
+v0.3.6 の `skill_run` は `editor.*` / `git.*` / `terminal.run` / `debug.*` の固定ハンドラを実行する。`allow` は読み取り専用に限り、
 `ask` はネイティブダイアログで都度承認し、`block` と受動モードは実行せず `status: "blocked"` を返す。
 書き込みは適用前の内容を `file_versions` に記録する。
 
@@ -680,8 +705,8 @@ v0.4.0 の `skill_run` は `editor.*` の同期ハンドラだけを実行する
   `useCases` / `examples` / `manifest` を持つ。
 - `status: "ready"` のエントリだけが `manifest` を持ち、`.agents/skills/<id>.json` へ書き出せる。
   既存ファイルがある場合は上書き確認を挟む。
-- `status: "planned"` のエントリ（Git / ターミナル / デバッグ）は設計カードとして表示し、
-  インストール操作を無効にする。ハンドラ未実装のスキルを実行可能に見せないため。
+- Git / ターミナル / デバッグも v0.3.6 で `status: "ready"` と v1 マニフェストを持つ。
+  ハンドラ未実装のスキルは `status: "planned"` とし、インストール操作を無効にする。
 - ワークスペースに既にあるがライブラリに無いスキルは「カスタム」として一覧に追加する。
 - 別窓は通常のアプリ起動と同じバンドルを使い、`index.html?window=skills` で分岐する。
   権限は `src-tauri/capabilities/default.json` の `windows` に `skill-library` を追加して付与する。

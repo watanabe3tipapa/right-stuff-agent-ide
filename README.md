@@ -12,7 +12,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.5-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.6-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 
 ## ダウンロード
 
-v0.3.5 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.3.6 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.5_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.5_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.6_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.6_x64.dmg`
 
 対応 OS は **macOS 11 以降（Apple Silicon / Intel）のみ**です。Windows / Linux 版は提供しません。
 
@@ -38,7 +38,7 @@ v0.3.5 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。Phase 2 では、クイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。v0.3.1 では LSP（補完・定義・ホバー・診断）と DAP（lldb-dap / debugpy）を追加し、v0.3.3 で LSP の名前変更・参照検索・コードアクション・ワークスペースシンボル検索を、v0.3.4 で人間向けのスキルライブラリとショーケース窓を、v0.3.5 でスキル実行後の検証ループ（typecheck / lint / test）を追加しました。
+Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。Phase 2 では、クイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。v0.3.1 では LSP（補完・定義・ホバー・診断）と DAP（lldb-dap / debugpy）を追加し、v0.3.3 で LSP の名前変更・参照検索・コードアクション・ワークスペースシンボル検索を、v0.3.4 で人間向けのスキルライブラリとショーケース窓を、v0.3.5 でスキル実行後の検証ループ（typecheck / lint / test）を、v0.3.6 で Git・ターミナル・デバッグのスキルハンドラを追加しました。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -84,7 +84,10 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリ・ワークスペース（デモ）を操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
 - **スキル実行** — `.agents/skills/*.json` の v1 マニフェストを読み込み・検証し、`editor.readFile` / `replaceText` / `createFile` をポリシーと承認付きで実行（Agent パネルの Skills タブと設定のスキルタブから操作）
 - **検証ループ（v0.3.5）** — スキル実行後に `package.json` / `Cargo.toml` から解決した typecheck・lint・test を実行し、結果と出力を Skills タブに表示。検証コマンドはワークスペース構成から決まり、マニフェストから任意のコマンドは受け取りません
-- **スキルライブラリ（v0.3.4）** — キュレーション済みのスキルを人間が読める形で一覧するショーケース別窓。目的・タグ・リスク・パラメータ・プロンプト例・マニフェストを表示し、その場でワークスペースへ追加できます。Git / ターミナル / デバッグは設計カードとして表示
+- **Git スキル（v0.3.6）** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を固定ハンドラで実行。読み取り系は承認なし、書き込み系は承認ダイアログを挟み、結果はローカルの監査ログに残します
+- **ターミナルスキル（v0.3.6）** — `terminal.run` が npm / pnpm / yarn / cargo / node / python3 / pytest / make を `program + args` で直接実行。シェル文字列を組み立てず、独立プロセスグループ・タイムアウト・出力上限を適用します
+- **デバッグスキル（v0.3.6）** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` が DAP の request/response で Debug タブと同じセッションを操作。`debug.start` は initialize → launch → initialized → configurationDone のハンドシェイクを行います
+- **スキルライブラリ（v0.3.4）** — キュレーション済みのスキルを人間が読める形で一覧するショーケース別窓。目的・タグ・リスク・パラメータ・プロンプト例・マニフェストを表示し、その場でワークスペースへ追加できます。Git / ターミナル / デバッグも実行可能なマニフェスト付きで表示
 - **テーマ** — ダークテーマ、Overlay タイトルバー、macOS ネイティブウィンドウ
 
 ### アーキテクチャ
@@ -266,7 +269,7 @@ GUI から起動したアプリでは `PATH` が限られるため、検出時�
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.3.5 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
+- v0.3.6 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。署名・公証は先送りとし、当面はこの状態で配布します
 - 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません
 
@@ -295,6 +298,15 @@ vercel --prod          # 本番環境へデプロイ
 `vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内のメモリ上で動作し、変更は保存されません。
 
 ## 既知の制約とロードマップ
+
+### v0.3.6
+
+- [x] Git ハンドラ — 既存の Git コマンドを `*_at` ヘルパーへ切り出し、スキルから `status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を実行
+- [x] ターミナルハンドラ — 許可プログラムを `program + args` で直接実行し、シェル文字列・パイプ・リダイレクトを使わない
+- [x] デバッグハンドラ — DAP の request/response 相関とイベント購読を追加し、Debug タブと同じセッションを操作
+- [x] 共通実行基盤 — 独立プロセスグループ、タイムアウト、出力上限を `skills/exec.rs` に集約
+- [x] 失敗の伝播 — ターミナルの非ゼロ終了とタイムアウトを `SkillRunStatus::Failed` として返し、監査ログに記録
+- [x] マニフェストとライブラリ — Git / ターミナル / デバッグを v1 マニフェスト化し、ライブラリの `status` を `ready` に更新
 
 ### v0.3.5
 

@@ -57,7 +57,9 @@ describe("skill library", () => {
     const json = manifestJson(entry!);
     expect(json.endsWith("\n")).toBe(true);
     expect(JSON.parse(json).id).toBe("code-edit");
-    expect(manifestJson(findLibraryEntry("git-operation")!)).toBe("");
+    const git = findLibraryEntry("git-operation")!;
+    expect(git.status).toBe("ready");
+    expect(JSON.parse(manifestJson(git)).id).toBe("git-operation");
   });
 
   it("maps paths and labels", () => {

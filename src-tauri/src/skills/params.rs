@@ -149,6 +149,54 @@ pub fn optional_string_param<'a>(params: &'a Value, name: &str) -> AppResult<Opt
     }
 }
 
+/// Read an integer parameter. JSON numbers are accepted when they fit i64.
+pub fn i64_param(params: &Value, name: &str) -> AppResult<i64> {
+    params
+        .get(name)
+        .and_then(Value::as_i64)
+        .ok_or_else(|| AppError::Other(format!("{name} は整数である必要があります")))
+}
+
+/// Read an optional integer parameter.
+pub fn optional_i64_param(params: &Value, name: &str) -> AppResult<Option<i64>> {
+    match params.get(name) {
+        None | Some(Value::Null) => Ok(None),
+        Some(value) => value
+            .as_i64()
+            .map(Some)
+            .ok_or_else(|| AppError::Other(format!("{name} は整数である必要があります"))),
+    }
+}
+
+/// Read a boolean parameter with a default for an omitted value.
+pub fn bool_param(params: &Value, name: &str, default: bool) -> AppResult<bool> {
+    match params.get(name) {
+        None | Some(Value::Null) => Ok(default),
+        Some(Value::Bool(value)) => Ok(*value),
+        Some(_) => Err(AppError::Other(format!(
+            "{name} は真偽値である必要があります"
+        ))),
+    }
+}
+
+/// Read an optional list of strings. Missing and null both mean "empty".
+pub fn string_array_param(params: &Value, name: &str) -> AppResult<Vec<String>> {
+    match params.get(name) {
+        None | Some(Value::Null) => Ok(Vec::new()),
+        Some(Value::Array(items)) => items
+            .iter()
+            .map(|item| {
+                item.as_str().map(ToString::to_string).ok_or_else(|| {
+                    AppError::Other(format!("{name} は文字列の配列である必要があります"))
+                })
+            })
+            .collect(),
+        Some(_) => Err(AppError::Other(format!(
+            "{name} は文字列の配列である必要があります"
+        ))),
+    }
+}
+
 /// Read a string parameter with a default for an omitted value.
 pub fn string_param_or<'a>(params: &'a Value, name: &str, default: &'a str) -> AppResult<&'a str> {
     Ok(optional_string_param(params, name)?.unwrap_or(default))

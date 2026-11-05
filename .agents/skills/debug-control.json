@@ -1,14 +1,205 @@
 {
-  "name": "debug-control",
-  "description": "デバッガ (DAP) の制御",
+  "schemaVersion": 1,
+  "id": "debug-control",
+  "name": "Debug Control",
+  "description": "DAP デバッガの開始、停止、再開、ステップ実行、ブレークポイント、式評価を行う",
+  "version": "0.1.0",
+  "category": "debug",
+  "risk": "write",
   "actions": [
-    "debug.start",
-    "debug.stop",
-    "debug.setBreakpoint",
-    "debug.continue",
-    "debug.stepOver",
-    "debug.stepInto",
-    "debug.evaluate"
+    {
+      "id": "debug.start",
+      "handler": "debug.start",
+      "description": "デバッガを起動して対象プログラムを実行する",
+      "risk": "write",
+      "params": {
+        "adapter": {
+          "type": "string",
+          "description": "使用する DAP アダプター",
+          "required": true,
+          "maxLength": 64,
+          "enum": ["lldb-dap", "debugpy"]
+        },
+        "program": {
+          "type": "string",
+          "description": "デバッグ対象の実行ファイル (ワークスペース相対または絶対パス)",
+          "required": true,
+          "maxLength": 1024
+        }
+      },
+      "timeoutMs": 60000
+    },
+    {
+      "id": "debug.stop",
+      "handler": "debug.stop",
+      "description": "デバッグセッションを終了する",
+      "risk": "write",
+      "params": {
+        "sessionId": {
+          "type": "string",
+          "description": "debug.start が返したセッション ID",
+          "required": true,
+          "maxLength": 128
+        }
+      },
+      "timeoutMs": 10000
+    },
+    {
+      "id": "debug.continue",
+      "handler": "debug.continue",
+      "description": "停止中のスレッドを再開する",
+      "risk": "write",
+      "params": {
+        "sessionId": {
+          "type": "string",
+          "description": "デバッグセッション ID",
+          "required": true,
+          "maxLength": 128
+        },
+        "threadId": {
+          "type": "number",
+          "description": "再開するスレッド ID",
+          "required": true
+        }
+      },
+      "timeoutMs": 10000
+    },
+    {
+      "id": "debug.next",
+      "handler": "debug.next",
+      "description": "次の行までステップオーバーする",
+      "risk": "write",
+      "params": {
+        "sessionId": {
+          "type": "string",
+          "description": "デバッグセッション ID",
+          "required": true,
+          "maxLength": 128
+        },
+        "threadId": {
+          "type": "number",
+          "description": "ステップするスレッド ID",
+          "required": true
+        }
+      },
+      "timeoutMs": 10000
+    },
+    {
+      "id": "debug.stepIn",
+      "handler": "debug.stepIn",
+      "description": "関数の内部へステップインする",
+      "risk": "write",
+      "params": {
+        "sessionId": {
+          "type": "string",
+          "description": "デバッグセッション ID",
+          "required": true,
+          "maxLength": 128
+        },
+        "threadId": {
+          "type": "number",
+          "description": "ステップするスレッド ID",
+          "required": true
+        }
+      },
+      "timeoutMs": 10000
+    },
+    {
+      "id": "debug.pause",
+      "handler": "debug.pause",
+      "description": "実行中のスレッドを一時停止する",
+      "risk": "write",
+      "params": {
+        "sessionId": {
+          "type": "string",
+          "description": "デバッグセッション ID",
+          "required": true,
+          "maxLength": 128
+        },
+        "threadId": {
+          "type": "number",
+          "description": "停止するスレッド ID",
+          "required": true
+        }
+      },
+      "timeoutMs": 10000
+    },
+    {
+      "id": "debug.setBreakpoint",
+      "handler": "debug.setBreakpoint",
+      "description": "指定ファイルの行にブレークポイントを設定する",
+      "risk": "write",
+      "params": {
+        "sessionId": {
+          "type": "string",
+          "description": "デバッグセッション ID",
+          "required": true,
+          "maxLength": 128
+        },
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        },
+        "line": {
+          "type": "number",
+          "description": "1 始まりの行番号",
+          "required": true
+        }
+      },
+      "timeoutMs": 10000
+    },
+    {
+      "id": "debug.evaluate",
+      "handler": "debug.evaluate",
+      "description": "停止中のフレームで式を評価する",
+      "risk": "read",
+      "params": {
+        "sessionId": {
+          "type": "string",
+          "description": "デバッグセッション ID",
+          "required": true,
+          "maxLength": 128
+        },
+        "expression": {
+          "type": "string",
+          "description": "評価する式",
+          "required": true,
+          "maxLength": 4000
+        },
+        "frameId": {
+          "type": "number",
+          "description": "対象フレーム ID",
+          "required": false
+        },
+        "context": {
+          "type": "string",
+          "description": "評価コンテキスト",
+          "required": false,
+          "maxLength": 32,
+          "enum": ["repl", "watch", "hover"]
+        }
+      },
+      "timeoutMs": 10000
+    }
   ],
-  "verification": "stopped_thread_state"
+  "permissions": {
+    "paths": {
+      "read": ["**/*"],
+      "write": []
+    }
+  },
+  "verification": {
+    "mode": "none",
+    "checks": [],
+    "timeoutMs": 300000,
+    "stopOnFailure": true
+  },
+  "limits": {
+    "maxFiles": 20,
+    "maxBytes": 1048576,
+    "timeoutMs": 60000,
+    "maxOutputChars": 50000
+  }
 }

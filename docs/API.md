@@ -221,7 +221,9 @@ interface SkillRunResult {
 ```
 
 `skill_run` に渡す引数は `{ request: SkillRequest }` の形にする。検証ループは
-v0.3.5 で `skill_verify` として追加した。設計は [SKILLS.md](./SKILLS.md) を参照。
+v0.3.5 で `skill_verify` として追加した。v0.3.6 では `skill_run` のディスパッチに
+`git.*` / `terminal.run` / `debug.*` を追加した。デバッグ操作は同じ `sessionId` を
+Debug タブと共有する。設計は [SKILLS.md](./SKILLS.md) を参照。
 
 ## 計画立案
 

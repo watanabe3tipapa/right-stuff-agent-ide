@@ -14,7 +14,8 @@ use crate::skills::editor::{self, SkillPreview};
 use crate::skills::policy::{self as skill_policy, SkillPolicy};
 use crate::skills::verify::{self, CheckStatus, VerificationResult};
 use crate::skills::{
-    self, Decision, Risk, SkillAction, SkillCatalog, SkillManifest, VerificationCheck, params,
+    self, Decision, HandlerOutcome, Risk, SkillAction, SkillCatalog, SkillManifest,
+    VerificationCheck, params,
 };
 use crate::state::AppState;
 
@@ -275,13 +276,43 @@ pub async fn skill_run(
     }
 
     let conn = lock_db(&state)?;
-    let result = execute_handler(&root, &conn, action, &request.params, manifest);
+    let result = execute_handler(
+        &root,
+        &conn,
+        Some(&app),
+        Some(&state),
+        action,
+        &request.params,
+        manifest,
+    );
     let duration_ms = started.elapsed().as_millis() as u64;
 
     match result {
         Ok(outcome) => {
             let detail = outcome.detail.clone();
             drop(conn);
+            if outcome.failed {
+                let audit_id = record_skill_audit(
+                    &state,
+                    &agent_policy,
+                    &request,
+                    "skill_run",
+                    "error",
+                    Some(&detail),
+                );
+                return Ok(SkillRunResult {
+                    run_id,
+                    status: SkillRunStatus::Failed,
+                    decision,
+                    changed_files: outcome.changed_files,
+                    stdout: truncate_chars(&outcome.stdout, manifest.limits.max_output_chars),
+                    stderr: detail,
+                    exit_code: outcome.exit_code,
+                    duration_ms,
+                    audit_id,
+                    error_code: Some("handler_failed".into()),
+                });
+            }
             let audit_id = record_skill_audit(
                 &state,
                 &agent_policy,
@@ -297,7 +328,7 @@ pub async fn skill_run(
                 changed_files: outcome.changed_files,
                 stdout: truncate_chars(&outcome.stdout, manifest.limits.max_output_chars),
                 stderr: String::new(),
-                exit_code: None,
+                exit_code: outcome.exit_code,
                 duration_ms,
                 audit_id,
                 error_code: None,
@@ -503,16 +534,11 @@ fn verification_message(planned: &[verify::PlannedCheck], timeout_ms: u64) -> St
     truncate_chars(&message, 4_000)
 }
 
-#[derive(Debug)]
-struct HandlerOutcome {
-    changed_files: Vec<String>,
-    stdout: String,
-    detail: String,
-}
-
 fn execute_handler(
     root: &Path,
     conn: &rusqlite::Connection,
+    app: Option<&AppHandle>,
+    state: Option<&AppState>,
     action: &SkillAction,
     params: &Value,
     manifest: &SkillManifest,
@@ -525,6 +551,7 @@ fn execute_handler(
                 changed_files: Vec::new(),
                 stdout: file.content,
                 detail: format!("{path} を読み取りました ({} bytes)", file.size),
+                ..HandlerOutcome::default()
             })
         }
         "editor.replaceText" => {
@@ -549,6 +576,7 @@ fn execute_handler(
                     "{path} を置換 (+{} / -{} 行, version {})",
                     change.added_lines, change.removed_lines, change.version_id
                 ),
+                ..HandlerOutcome::default()
             })
         }
         "editor.createFile" => {
@@ -559,8 +587,19 @@ fn execute_handler(
                 changed_files: vec![path.to_string()],
                 stdout: format!("{path} を作成しました"),
                 detail: format!("{path} を作成 (version {})", change.version_id),
+                ..HandlerOutcome::default()
             })
         }
+        handler if handler.starts_with("git.") => skills::git::run(root, handler, params),
+        handler if handler.starts_with("terminal.") => {
+            skills::terminal::run(root, handler, params, manifest)
+        }
+        handler if handler.starts_with("debug.") => match (app, state) {
+            (Some(app), Some(state)) => skills::debug::run(app, state, root, handler, params),
+            _ => Err(AppError::Other(
+                "デバッグ操作はアプリから実行する必要があります".into(),
+            )),
+        },
         handler => Err(AppError::Other(format!("未実装のハンドラです: {handler}"))),
     }
 }
@@ -592,6 +631,11 @@ fn preview_for(
                 root, path, content, max_bytes,
             )?))
         }
+        handler if handler.starts_with("git.") => {
+            let _ = params;
+            Ok(None)
+        }
+        handler if handler.starts_with("terminal.") || handler.starts_with("debug.") => Ok(None),
         handler => Err(AppError::Other(format!("未実装のハンドラです: {handler}"))),
     }
 }
@@ -806,6 +850,8 @@ mod tests {
         let outcome = execute_handler(
             &root,
             &conn,
+            None,
+            None,
             &action,
             &json!({ "path": "app.ts" }),
             &manifest,
@@ -828,6 +874,8 @@ mod tests {
         let outcome = execute_handler(
             &root,
             &conn,
+            None,
+            None,
             &replace,
             &json!({
                 "path": "app.ts",
@@ -848,6 +896,8 @@ mod tests {
         let outcome = execute_handler(
             &root,
             &conn,
+            None,
+            None,
             &create,
             &json!({ "path": "src/new.ts", "content": "export {};" }),
             &manifest,
@@ -875,6 +925,8 @@ mod tests {
         let error = execute_handler(
             &root,
             &conn,
+            None,
+            None,
             &action,
             &json!({
                 "path": "app.ts",
@@ -901,7 +953,7 @@ mod tests {
         let mut action = action(&manifest, "editor.readFile");
         action.handler = "editor.unknown".into();
 
-        let error = execute_handler(&root, &conn, &action, &json!({}), &manifest)
+        let error = execute_handler(&root, &conn, None, None, &action, &json!({}), &manifest)
             .expect_err("unknown handler");
         assert!(error.to_string().contains("未実装"));
 

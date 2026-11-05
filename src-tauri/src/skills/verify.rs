@@ -1,16 +1,13 @@
 use std::collections::BTreeSet;
 use std::fs;
-use std::io::Read;
-use std::os::unix::process::CommandExt;
 use std::path::Path;
-use std::process::{Child, Command, Stdio};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use serde::Serialize;
 use serde_json::Value;
 
 use crate::error::{AppError, AppResult};
+use crate::skills::exec;
 use crate::skills::{VerificationCheck, VerificationMode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -243,138 +240,23 @@ fn run_one(
     timeout: Duration,
     max_output_chars: usize,
 ) -> VerificationCheckResult {
-    let started = Instant::now();
-    let command = check.command();
-    let mut process = Command::new(&check.program);
-    process
-        .args(&check.args)
-        .current_dir(root)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .env("CI", "1")
-        .env("NO_COLOR", "1")
-        .env("FORCE_COLOR", "0");
-
-    // Run each check in its own process group so a timeout can stop the whole
-    // tree (npm/pnpm/cargo all spawn children).
-    process.process_group(0);
-
-    let mut child = match process.spawn() {
-        Ok(child) => child,
-        Err(error) => {
-            return VerificationCheckResult {
-                name: check.name,
-                ecosystem: check.ecosystem.to_string(),
-                status: CheckStatus::Failed,
-                command,
-                exit_code: None,
-                output: truncate_chars(&format!("起動に失敗しました: {error}"), max_output_chars),
-                duration_ms: started.elapsed().as_millis() as u64,
-            };
-        }
-    };
-
-    let stdout = child.stdout.take();
-    let stderr = child.stderr.take();
-    let out_handle = stdout.map(|mut stream| {
-        thread::spawn(move || {
-            let mut buffer = String::new();
-            let _ = stream.read_to_string(&mut buffer);
-            buffer
-        })
-    });
-    let err_handle = stderr.map(|mut stream| {
-        thread::spawn(move || {
-            let mut buffer = String::new();
-            let _ = stream.read_to_string(&mut buffer);
-            buffer
-        })
-    });
-
-    let deadline = Instant::now() + timeout;
-    let mut timed_out = false;
-    let status = loop {
-        match child.try_wait() {
-            Ok(Some(status)) => break Some(status),
-            Ok(None) => {
-                if Instant::now() >= deadline {
-                    timed_out = true;
-                    kill_group(&child);
-                    let _ = child.wait();
-                    break None;
-                }
-                thread::sleep(Duration::from_millis(50));
-            }
-            Err(error) => {
-                let _ = child.kill();
-                let _ = child.wait();
-                return VerificationCheckResult {
-                    name: check.name,
-                    ecosystem: check.ecosystem.to_string(),
-                    status: CheckStatus::Failed,
-                    command,
-                    exit_code: None,
-                    output: truncate_chars(
-                        &format!("待機中にエラーが発生しました: {error}"),
-                        max_output_chars,
-                    ),
-                    duration_ms: started.elapsed().as_millis() as u64,
-                };
-            }
-        }
-    };
-
-    let stdout = out_handle
-        .and_then(|handle| handle.join().ok())
-        .unwrap_or_default();
-    let stderr = err_handle
-        .and_then(|handle| handle.join().ok())
-        .unwrap_or_default();
-    let output = truncate_chars(&combine_output(stdout, stderr), max_output_chars);
-
-    let (status, exit_code) = if timed_out {
-        (CheckStatus::Timeout, None)
+    let output = exec::run(root, &check.program, &check.args, timeout, max_output_chars);
+    let status = if output.timed_out {
+        CheckStatus::Timeout
+    } else if output.success {
+        CheckStatus::Passed
     } else {
-        let code = status.and_then(|status| status.code());
-        let status = if code == Some(0) {
-            CheckStatus::Passed
-        } else {
-            CheckStatus::Failed
-        };
-        (status, code)
+        CheckStatus::Failed
     };
-
     VerificationCheckResult {
         name: check.name,
         ecosystem: check.ecosystem.to_string(),
         status,
-        command,
-        exit_code,
-        output,
-        duration_ms: started.elapsed().as_millis() as u64,
+        command: check.command(),
+        exit_code: output.exit_code,
+        output: output.output,
+        duration_ms: output.duration_ms,
     }
-}
-
-fn kill_group(child: &Child) {
-    let pid = child.id() as i32;
-    // process_group(0) put the child in its own group, so the negative PID
-    // targets every process that inherited the pipe.
-    unsafe {
-        libc::kill(-pid, libc::SIGKILL);
-    }
-}
-
-fn combine_output(stdout: String, stderr: String) -> String {
-    let mut output = stdout.trim_end().to_string();
-    let stderr = stderr.trim_end();
-    if !stderr.is_empty() {
-        if !output.is_empty() {
-            output.push('\n');
-        }
-        output.push_str("[stderr]\n");
-        output.push_str(stderr);
-    }
-    output
 }
 
 fn aggregate(checks: &[VerificationCheckResult]) -> CheckStatus {
@@ -395,15 +277,6 @@ fn aggregate(checks: &[VerificationCheckResult]) -> CheckStatus {
         CheckStatus::Passed
     } else {
         CheckStatus::Skipped
-    }
-}
-
-pub fn truncate_chars(value: &str, limit: usize) -> String {
-    let limit = limit.max(1);
-    if value.chars().count() <= limit {
-        value.to_string()
-    } else {
-        format!("{}…", value.chars().take(limit).collect::<String>())
     }
 }
 
@@ -500,7 +373,7 @@ mod tests {
     #[test]
     fn stops_after_failure_and_truncates_output() {
         let value = "a".repeat(20);
-        assert_eq!(truncate_chars(&value, 5), "aaaaa…");
+        assert_eq!(crate::skills::exec::truncate_chars(&value, 5), "aaaaa…");
         let checks = vec![VerificationCheckResult {
             name: VerificationCheck::Typecheck,
             ecosystem: "node".into(),

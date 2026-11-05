@@ -202,6 +202,355 @@ const codeInspector = buildManifest({
   },
 });
 
+const gitOperation = buildManifest({
+  id: "git-operation",
+  name: "Git Operation",
+  description: "Git の状態確認、差分取得、ステージ、ブランチ一覧、コミットを行う",
+  version: "0.1.0",
+  category: "git",
+  risk: "write",
+  actions: [
+    {
+      id: "git.status",
+      handler: "git.status",
+      description: "作業ツリーの状態と現在のブランチを取得する",
+      risk: "read",
+      params: {},
+      timeoutMs: 10_000,
+    },
+    {
+      id: "git.diff",
+      handler: "git.diff",
+      description: "指定ファイルの差分を取得する",
+      risk: "read",
+      params: {
+        path: pathParam,
+        staged: {
+          type: "boolean",
+          description: "ステージ済みの差分を取得する",
+          required: false,
+        },
+      },
+      timeoutMs: 30_000,
+    },
+    {
+      id: "git.branches",
+      handler: "git.branches",
+      description: "ローカルブランチの一覧を取得する",
+      risk: "read",
+      params: {},
+      timeoutMs: 10_000,
+    },
+    {
+      id: "git.stage",
+      handler: "git.stage",
+      description: "指定ファイルをステージする",
+      risk: "write",
+      params: { path: pathParam },
+      timeoutMs: 30_000,
+    },
+    {
+      id: "git.stageAll",
+      handler: "git.stageAll",
+      description: "すべての変更をステージする",
+      risk: "write",
+      params: {},
+      timeoutMs: 30_000,
+    },
+    {
+      id: "git.commit",
+      handler: "git.commit",
+      description: "ステージ済みの変更をコミットする",
+      risk: "write",
+      params: {
+        message: {
+          type: "string",
+          description: "コミットメッセージ",
+          required: true,
+          maxLength: 4_000,
+        },
+      },
+      timeoutMs: 60_000,
+    },
+  ],
+  permissions: {
+    paths: { read: ["**/*"], write: [] },
+    commands: [],
+    env: [],
+  },
+  approval: {
+    default: "ask",
+    overrides: {
+      "git.status": "allow",
+      "git.diff": "allow",
+      "git.branches": "allow",
+    },
+  },
+  limits: {
+    maxFiles: 20,
+    maxBytes: 1_048_576,
+    timeoutMs: 60_000,
+    maxOutputChars: 50_000,
+  },
+});
+
+const terminalCommand = buildManifest({
+  id: "terminal-command",
+  name: "Terminal Command",
+  description: "許可されたプログラムをシェル文字列なしで直接実行する",
+  version: "0.1.0",
+  category: "terminal",
+  risk: "write",
+  actions: [
+    {
+      id: "terminal.run",
+      handler: "terminal.run",
+      description: "許可リストのプログラムを引数付きで実行する",
+      risk: "write",
+      params: {
+        program: {
+          type: "string",
+          description: "実行するプログラム",
+          required: true,
+          maxLength: 64,
+          enum: [
+            "npm",
+            "pnpm",
+            "yarn",
+            "cargo",
+            "node",
+            "python3",
+            "pytest",
+            "make",
+          ],
+        },
+        args: {
+          type: "string[]",
+          description: "プログラムに渡す引数。シェル展開は行わない",
+          required: false,
+          maxItems: 32,
+        },
+      },
+      timeoutMs: 300_000,
+      maxOutputChars: 50_000,
+    },
+  ],
+  permissions: {
+    paths: { read: [], write: [] },
+    commands: [
+      { program: "npm", args: [] },
+      { program: "pnpm", args: [] },
+      { program: "yarn", args: [] },
+      { program: "cargo", args: [] },
+      { program: "node", args: [] },
+      { program: "python3", args: [] },
+      { program: "pytest", args: [] },
+      { program: "make", args: [] },
+    ],
+    env: [],
+  },
+  limits: {
+    maxFiles: 20,
+    maxBytes: 1_048_576,
+    timeoutMs: 300_000,
+    maxOutputChars: 50_000,
+  },
+});
+
+const debugControl = buildManifest({
+  id: "debug-control",
+  name: "Debug Control",
+  description:
+    "DAP デバッガの開始、停止、再開、ステップ実行、ブレークポイント、式評価を行う",
+  version: "0.1.0",
+  category: "debug",
+  risk: "write",
+  actions: [
+    {
+      id: "debug.start",
+      handler: "debug.start",
+      description: "デバッガを起動して対象プログラムを実行する",
+      risk: "write",
+      params: {
+        adapter: {
+          type: "string",
+          description: "使用する DAP アダプター",
+          required: true,
+          maxLength: 64,
+          enum: ["lldb-dap", "debugpy"],
+        },
+        program: {
+          type: "string",
+          description: "デバッグ対象の実行ファイル (ワークスペース相対または絶対パス)",
+          required: true,
+          maxLength: 1_024,
+        },
+      },
+      timeoutMs: 60_000,
+    },
+    {
+      id: "debug.stop",
+      handler: "debug.stop",
+      description: "デバッグセッションを終了する",
+      risk: "write",
+      params: {
+        sessionId: {
+          type: "string",
+          description: "debug.start が返したセッション ID",
+          required: true,
+          maxLength: 128,
+        },
+      },
+      timeoutMs: 10_000,
+    },
+    {
+      id: "debug.continue",
+      handler: "debug.continue",
+      description: "停止中のスレッドを再開する",
+      risk: "write",
+      params: {
+        sessionId: {
+          type: "string",
+          description: "デバッグセッション ID",
+          required: true,
+          maxLength: 128,
+        },
+        threadId: {
+          type: "number",
+          description: "再開するスレッド ID",
+          required: true,
+        },
+      },
+      timeoutMs: 10_000,
+    },
+    {
+      id: "debug.next",
+      handler: "debug.next",
+      description: "次の行までステップオーバーする",
+      risk: "write",
+      params: {
+        sessionId: {
+          type: "string",
+          description: "デバッグセッション ID",
+          required: true,
+          maxLength: 128,
+        },
+        threadId: {
+          type: "number",
+          description: "ステップするスレッド ID",
+          required: true,
+        },
+      },
+      timeoutMs: 10_000,
+    },
+    {
+      id: "debug.stepIn",
+      handler: "debug.stepIn",
+      description: "関数の内部へステップインする",
+      risk: "write",
+      params: {
+        sessionId: {
+          type: "string",
+          description: "デバッグセッション ID",
+          required: true,
+          maxLength: 128,
+        },
+        threadId: {
+          type: "number",
+          description: "ステップするスレッド ID",
+          required: true,
+        },
+      },
+      timeoutMs: 10_000,
+    },
+    {
+      id: "debug.pause",
+      handler: "debug.pause",
+      description: "実行中のスレッドを一時停止する",
+      risk: "write",
+      params: {
+        sessionId: {
+          type: "string",
+          description: "デバッグセッション ID",
+          required: true,
+          maxLength: 128,
+        },
+        threadId: {
+          type: "number",
+          description: "停止するスレッド ID",
+          required: true,
+        },
+      },
+      timeoutMs: 10_000,
+    },
+    {
+      id: "debug.setBreakpoint",
+      handler: "debug.setBreakpoint",
+      description: "指定ファイルの行にブレークポイントを設定する",
+      risk: "write",
+      params: {
+        sessionId: {
+          type: "string",
+          description: "デバッグセッション ID",
+          required: true,
+          maxLength: 128,
+        },
+        path: pathParam,
+        line: {
+          type: "number",
+          description: "1 始まりの行番号",
+          required: true,
+        },
+      },
+      timeoutMs: 10_000,
+    },
+    {
+      id: "debug.evaluate",
+      handler: "debug.evaluate",
+      description: "停止中のフレームで式を評価する",
+      risk: "read",
+      params: {
+        sessionId: {
+          type: "string",
+          description: "デバッグセッション ID",
+          required: true,
+          maxLength: 128,
+        },
+        expression: {
+          type: "string",
+          description: "評価する式",
+          required: true,
+          maxLength: 4_000,
+        },
+        frameId: {
+          type: "number",
+          description: "対象フレーム ID",
+          required: false,
+        },
+        context: {
+          type: "string",
+          description: "評価コンテキスト",
+          required: false,
+          maxLength: 32,
+          enum: ["repl", "watch", "hover"],
+        },
+      },
+      timeoutMs: 10_000,
+    },
+  ],
+  permissions: {
+    paths: { read: ["**/*"], write: [] },
+    commands: [],
+    env: [],
+  },
+  limits: {
+    maxFiles: 20,
+    maxBytes: 1_048_576,
+    timeoutMs: 60_000,
+    maxOutputChars: 50_000,
+  },
+});
+
 export const SKILL_LIBRARY: SkillLibraryEntry[] = [
   {
     id: "code-edit",
@@ -278,60 +627,81 @@ export const SKILL_LIBRARY: SkillLibraryEntry[] = [
     name: "Git Operation",
     tagline: "状態確認からコミットまで",
     description:
-      "Git の状態確認・差分・ステージ・コミットを宣言するスキルです。実行ハンドラは v0.4 で追加予定で、現在は設計カードとして表示しています。",
+      "Git の状態確認・差分・ブランチ一覧・ステージ・コミットを Rust の固定ハンドラで実行します。読み取り系は承認なし、書き込み系は承認ダイアログを挟みます。",
     category: "git",
-    status: "planned",
-    tags: ["Git", "コミット", "予定"],
+    status: "ready",
+    tags: ["Git", "コミット", "差分", "ローカル"],
     useCases: [
       "変更内容を確認してからコミットする",
       "意図しないファイルをステージしない",
+      "現在のブランチと差分をまとめて確認する",
     ],
     examples: [
       {
         title: "変更を整理",
         prompt: "変更を確認して、関連するファイルだけステージしてコミットして",
       },
+      {
+        title: "差分を確認",
+        prompt: "src/App.tsx のステージ済み差分を見せて",
+      },
     ],
-    manifest: null,
-    note: "Git ハンドラは v0.4 で実装予定です。現在の Git 操作は Git パネルから実行してください。",
+    manifest: gitOperation,
+    note: "Git の実行結果はローカルにのみ保存されます。push / reset --hard はハンドラに含めていません。",
   },
   {
     id: "terminal-command",
     name: "Terminal Command",
     tagline: "コマンドを安全に組み立てる",
     description:
-      "統合ターミナルで実行するコマンドを宣言するスキルです。シェル文字列ではなく program + args で渡す設計で、v0.4 以降にハンドラを追加します。",
+      "許可リストのプログラムを、シェル文字列ではなく program + args で直接実行します。独立プロセスグループ・タイムアウト・出力上限を適用し、失敗はスキル実行の失敗として返します。",
     category: "terminal",
-    status: "planned",
-    tags: ["ターミナル", "コマンド", "予定"],
-    useCases: ["テストやビルドをエージェントから実行する"],
+    status: "ready",
+    tags: ["ターミナル", "コマンド", "許可リスト", "タイムアウト"],
+    useCases: [
+      "テストやビルドをエージェントから実行する",
+      "出力を上限付きで取得して要約する",
+      "シェルを介さずに引数を安全に渡す",
+    ],
     examples: [
       {
         title: "テストを実行",
         prompt: "npm test を実行して、失敗したテストを要約して",
       },
+      {
+        title: "型検査を実行",
+        prompt: "cargo check を実行して結果を要約して",
+      },
     ],
-    manifest: null,
-    note: "ターミナルの直接操作は v0.4 の検証ループで実装予定です。",
+    manifest: terminalCommand,
+    note: "実行できるのは npm / pnpm / yarn / cargo / node / python3 / pytest / make のみです。シェル展開やパイプは使いません。",
   },
   {
     id: "debug-control",
     name: "Debug Control",
     tagline: "停止・再開・ブレークポイント",
     description:
-      "DAP デバッガの操作を宣言するスキルです。v0.3.1 で IDE の Debug タブとして実装済みで、スキルからの操作は v0.4 以降の対象です。",
+      "lldb-dap / debugpy のセッションを開始し、停止・再開・ステップ実行・ブレークポイント・式評価を DAP の request/response で行います。Debug タブと同じセッションを共有します。",
     category: "debug",
-    status: "planned",
-    tags: ["DAP", "デバッグ", "予定"],
-    useCases: ["失敗したテストの停止位置を調べる"],
+    status: "ready",
+    tags: ["DAP", "デバッグ", "ブレークポイント", "LLDB", "debugpy"],
+    useCases: [
+      "失敗したテストの停止位置を調べる",
+      "スキルから変数を評価して原因を絞る",
+      "実行中のプロセスを一時停止して状態を確認する",
+    ],
     examples: [
       {
         title: "停止位置を確認",
         prompt: "失敗するテストをデバッグ実行して、停止した変数を要約して",
       },
+      {
+        title: "式を評価",
+        prompt: "デバッグ中のフレームで items.length を評価して",
+      },
     ],
-    manifest: null,
-    note: "スキルから DAP を操作する機能は未実装です。Debug タブから利用してください。",
+    manifest: debugControl,
+    note: "debug.start は initialize → launch → initialized → configurationDone の順でハンドシェイクします。セッションは Debug タブと共有されます。",
   },
 ];
 

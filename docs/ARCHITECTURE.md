@@ -187,7 +187,7 @@ Audit タブ
 OpenAI 互換 API のチャット（ストリーミング・停止・接続テスト）、
 計画の生成・承認・実行、監査ログまでを実装している。スキル実行は
 `code-edit` の `editor.*` ハンドラ、ポリシー、承認、監査、Agent パネルの
-Skills タブと設定のスキルタブまで実装済みで、検証ループは未実装。
+Skills タブと設定のスキルタブまで実装済み。
 v0.3.4 では、キュレーション済みのスキルを人間が読める形で提示する
 スキルライブラリ（`src/lib/skillLibrary.ts`）と、`skill-library` ラベルの
 別 WebviewWindow（`src/components/SkillLibrary.tsx`）を追加した。別窓は
@@ -195,15 +195,19 @@ v0.3.4 では、キュレーション済みのスキルを人間が読める形�
 `.agents/skills/<id>.json` へ書き出せる。v0.3.5 では、スキル実行後に
 `src-tauri/src/skills/verify.rs` が `package.json` / `Cargo.toml` から解決した
 typecheck / lint / test を実行する。各チェックは独立したプロセスグループで動かし、
-タイムアウト時はグループごと停止する。
+タイムアウト時はグループごと停止する。v0.3.6 では `src-tauri/src/skills/exec.rs` に
+共通のプロセス実行を切り出し、Git（`skills/git.rs`）、ターミナル（`skills/terminal.rs`）、
+デバッグ（`skills/debug.rs`）のハンドラを追加した。ターミナルは許可プログラムを
+`program + args` で直接実行し、シェル文字列を組み立てない。デバッグは `rpc.rs` の
+request/response 相関とイベント購読を使い、Debug タブと同じ DAP セッションを操作する。
 
-### スキル実行と検証ループ（一部実装済み）
+### スキル実行と検証ループ（実装済み）
 
-v0.4.0 では、エディタ・Git・ターミナルの操作を宣言するスキルマニフェストと、
-`allow` / `ask` / `block` の実行ポリシーを追加する。マニフェストはリポジトリ内の
-宣言に限定し、実行は Rust の閉じたハンドラだけが行う。v0.4.0 の最小垂直スライスは
-`code-edit`（読み取り・一意一致の文字列置換・作成）で、実行・承認・監査までを
-実装済み。検証ループ（typecheck / lint / test）は v0.5 で追加する。
+エディタ・Git・ターミナル・デバッグの操作を宣言する v1 マニフェストと、
+`allow` / `ask` / `block` の実行ポリシーを実装済み。マニフェストはリポジトリ内の
+宣言に限定し、実行は Rust の閉じたハンドラだけが行う。`code-edit`（読み取り・
+一意一致の文字列置換・作成）、Git、ターミナル、デバッグの実行・承認・監査と、
+検証ループ（typecheck / lint / test）が動作する。
 
 スキーマ、承認フロー、パス・コマンドの制限、監査項目、API、テスト計画は
 [SKILLS.md](./SKILLS.md) を参照。機械可読スキーマは

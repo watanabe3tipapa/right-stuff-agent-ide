@@ -2,13 +2,19 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
+use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Emitter};
 
 use crate::error::{AppError, AppResult};
+
+/// Event name paired with the one-shot waiter registered by `subscribe`.
+type EventWaiter = (String, Sender<Value>);
 
 /// Refuse pathological frames before allocating. LSP/DAP payloads are small;
 /// a 16 MB ceiling leaves room for large documents without letting a broken
@@ -19,6 +25,9 @@ const MAX_LOG_LINE: usize = 8 * 1024;
 pub struct RpcSession {
     stdin: Arc<Mutex<ChildStdin>>,
     child: Child,
+    pending: Arc<Mutex<HashMap<i64, Sender<Value>>>>,
+    events: Arc<Mutex<Vec<EventWaiter>>>,
+    next_id: AtomicI64,
 }
 
 #[derive(Clone, Serialize)]
@@ -87,6 +96,8 @@ pub fn spawn(
         .take()
         .ok_or_else(|| AppError::Other("サーバーの標準エラーを開けませんでした。".into()))?;
     let stdin = Arc::new(Mutex::new(stdin));
+    let pending = Arc::new(Mutex::new(HashMap::<i64, Sender<Value>>::new()));
+    let events = Arc::new(Mutex::new(Vec::<(String, Sender<Value>)>::new()));
 
     let message_event = format!("{channel}://message");
     let exit_event = format!("{channel}://exit");
@@ -94,11 +105,14 @@ pub fn spawn(
 
     let read_app = app.clone();
     let read_id = id.to_string();
+    let read_pending = pending.clone();
+    let read_events = events.clone();
     std::thread::spawn(move || {
         let mut reader = BufReader::new(stdout);
         loop {
             match read_message(&mut reader) {
                 Ok(Some(message)) => {
+                    dispatch(&message, &read_pending, &read_events);
                     let _ = read_app.emit(
                         &message_event,
                         RpcMessage {
@@ -138,7 +152,138 @@ pub fn spawn(
         }
     });
 
-    Ok(RpcSession { stdin, child })
+    Ok(RpcSession {
+        stdin,
+        child,
+        pending,
+        events,
+        next_id: AtomicI64::new(1),
+    })
+}
+
+/// Route a DAP response to the waiting `request` call, or an event to any
+/// matching `subscribe` call. LSP messages have neither field, so they are
+/// simply forwarded to the WebView as before.
+fn dispatch(
+    message: &Value,
+    pending: &Mutex<HashMap<i64, Sender<Value>>>,
+    events: &Mutex<Vec<EventWaiter>>,
+) {
+    match message.get("type").and_then(Value::as_str) {
+        Some("response") => {
+            let Some(request_seq) = message.get("request_seq").and_then(Value::as_i64) else {
+                return;
+            };
+            let waiter = pending
+                .lock()
+                .ok()
+                .and_then(|mut pending| pending.remove(&request_seq));
+            if let Some(waiter) = waiter {
+                let _ = waiter.send(message.clone());
+            }
+        }
+        Some("event") => {
+            let event = message
+                .get("event")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            if let Ok(mut waiters) = events.lock() {
+                waiters.retain(|(name, waiter)| {
+                    if name == event {
+                        let _ = waiter.send(message.clone());
+                        false
+                    } else {
+                        true
+                    }
+                });
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Send a request without waiting for its response. DAP's `launch` request is
+/// answered only after the debuggee stops, so callers must not block on it.
+pub fn send_request(session: &RpcSession, command: &str, arguments: Value) -> AppResult<i64> {
+    let id = session.next_id.fetch_add(1, Ordering::Relaxed);
+    let message = serde_json::json!({
+        "seq": id,
+        "type": "request",
+        "command": command,
+        "arguments": arguments,
+    });
+    write_message(session, &message)?;
+    Ok(id)
+}
+
+/// Send a DAP request and wait for the matching response.
+pub fn request(
+    session: &RpcSession,
+    command: &str,
+    arguments: Value,
+    timeout: Duration,
+) -> AppResult<Value> {
+    let id = session.next_id.fetch_add(1, Ordering::Relaxed);
+    let (sender, receiver) = mpsc::channel();
+    session
+        .pending
+        .lock()
+        .map_err(|_| AppError::Other("DAP の応答待ちを登録できませんでした".into()))?
+        .insert(id, sender);
+
+    let message = serde_json::json!({
+        "seq": id,
+        "type": "request",
+        "command": command,
+        "arguments": arguments,
+    });
+    if let Err(error) = write_message(session, &message) {
+        if let Ok(mut pending) = session.pending.lock() {
+            pending.remove(&id);
+        }
+        return Err(error);
+    }
+
+    let response = match receiver.recv_timeout(timeout) {
+        Ok(response) => response,
+        Err(_) => {
+            if let Ok(mut pending) = session.pending.lock() {
+                pending.remove(&id);
+            }
+            return Err(AppError::Other(format!(
+                "DAP の応答がタイムアウトしました: {command}"
+            )));
+        }
+    };
+
+    if response.get("success") == Some(&Value::Bool(false)) {
+        let message = response
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or("不明なエラー");
+        return Err(AppError::Other(format!("DAP が失敗しました: {message}")));
+    }
+    Ok(response)
+}
+
+/// Register for a DAP event before sending the request that triggers it.
+pub fn subscribe(session: &RpcSession, event: &str) -> AppResult<Receiver<Value>> {
+    let (sender, receiver) = mpsc::channel();
+    session
+        .events
+        .lock()
+        .map_err(|_| AppError::Other("DAP イベントの購読に失敗しました".into()))?
+        .push((event.to_string(), sender));
+    Ok(receiver)
+}
+
+pub fn wait_event(receiver: Receiver<Value>, event: &str, timeout: Duration) -> AppResult<Value> {
+    receiver.recv_timeout(timeout).map_err(|_| {
+        AppError::Other(format!(
+            "DAP イベント {event} が {} ms 以内に届きませんでした",
+            timeout.as_millis()
+        ))
+    })
 }
 
 pub fn write_message(session: &RpcSession, message: &Value) -> AppResult<()> {

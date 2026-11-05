@@ -1,6 +1,6 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -12,7 +12,10 @@ use crate::error::{AppError, AppResult};
 use crate::fsutil::now_millis;
 use crate::skills::editor::{self, SkillPreview};
 use crate::skills::policy::{self as skill_policy, SkillPolicy};
-use crate::skills::{self, Decision, Risk, SkillAction, SkillCatalog, SkillManifest, params};
+use crate::skills::verify::{self, CheckStatus, VerificationResult};
+use crate::skills::{
+    self, Decision, Risk, SkillAction, SkillCatalog, SkillManifest, VerificationCheck, params,
+};
 use crate::state::AppState;
 
 static RUN_SEQUENCE: AtomicU64 = AtomicU64::new(1);
@@ -325,6 +328,179 @@ pub async fn skill_run(
             })
         }
     }
+}
+
+/// Run the verification checks declared by the manifest. The commands come
+/// from the workspace layout (package manager / Cargo), never from the
+/// manifest, and every check runs in its own process group with a timeout.
+#[tauri::command]
+pub async fn skill_verify(
+    app: AppHandle,
+    skill_id: String,
+    action_id: String,
+    checks: Option<Vec<VerificationCheck>>,
+    state: State<'_, AppState>,
+) -> AppResult<VerificationResult> {
+    let root = state.root()?;
+    let catalog = skills::load_catalog(&root)?;
+    let (manifest, _action) = find_action(&catalog, &skill_id, &action_id)?;
+    let verification = manifest.verification.clone();
+
+    if verification.mode == skills::VerificationMode::None {
+        return Ok(VerificationResult {
+            status: CheckStatus::Skipped,
+            checks: Vec::new(),
+        });
+    }
+
+    let requested = checks
+        .filter(|list| !list.is_empty())
+        .unwrap_or_else(|| verification.checks.clone());
+    let requested: Vec<VerificationCheck> = requested
+        .into_iter()
+        .filter(|check| verification.checks.contains(check))
+        .collect();
+    if requested.is_empty() {
+        return Ok(VerificationResult {
+            status: CheckStatus::Skipped,
+            checks: Vec::new(),
+        });
+    }
+
+    let (skill_policy, agent_policy) = {
+        let conn = lock_db(&state)?;
+        (
+            skill_policy::load_policy(&conn, Some(&catalog))?,
+            audit_policy::load_policy(&conn)?,
+        )
+    };
+
+    let planned = verify::plan_checks(&root, &requested, verification.mode)?;
+    let needs_approval = planned.iter().any(|check| {
+        check.skip_reason.is_none()
+            && !(skill_policy.verification.auto_run
+                && skill_policy.verification.allow_checks.contains(&check.name))
+    });
+
+    let audit_request = SkillRequest {
+        skill_id: skill_id.clone(),
+        action_id: action_id.clone(),
+        params: Value::Null,
+        plan_id: None,
+        step_id: None,
+        title: Some("検証".into()),
+        mode: None,
+    };
+
+    if needs_approval && !confirm_verification(&app, &planned, verification.timeout_ms) {
+        record_skill_audit(
+            &state,
+            &agent_policy,
+            &audit_request,
+            "verification_run",
+            "cancelled",
+            Some("ユーザーが検証をキャンセルしました"),
+        );
+        return Ok(VerificationResult {
+            status: CheckStatus::Skipped,
+            checks: Vec::new(),
+        });
+    }
+
+    let run_root = root.clone();
+    let max_output = manifest.limits.max_output_chars;
+    let timeout = Duration::from_millis(verification.timeout_ms);
+    let stop_on_failure = verification.stop_on_failure;
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        verify::run_planned(&run_root, planned, timeout, stop_on_failure, max_output)
+    })
+    .await
+    .map_err(|error| AppError::Other(format!("検証の実行に失敗しました: {error}")))?;
+
+    let outcome = match result.status {
+        CheckStatus::Failed | CheckStatus::Timeout => "error",
+        _ => "ok",
+    };
+    record_skill_audit(
+        &state,
+        &agent_policy,
+        &audit_request,
+        "verification_run",
+        outcome,
+        Some(&summarize_verification(&result)),
+    );
+
+    Ok(result)
+}
+
+fn summarize_verification(result: &VerificationResult) -> String {
+    if result.checks.is_empty() {
+        return "検証項目はありません".into();
+    }
+    result
+        .checks
+        .iter()
+        .map(|check| {
+            format!(
+                "{} / {}: {} ({} ms)",
+                verification_check_label(check.name),
+                check.ecosystem,
+                verification_status_label(check.status),
+                check.duration_ms
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn verification_check_label(check: VerificationCheck) -> &'static str {
+    match check {
+        VerificationCheck::Typecheck => "typecheck",
+        VerificationCheck::Lint => "lint",
+        VerificationCheck::Test => "test",
+    }
+}
+
+fn verification_status_label(status: CheckStatus) -> &'static str {
+    match status {
+        CheckStatus::Passed => "passed",
+        CheckStatus::Failed => "failed",
+        CheckStatus::Skipped => "skipped",
+        CheckStatus::Timeout => "timeout",
+    }
+}
+
+fn confirm_verification(
+    app: &AppHandle,
+    planned: &[verify::PlannedCheck],
+    timeout_ms: u64,
+) -> bool {
+    app.dialog()
+        .message(verification_message(planned, timeout_ms))
+        .title("検証の実行を承認")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "実行".to_string(),
+            "キャンセル".to_string(),
+        ))
+        .blocking_show()
+}
+
+fn verification_message(planned: &[verify::PlannedCheck], timeout_ms: u64) -> String {
+    let mut message = String::from("操作の後に次の検証を実行します。\n\n");
+    for check in planned.iter().filter(|check| check.skip_reason.is_none()) {
+        message.push_str(&format!(
+            "- {} ({}): {}\n",
+            verification_check_label(check.name),
+            check.ecosystem,
+            check.command().join(" ")
+        ));
+    }
+    message.push_str(&format!(
+        "\nタイムアウト: {} 秒\nこの操作はプロジェクトのコードを実行します。承認しますか？",
+        timeout_ms / 1_000
+    ));
+    truncate_chars(&message, 4_000)
 }
 
 #[derive(Debug)]

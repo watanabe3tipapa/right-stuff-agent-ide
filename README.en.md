@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.4-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.5-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 ## Download
 
-v0.3.4 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.5 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.4_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.4_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.5_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.5_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
@@ -38,7 +38,7 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), v0.3.3 adds LSP rename, references, code actions, and workspace symbol search, and v0.3.4 adds a human-readable skill library and showcase window.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), v0.3.3 adds LSP rename, references, code actions, and workspace symbol search, v0.3.4 adds a human-readable skill library and showcase window, and v0.3.5 adds a verification loop (typecheck / lint / test) after skill runs.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -263,7 +263,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.4 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.5 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
@@ -292,6 +292,14 @@ vercel --prod          # Deploy to production
 `vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
 
 ## Known limitations and roadmap
+
+### v0.3.5
+
+- [x] Verification loop — run typecheck / lint / test after `verification.mode: "auto"` skill runs and show the results
+- [x] Command resolution — derive checks from `package.json` scripts and `Cargo.toml`; manifests never provide command strings
+- [x] Approval — skip prompts according to `autoRun` and `allowChecks`; `test` always asks through the native dialog
+- [x] Safe execution — each check runs in its own process group with a timeout, and `stopOnFailure` skips the rest after a failure
+- [x] Audit and UI — record verification in the audit log and show each check's output in the Skills tab
 
 ### v0.3.4
 
@@ -378,8 +386,8 @@ vercel --prod          # Deploy to production
 
 ### Next candidates
 
-- [ ] Skill execution and verification loop
 - [ ] Anthropic-specific API adapter
+- [ ] Git / terminal / debug skill handlers
 
 ### Constraints
 
@@ -390,6 +398,7 @@ vercel --prod          # Deploy to production
 - The Git panel uses the local `git` CLI. If `git` is missing, the panel reports an error. Merge, rebase, push, and other history operations are not implemented
 - The integrated terminal is Tauri-only. Git and the terminal are disabled in the browser demo. PTYs stop when the app exits
 - The terminal shell can be changed with `RIGHT_STUFF_SHELL` or `SHELL`. Only an existing executable at an absolute path is launched
+- The verification loop only targets workspaces with `package.json` (npm / pnpm / yarn) or `Cargo.toml`. It runs a fixed set of commands such as `npm run typecheck` and never arbitrary commands
 - LSP supports completion, go-to-definition, hover, diagnostics, rename, references, code actions, and workspace symbol search. Signature help, semantic tokens, formatting, and refactors that create or delete files are not implemented. DAP supports start, stop, stepping, breakpoints, and variable views only; attach and conditional breakpoints are not implemented. Language servers and debug adapters must be installed separately
 - Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved (the policy cannot set them to allow)
 - The audit log is stored in local SQLite with a default retention of 30 days and a 5,000-row cap. Disabling it leaves existing records in place

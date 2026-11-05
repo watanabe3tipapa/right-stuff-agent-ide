@@ -1,6 +1,6 @@
 [package]
 name = "right-stuff-agent-ide"
-version = "0.3.4"
+version = "0.3.5"
 description = "Agent-driven IDE built on Right-Stuff Editor and Agent Desktop"
 authors = ["watanabe3tipapa"]
 edition = "2024"
@@ -31,6 +31,7 @@ reqwest = { version = "0.13", features = ["json", "stream"] }
 futures-util = "0.3"
 tokio = { version = "1", features = ["macros", "sync", "time"] }
 portable-pty = "0.9"
+libc = "0.2"
 
 # The app is macOS-only, so only the Keychain backend is built.
 keyring = { version = "3.6.3", features = ["apple-native"] }

@@ -192,7 +192,10 @@ v0.3.4 では、キュレーション済みのスキルを人間が読める形�
 スキルライブラリ（`src/lib/skillLibrary.ts`）と、`skill-library` ラベルの
 別 WebviewWindow（`src/components/SkillLibrary.tsx`）を追加した。別窓は
 `index.html?window=skills` で通常起動と分岐し、`ready` のマニフェストだけを
-`.agents/skills/<id>.json` へ書き出せる。
+`.agents/skills/<id>.json` へ書き出せる。v0.3.5 では、スキル実行後に
+`src-tauri/src/skills/verify.rs` が `package.json` / `Cargo.toml` から解決した
+typecheck / lint / test を実行する。各チェックは独立したプロセスグループで動かし、
+タイムアウト時はグループごと停止する。
 
 ### スキル実行と検証ループ（一部実装済み）
 
@@ -318,11 +321,12 @@ Debug タブ
 ```
 src/
 ├── components/ (AgentPanel, PlanPanel, GitPanel, DebugPanel, SkillLibrary, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
-├── lib/{api,demo,llm,plan,policy,monaco,lsp,lspMapping,dap}.ts
+├── lib/{api,demo,llm,plan,policy,monaco,lsp,lspMapping,dap,skillLibrary,skillWindow}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent,git,lsp,dap}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,lsp,dap,settings,app}.rs
+├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,lsp,dap,skills,settings,app}.rs
+├── skills/{mod,editor,params,policy,verify}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs
@@ -335,5 +339,5 @@ src-tauri/src/
 - 大きなツリーの列挙は `spawn_blocking` + ページングに移行する。
 - Monaco と Agent パネルは動的 import でチャンク分割する (現在は単一バンドル)。
 - ターミナルは複数セッションのタブ化と、スクロールバックの永続化を検討する。
-- LSP は rename / references / code action を追加し、DAP は attach と条件付きブレークポイントを検討する。
+- DAP は attach と条件付きブレークポイントを検討する。
 - Git は merge / rebase / push などの履歴操作を追加する。

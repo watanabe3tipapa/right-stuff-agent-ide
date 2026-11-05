@@ -22,6 +22,8 @@ import type {
   SkillPreviewResult,
   SkillRequest,
   SkillRunResult,
+  VerificationCheckName,
+  VerificationResult,
   VersionContent,
   VersionSummary,
   WorkspaceInfo,
@@ -66,7 +68,7 @@ npm run tauri dev
   "package.json": `{
   "name": "right-stuff-agent-ide",
   "private": true,
-  "version": "0.3.4",
+  "version": "0.3.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -423,7 +425,7 @@ export const demoApi = {
   async appInfo(): Promise<AppInfo> {
     return {
       name: "Right-Stuff Agent IDE",
-      version: "0.3.4-demo",
+      version: "0.3.5-demo",
       tauriVersion: "browser",
       platform: "browser",
       arch: "web",
@@ -739,6 +741,25 @@ export const demoApi = {
       exitCode: null,
       durationMs: Date.now() - started,
       auditId: 0,
+    };
+  },
+
+  async skillVerify(
+    _skillId: string,
+    _actionId: string,
+    checks?: VerificationCheckName[],
+  ): Promise<VerificationResult> {
+    return {
+      status: "skipped",
+      checks: (checks ?? ["typecheck", "lint", "test"]).map((name) => ({
+        name,
+        ecosystem: "demo",
+        status: "skipped" as const,
+        command: [],
+        exitCode: null,
+        output: "ブラウザデモでは検証コマンドを実行しません。",
+        durationMs: 0,
+      })),
     };
   },
 

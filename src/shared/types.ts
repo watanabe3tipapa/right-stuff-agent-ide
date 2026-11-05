@@ -263,6 +263,25 @@ export interface SkillRunResult {
   durationMs: number;
   auditId: number;
   errorCode?: string;
+  verification?: VerificationResult;
+}
+
+export type VerificationCheckName = "typecheck" | "lint" | "test";
+export type VerificationStatus = "passed" | "failed" | "skipped" | "timeout";
+
+export interface VerificationCheckResult {
+  name: VerificationCheckName;
+  ecosystem: string;
+  status: VerificationStatus;
+  command: string[];
+  exitCode: number | null;
+  output: string;
+  durationMs: number;
+}
+
+export interface VerificationResult {
+  status: VerificationStatus;
+  checks: VerificationCheckResult[];
 }
 
 export type PlanStepRisk = "read" | "write" | "destructive";

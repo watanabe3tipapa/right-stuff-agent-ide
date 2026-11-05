@@ -878,6 +878,16 @@ interface EditorStateUpdate {
       </p>
     </div>
     <div class="phase-item done">
+      <div class="phase-title">追加: 検証ループ (v0.3.5)</div>
+      <div class="phase-meta">typecheck / lint / test / 承認 / 監査</div>
+      <p>
+        スキル実行後に、ワークスペースの <code>package.json</code> または <code>Cargo.toml</code>
+        から解決した検証コマンドを実行。各チェックは独立したプロセスグループとタイムアウトで動かし、
+        <code>autoRun</code> / <code>allowChecks</code> に沿って承認を省略する。結果は Skills タブと
+        監査ログに記録する。
+      </p>
+    </div>
+    <div class="phase-item done">
       <div class="phase-title">追加: スキルライブラリ (v0.3.4)</div>
       <div class="phase-meta">人間向けカタログ / ショーケース別窓 / マニフェスト書き出し</div>
       <p>

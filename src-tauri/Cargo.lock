@@ -3209,11 +3209,12 @@ dependencies = [
 
 [[package]]
 name = "right-stuff-agent-ide"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "chrono",
  "futures-util",
  "keyring",
+ "libc",
  "portable-pty",
  "regex",
  "reqwest",

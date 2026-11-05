@@ -116,6 +116,7 @@ session, trace, --version, --help
 | `skill_decision` | `{ skillId, actionId }` | `{ skillId, actionId, decision, risk }` |
 | `skill_preview` | `{ skillId, actionId, params, mode? }` | `SkillPreviewResult` |
 | `skill_run` | `{ request }` | `SkillRunResult` |
+| `skill_verify` | `{ skillId, actionId, checks? }` | `VerificationResult` |
 
 `skills_list` は `<workspace>/.agents/skills/*.json` を読み、検証済みの
 マニフェストだけを返す。壊れたファイルは `warnings` に `file` と `message` を
@@ -128,6 +129,12 @@ session, trace, --version, --help
 一覧は既存の `skills_list` を使う。別窓の起動は
 `@tauri-apps/api/webviewWindow` の `WebviewWindow` で行い、権限は
 `core:webview:allow-create-webview-window` と `core:window:allow-set-focus` に限定する。
+
+`skill_verify` はマニフェストの `verification` に従い、ワークスペースの構成
+（`package.json` / `Cargo.toml`）から検証コマンドを解決して実行する。`checks` を
+省略するとマニフェストの `verification.checks` を使う。コマンド文字列は
+マニフェストから受け取らず、`verification.autoRun` と `allowChecks` に沿って
+ネイティブ承認を省略する。
 
 `skill_policy_set` は保存前に `allow` の書き込みアクションを `ask` へ丸め、
 `test` を自動許可の対象から外す。`skill_decision` はポリシーとマニフェストの
@@ -213,9 +220,8 @@ interface SkillRunResult {
 }
 ```
 
-`skill_run` に渡す引数は `{ request: SkillRequest }` の形にする。検証ループ
-（`verification` / `skill_verify`）は v0.5 で追加する。設計は
-[SKILLS.md](./SKILLS.md) を参照。
+`skill_run` に渡す引数は `{ request: SkillRequest }` の形にする。検証ループは
+v0.3.5 で `skill_verify` として追加した。設計は [SKILLS.md](./SKILLS.md) を参照。
 
 ## 計画立案
 

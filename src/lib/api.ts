@@ -47,6 +47,8 @@ import type {
   TerminalExit,
   TerminalOutput,
   TerminalStart,
+  VerificationCheckName,
+  VerificationResult,
   VersionContent,
   VersionSummary,
   WorkspaceInfo,
@@ -242,6 +244,20 @@ export const api = {
     return isTauri
       ? call<SkillRunResult>("skill_run", { request })
       : demoApi.skillRun(request);
+  },
+
+  /**
+   * Runs the manifest verification checks. Rust picks the commands from the
+   * workspace layout and asks for approval unless the policy auto-runs them.
+   */
+  skillVerify(
+    skillId: string,
+    actionId: string,
+    checks?: VerificationCheckName[],
+  ): Promise<VerificationResult> {
+    return isTauri
+      ? call<VerificationResult>("skill_verify", { skillId, actionId, checks })
+      : demoApi.skillVerify(skillId, actionId, checks);
   },
 
   openshipConfig(): Promise<OpenShipSettings> {

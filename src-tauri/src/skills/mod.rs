@@ -1,6 +1,7 @@
 pub mod editor;
 pub mod params;
 pub mod policy;
+pub mod verify;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;

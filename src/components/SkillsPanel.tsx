@@ -6,6 +6,7 @@ import type {
   SkillParamDef,
   SkillPreviewResult,
   SkillRunResult,
+  VerificationResult,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
 import { openSkillLibraryWindow } from "../lib/skillWindow";
@@ -139,7 +140,10 @@ function SkillActionCard({
   const [preview, setPreview] = useState<SkillPreviewResult | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [result, setResult] = useState<SkillRunResult | null>(null);
-  const [busy, setBusy] = useState<"preview" | "run" | null>(null);
+  const [verification, setVerification] = useState<VerificationResult | null>(
+    null,
+  );
+  const [busy, setBusy] = useState<"preview" | "run" | "verify" | null>(null);
 
   const disabled = busy !== null || (mode === "passive" && action.risk !== "read");
   const params = useMemo(() => buildParams(action, values), [action, values]);
@@ -154,6 +158,7 @@ function SkillActionCard({
     setBusy("preview");
     setPreviewError(null);
     setResult(null);
+    setVerification(null);
     try {
       const next = await api.skillPreview(
         skill.id,
@@ -180,6 +185,7 @@ function SkillActionCard({
     setBusy("run");
     setPreviewError(null);
     setResult(null);
+    setVerification(null);
     try {
       const next = await api.skillRun({
         skillId: skill.id,
@@ -189,6 +195,26 @@ function SkillActionCard({
         title: `${skill.name} / ${action.description}`,
       });
       setResult(next);
+      if (
+        next.status === "ok" &&
+        next.changedFiles.length > 0 &&
+        skill.verification.mode === "auto"
+      ) {
+        await runVerification();
+      }
+    } catch (error) {
+      setPreviewError(errorMessage(error));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runVerification() {
+    setBusy("verify");
+    setPreviewError(null);
+    setVerification(null);
+    try {
+      setVerification(await api.skillVerify(skill.id, action.id));
     } catch (error) {
       setPreviewError(errorMessage(error));
     } finally {
@@ -230,6 +256,7 @@ function SkillActionCard({
                 setPreview(null);
                 setPreviewError(null);
                 setResult(null);
+                setVerification(null);
               }}
             />
           ))
@@ -254,6 +281,17 @@ function SkillActionCard({
             <Icon name="play" size={12} />
             {busy === "run" ? "実行中…" : "実行"}
           </button>
+          {skill.verification.mode === "auto" && (
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => void runVerification()}
+              disabled={disabled}
+            >
+              <Icon name="check" size={12} />
+              {busy === "verify" ? "検証中…" : "検証を実行"}
+            </button>
+          )}
         </div>
 
         {previewError && (
@@ -300,6 +338,49 @@ function SkillActionCard({
             </div>
             {result.stdout && <pre>{result.stdout}</pre>}
             {result.stderr && <pre>{result.stderr}</pre>}
+          </div>
+        )}
+
+        {verification && (
+          <div className={`skill-verify ${verification.status}`}>
+            <div className="skill-preview-head">
+              <span className={`skill-decision ${verification.status}`}>
+                {verification.status}
+              </span>
+              <span className="skill-action-desc">
+                検証 / {verification.checks.length} 項目
+              </span>
+            </div>
+            {verification.checks.length === 0 ? (
+              <p className="field-help">
+                検証は実行されませんでした（キャンセルまたは対象外）。
+              </p>
+            ) : (
+              verification.checks.map((check, index) => (
+                <details
+                  className={`skill-verify-check ${check.status}`}
+                  key={`${check.name}-${check.ecosystem}-${index}`}
+                  open={check.status === "failed" || check.status === "timeout"}
+                >
+                  <summary>
+                    <span className={`skill-verify-status ${check.status}`}>
+                      {check.status}
+                    </span>
+                    <code>{check.name}</code>
+                    <span>{check.ecosystem}</span>
+                    <span>{check.durationMs} ms</span>
+                  </summary>
+                  {check.command.length > 0 && (
+                    <pre className="skill-verify-command">
+                      {check.command.join(" ")}
+                    </pre>
+                  )}
+                  {check.output && (
+                    <pre className="skill-verify-output">{check.output}</pre>
+                  )}
+                </details>
+              ))
+            )}
           </div>
         )}
       </div>

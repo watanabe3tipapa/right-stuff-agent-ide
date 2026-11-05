@@ -1,6 +1,6 @@
 # スキル実行と検証ループの設計
 
-v0.4.0 の実装前に、スキーマ・実行ポリシー・承認・検証・監査の設計を確定する。本書は実装の契約として使う。マニフェストの型・ローダー・バリデータ・ポリシー・`editor.*` の実行と承認は実装済みで、検証ループは v0.5 で追加する。
+v0.4.0 の実装前に、スキーマ・実行ポリシー・承認・検証・監査の設計を確定する。本書は実装の契約として使う。マニフェストの型・ローダー・バリデータ・ポリシー・`editor.*` の実行と承認は実装済みで、検証ループは v0.3.5 で追加した。
 
 - 機械可読スキーマ: [`skills.schema.json`](./skills.schema.json)
 - 関連: [ARCHITECTURE.md](./ARCHITECTURE.md) / [SECURITY.md](./SECURITY.md) / [API.md](./API.md)
@@ -19,7 +19,7 @@ v0.4.0 の最小垂直スライスは `code-edit` とする。LLM の計画に�
 
 - サードパーティ製スキルの配布・マーケットプレイス
 - スキルからのネットワークアクセス
-- 検証失敗時に LLM が自動で修正を繰り返すループ（v0.5 以降）
+- 検証失敗時に LLM が自動で修正を繰り返すループ（v0.3.6 以降）
 - 統合ターミナルへの直接入力（PTY）をスキルから操作すること
 - デバッガ（DAP）連携をスキルから操作すること（v0.3.1 で IDE の Debug タブとして実装済み。スキルからの操作は対象外）
 - Windows / Linux 対応、署名・公証
@@ -33,7 +33,7 @@ v0.4.0 の最小垂直スライスは `code-edit` とする。LLM の計画に�
 | 実行 | `agent_run` が許可リスト・引数検証・ネイティブ承認を行う | `skill_run`、プレビュー、承認、キャンセル |
 | ポリシー | `AgentPolicy` が Agent Desktop のアクション単位で保持 | `SkillPolicy`（スキル / アクション / 検証） |
 | 監査 | `audit_log` に `action_run` などを記録 | `skill_run` 系の種別と `skill_id` / `action_id` |
-| 検証 | 未実装 | 変更後の typecheck / lint / test 実行 |
+| 検証 | 実装済み（v0.3.5） | 変更後の typecheck / lint / test 実行 |
 
 ## 4. 設計原則
 
@@ -362,7 +362,7 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 | `code-edit` | `editor.createFile` | write | 存在しないファイルを作成する |
 | `git-operation` | `git.status` / `git.diff` / `git.branches` | read | 既存の Git コマンドを再利用 |
 | `git-operation` | `git.stage` / `git.commit` | write | v0.4.x で追加 |
-| `terminal-command` | `terminal.run` | destructive | v0.5 以降。許可プログラムのみ |
+| `terminal-command` | `terminal.run` | destructive | v0.3.6 以降。許可プログラムのみ |
 | `debug-control` | `debug.*` | — | DAP 実装後 |
 
 `editor.replaceText` は unified diff を解析せず、`oldText` がファイル内で 1 回だけ一致することを必須にする。0 回または 2 回以上なら失敗し、モデルに再試行を促す。これによりパーサの複雑さと部分適用の危険を避ける。
@@ -373,8 +373,8 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 ### 9.1 実行方法
 
-> v0.4.0 では検証ループを実装しない。`verification` はマニフェストで検証済みだが、
-> `skill_run` は実行も結果返却も行わない。以下は v0.5 の契約とする。
+> v0.3.5 で実装済み。`skill_verify` がマニフェストの `verification` に従って
+> チェックを実行し、Skills タブと監査ログへ結果を返す。
 
 `verification.mode: "auto"` のとき、ワークスペースの構成から検証コマンドを決める。マニフェストから任意のコマンド文字列は受け取らない。
 
@@ -402,6 +402,19 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 - 失敗した check がある場合、その手順を `failed` にし、既定では計画を停止する
 - v0.4.0 では自動修正しない。UI に「失敗した検証」と出力を表示し、ユーザーが次の計画を立てる
 - 検証出力は既定では LLM に送らない。送る場合はユーザーが明示的に選ぶ
+
+### 9.4 実装メモ（v0.3.5）
+
+`src-tauri/src/skills/verify.rs` がコマンド解決と実行を担当する。
+
+- Node は `package.json` の `scripts` に `typecheck` / `lint` / `test` がある場合だけ実行する。
+  パッケージマネージャーは `pnpm-lock.yaml` → `yarn.lock` → npm の順で判定する。
+- Rust は `Cargo.toml` があれば `cargo check` / `cargo clippy -- -D warnings` / `cargo test` を実行する。
+- 各チェックは `process_group(0)` で独立したプロセスグループに入れ、`verification.timeoutMs` を
+  超えたらグループごと SIGKILL する。出力は `limits.maxOutputChars` で打ち切る。
+- 承認は `verification.autoRun` と `allowChecks` で決める。`test` は `allowChecks` から除外されるため、
+  常にネイティブ承認を求める。
+- 結果は `passed` / `failed` / `skipped` / `timeout` を返し、監査ログの `verification_run` に記録する。
 
 ## 10. 計画スキーマの拡張
 
@@ -513,7 +526,7 @@ v0.4.0 では `kind`、`skill_id`、`action_id`、`mode`、`plan_id`、`step_id`
 | `skill_preview` | 実装済み | 実行前の差分・警告を返す |
 | `skill_run` | 実装済み | 承認・実行・監査を行う |
 | `skill_cancel` | 未実装（v0.4.x） | 実行中のスキルを停止する |
-| `skill_verify` | 未実装（v0.5） | 検証チェックを実行する |
+| `skill_verify` | 実装済み（v0.3.5） | 検証チェックを実行する |
 
 ```ts
 interface SkillRequest {
@@ -539,7 +552,7 @@ interface SkillRunResult {
   durationMs: number;
   auditId: number;
   errorCode?: string;
-  verification?: VerificationResult; // v0.5
+  verification?: VerificationResult; // v0.3.5
 }
 
 interface VerificationResult {
@@ -616,9 +629,9 @@ interface VerificationResult {
 
 - マニフェストはリポジトリ内のみ。実行は Rust の閉じたハンドラ
 - v0.4.0 は `code-edit` の最小垂直スライス
-- 置換は一意一致の文字列置換。unified diff は v0.5 以降
+- 置換は一意一致の文字列置換。unified diff は v0.3.6 以降
 - 書き込みは承認必須。`allow` は読み取り専用のみ
-- 検証は「実行して報告して停止」。自動修正は v0.5 以降
+- 検証は「実行して報告して停止」。自動修正は v0.3.6 以降
 - ターミナルとデバッガは v0.4.0 の対象外
 
 ### 実装前に決めること
@@ -626,7 +639,7 @@ interface VerificationResult {
 1. `git.status` / `git.diff` の読み取りを v0.4.0 に含めるか（推奨: 含める）
 2. 検証の `autoRun` を既定で有効にするか（推奨: 無効。初回は承認）
 3. スキルポリシー UI を「設定 > スキル」に置くか（推奨: そこに置く）
-4. `terminal.run` を v0.5 のどこで解禁するか（推奨: Git 書き込みの後）
+4. `terminal.run` を v0.3.6 のどこで解禁するか（推奨: Git 書き込みの後）
 
 ## 17. 実装状況
 
@@ -642,7 +655,8 @@ interface VerificationResult {
 | `editor.readFile` / `replaceText` / `createFile` | 実装済み | `src-tauri/src/skills/editor.rs` |
 | パラメータ検証 | 実装済み | `src-tauri/src/skills/params.rs` |
 | スキル監査（`skill_id` / `action_id`） | 実装済み | `src-tauri/src/commands/policy.rs` |
-| 検証ループ | 未実装（v0.5） | — |
+| 検証ループ | 実装済み（v0.3.5） | `src-tauri/src/skills/verify.rs` |
+| `skill_verify` | 実装済み（v0.3.5） | `src-tauri/src/commands/skills.rs` |
 | `skill_cancel` / タイムアウト | 未実装（v0.4.x） | — |
 | フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |
 | フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |

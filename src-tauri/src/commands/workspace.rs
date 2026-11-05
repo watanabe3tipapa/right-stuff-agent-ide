@@ -315,13 +315,6 @@ fn atomic_write(absolute: &Path, content: &[u8]) -> AppResult<()> {
 
     fs::write(&temp_path, content)?;
 
-    #[cfg(windows)]
-    {
-        if absolute.exists() {
-            fs::remove_file(absolute)?;
-        }
-    }
-
     match fs::rename(&temp_path, absolute) {
         Ok(()) => Ok(()),
         Err(error) => {

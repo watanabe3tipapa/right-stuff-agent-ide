@@ -11,6 +11,8 @@ Right-Stuff Agent IDE は、デスクトップ（Tauri）、ブラウザデモ�
 
 最新リリースは [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) を参照してください。
 
+デスクトップアプリの対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供していません。
+
 ## 脆弱性の報告
 
 **公開 Issue で脆弱性を報告しないでください。**
@@ -79,6 +81,8 @@ Right-Stuff Agent IDE is a personal project consisting of a desktop app (Tauri),
 | --- | --- |
 | 0.3.x | Yes |
 | 0.2.x and earlier | Please upgrade |
+
+The desktop app supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided.
 
 ## Reporting a vulnerability
 

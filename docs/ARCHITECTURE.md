@@ -1,5 +1,9 @@
 # Architecture
 
+## 対象プラットフォーム
+
+デスクトップアプリは macOS 11 以降（Apple Silicon / Intel）専用です。Windows / Linux 向けのビルドは提供しません。ブラウザデモとランディングページは OS を問わず動作します。
+
 ## レイヤー
 
 ```

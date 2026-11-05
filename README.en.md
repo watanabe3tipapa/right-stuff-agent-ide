@@ -4,7 +4,7 @@
 
 **Write, delegate, verify. An IDE where agents and your workspace share one screen.**
 
-right-stuff-agent-ide is a macOS desktop IDE built with Tauri 2.0 and React 18. It combines the writing experience of [Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) with the OS-level control of [Agent Desktop](https://github.com/vercel-labs/agent-desktop), so Markdown editing and agent-driven app operations live in the same workspace.
+right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React 18. It combines the writing experience of [Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) with the OS-level control of [Agent Desktop](https://github.com/vercel-labs/agent-desktop), so Markdown editing and agent-driven app operations live in the same workspace.
 
 > **Status:** The Tauri 2.0 native app is the main development target and is available as a DMG on GitHub Releases. The landing page and browser demo on Vercel are a sample (reference implementation) for trying the UI without installing the app.
 
@@ -26,6 +26,8 @@ v0.3.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3ti
 
 - Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.0_aarch64.dmg`
 - Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.0_x64.dmg`
+
+The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
 > The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
 
@@ -235,7 +237,7 @@ Detection order:
 - The app itself is not distributed over the web
 - v0.3.0 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned)
-- Targets macOS (Apple Silicon and Intel)
+- Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
 ## Sample deployment (Vercel)
 
@@ -324,11 +326,10 @@ vercel --prod          # Deploy to production
 - [ ] LSP / DAP
 - [ ] Anthropic-specific API adapter
 - [ ] Release packaging (Developer ID signing and notarization)
-- [ ] Windows / Linux support
 
 ### Constraints
 
-- Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is not implemented, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
+- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is not implemented, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
 - Plans can only run allowlisted Agent Desktop actions. Editor, Git, and terminal skill execution is not implemented yet

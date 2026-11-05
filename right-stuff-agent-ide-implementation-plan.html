@@ -436,7 +436,7 @@ footer {
   </p>
   <div class="meta">
     <span>作成日: 2026-11-02</span>
-    <span>対象プラットフォーム: macOS（Windows / Linux は将来対応）</span>
+    <span>対象プラットフォーム: macOS 専用（macOS 11 以降）</span>
     <span>ライセンス: MIT</span>
   </div>
   <div class="card" style="max-width: 880px; margin: 1.5em auto 0; text-align: left;">
@@ -547,7 +547,7 @@ footer {
       <div class="layer-name">OS Integration Layer</div>
       <div class="layer-desc">
         Agent Desktop ネイティブバイナリ<br>
-        macOS AX API / Windows UI Automation / Linux AT-SPI<br>
+        macOS AX API<br>
         スクリーンショット、クリップボード、ウィンドウ操作
       </div>
     </div>
@@ -608,7 +608,7 @@ footer {
     Agent Desktop との統合では Rust レイヤーが必須です。
     Tauri 2.0 は Rust コア + WebView フロントエンドの構成で、
     Agent Desktop の Rust バイナリとの親和性が高く、
-    マルチプラットフォーム対応も容易です。
+    macOS のネイティブ機能を活かしやすい構成です。
   </div>
 </section>
 
@@ -896,11 +896,11 @@ interface EditorStateUpdate {
       </p>
     </div>
     <div class="phase-item">
-      <div class="phase-title">Phase 4: マルチプラットフォーム対応</div>
+      <div class="phase-title">Phase 4: 配布品質の向上</div>
       <div class="phase-meta">期間: 2週間 / 優先度: 中</div>
       <p>
-        macOS での動作確認後、Windows / Linux 向けに Agent Desktop 統合を調整。
-        プラットフォーム差異（アクセシビリティ API、権限モデル、パス形式）を抽象化。
+        Developer ID 署名と公証、DMG の自動ビルド・配布を整備。
+        初回起動時の警告をなくし、macOS 利用者がそのままインストールできる状態にする。
       </p>
     </div>
     <div class="phase-item future">
@@ -943,7 +943,7 @@ interface EditorStateUpdate {
     </thead>
     <tbody>
       <tr><td>原稿データ</td><td>ワークスペースのローカルファイルにのみ保存。クラウド送信なし。</td></tr>
-      <tr><td>API キー</td><td>OS キーチェーン（macOS Keychain / Windows Credential / Linux Secret Service）に保存。</td></tr>
+      <tr><td>API キー</td><td>macOS Keychain（Keychain Services）に保存。</td></tr>
       <tr><td>スナップショット</td><td>メモリ上に一時保持。永続化はオプトイン。機密ウィンドウは自動マスク。</td></tr>
       <tr><td>テレメトリ</td><td>収集なし。完全にオプトインのクラッシュレポートのみ。</td></tr>
       <tr><td>パス検証</td><td>バックエンドでワークスペース外パスを拒否。<code>.right-stuff</code> 配下への直接アクセスも禁止。</td></tr>
@@ -1090,9 +1090,9 @@ async fn lsp_request(method: String, params: Value) -> Result&lt;Value, Error&gt
         <td>危険操作の承認フロー、undo 履歴、バックアップ自動化。</td>
       </tr>
       <tr>
-        <td>プラットフォーム差異</td>
-        <td>macOS/Windows/Linux で挙動が異なる</td>
-        <td>Agent Desktop が抽象化済み。IDE 側はプラットフォーム判定で分岐。</td>
+        <td>macOS バージョン差異</td>
+        <td>macOS 11 以降で挙動が異なる</td>
+        <td>macOS 11 以降を対象に検証。Agent Desktop が API 差異を抽象化。</td>
       </tr>
       <tr>
         <td>パフォーマンス低下</td>

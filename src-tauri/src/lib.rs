@@ -7,46 +7,21 @@ mod state;
 use state::AppState;
 use tauri::{Emitter, Manager};
 
+// The desktop app is macOS-only. Fail fast when someone tries to build it for
+// another target instead of producing an unsupported binary.
+#[cfg(not(target_os = "macos"))]
+compile_error!("Right-Stuff Agent IDE supports macOS only.");
+
 /// macOS builds the predefined Quit item as `Quit <AppName>` (muda sets an
 /// explicit title), so match the prefix rather than the exact word.
-#[cfg(target_os = "macos")]
 fn is_quit_item_text(text: &str) -> bool {
     let text = text.replace('&', "").trim().to_lowercase();
     text == "quit" || text.starts_with("quit ") || text == "exit" || text == "終了"
 }
 
-#[cfg(all(test, target_os = "macos"))]
-mod tests {
-    use super::is_quit_item_text;
-
-    #[test]
-    fn detects_the_native_quit_item_title() {
-        // muda titles the item `Quit <AppName>`; a bare "quit" comparison
-        // silently skipped the guard before this was handled.
-        assert!(is_quit_item_text("Quit right-stuff-agent-ide"));
-        assert!(is_quit_item_text("Quit"));
-    }
-
-    #[test]
-    fn ignores_case_padding_and_mnemonics() {
-        assert!(is_quit_item_text("  QUIT App "));
-        assert!(is_quit_item_text("&Quit App"));
-        assert!(is_quit_item_text("Exit"));
-        assert!(is_quit_item_text("終了"));
-    }
-
-    #[test]
-    fn ignores_unrelated_menu_items() {
-        assert!(!is_quit_item_text(""));
-        assert!(!is_quit_item_text("Hide Others"));
-        assert!(!is_quit_item_text("Show All"));
-    }
-}
-
 /// Replace the native macOS Quit menu item with one that notifies the WebView
 /// first. `RunEvent::ExitRequested` is not emitted for Cmd+Q on macOS, so the
 /// menu item is the only reliable hook for the keyboard shortcut and app menu.
-#[cfg(target_os = "macos")]
 fn install_quit_menu_guard(app: &tauri::App) -> tauri::Result<()> {
     let Some(menu) = app.menu() else {
         return Ok(());
@@ -86,7 +61,6 @@ fn install_quit_menu_guard(app: &tauri::App) -> tauri::Result<()> {
     Ok(())
 }
 
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -97,7 +71,6 @@ pub fn run() {
             }
         })
         .setup(|app| {
-            #[cfg(target_os = "macos")]
             install_quit_menu_guard(app)?;
 
             let state = AppState::new(app.handle())?;
@@ -160,4 +133,32 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running right-stuff-agent-ide");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_quit_item_text;
+
+    #[test]
+    fn detects_the_native_quit_item_title() {
+        // muda titles the item `Quit <AppName>`; a bare "quit" comparison
+        // silently skipped the guard before this was handled.
+        assert!(is_quit_item_text("Quit right-stuff-agent-ide"));
+        assert!(is_quit_item_text("Quit"));
+    }
+
+    #[test]
+    fn ignores_case_padding_and_mnemonics() {
+        assert!(is_quit_item_text("  QUIT App "));
+        assert!(is_quit_item_text("&Quit App"));
+        assert!(is_quit_item_text("Exit"));
+        assert!(is_quit_item_text("終了"));
+    }
+
+    #[test]
+    fn ignores_unrelated_menu_items() {
+        assert!(!is_quit_item_text(""));
+        assert!(!is_quit_item_text("Hide Others"));
+        assert!(!is_quit_item_text("Show All"));
+    }
 }

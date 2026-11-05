@@ -983,9 +983,9 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="feature-desc">エージェントのアクション後にスナップショットを再取得し、状態変化を検証する設計です。検証ループは今後実装します。</div>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">&#127760;</div>
-      <div class="feature-title">マルチプラットフォーム</div>
-      <div class="feature-desc">まずは macOS に対応。Windows / Linux は Agent Desktop の対応状況を見て検討します。</div>
+      <div class="feature-icon">&#128421;</div>
+      <div class="feature-title">macOS ネイティブ</div>
+      <div class="feature-desc">macOS 専用のデスクトップアプリとして、Apple Silicon / Intel の DMG を配布しています。Overlay タイトルバー、Keychain、アクセシビリティ権限など macOS の機能に統合しています。</div>
     </div>
   </div>
 </section>
@@ -1037,7 +1037,7 @@ footer .footer-links a:hover { color: var(--accent); }
         <li><strong>LLM は OpenAI 互換 API に対応</strong> — Tauri 版では OpenAI / Ollama / LM Studio / OpenRouter などに接続できます。ブラウザデモでは利用できません。Anthropic 固有 API は今後対応</li>
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か <code>AGENT_DESKTOP_BIN</code> で指定する</li>
         <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みですが、実行できるのは Agent Desktop の許可アクションだけです。エディタ・Git・ターミナルのスキル実行と検証ループは今後対応</li>
-        <li><strong>macOS のみ検証</strong> — 配布用 DMG は Developer ID 署名・公証なし。Intel 実機での起動確認は未実施。Windows / Linux は未検証</li>
+        <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしで、Intel 実機での起動確認は未実施です</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
         <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は今後対応</li>
       </ul>
@@ -1084,9 +1084,9 @@ footer .footer-links a:hover { color: var(--accent); }
     </div>
     <div class="roadmap-item">
       <div class="roadmap-phase">Phase 4</div>
-      <div class="roadmap-title">マルチプラットフォーム対応</div>
+      <div class="roadmap-title">配布品質の向上</div>
       <div class="roadmap-meta">2週間 / 優先度: 中</div>
-      <p>Windows / Linux 向けに Agent Desktop 統合と権限モデルの差異を抽象化。</p>
+      <p>Developer ID 署名と公証、DMG の自動ビルド・配布を整備し、初回起動時の警告をなくします。</p>
     </div>
   </div>
 </section>
@@ -1100,7 +1100,7 @@ footer .footer-links a:hover { color: var(--accent); }
   <div class="notice-box" role="note">
     <div class="notice-title">始める前に確認</div>
     <ul>
-      <li><strong>対応 OS は macOS のみ</strong> — 検証済みは macOS 11 以降です。Windows / Linux は未検証です。</li>
+      <li><strong>対応 OS は macOS 11 以降のみ</strong> — 本アプリは macOS 専用です。Windows / Linux 版は提供していません。</li>
       <li><strong>ブラウザデモは保存されません</strong> — 変更はメモリ上のみで、再読み込みすると初期状態に戻ります。</li>
       <li><strong>LLM は Tauri 版で利用可能</strong> — ブラウザデモでは利用できません。エージェントパネル右上の歯車アイコンから設定します。</li>
       <li><strong>Agent Desktop CLI は別途必要</strong> — 同梱していません。次の手順でインストールします。</li>
@@ -1140,8 +1140,8 @@ npm ci</pre>
         <div class="step-title">ワークスペースを開く</div>
         <div class="step-desc">フォルダを選択するとファイルツリーが表示されます。Markdown は Monaco で編集し、分割プレビューで確認できます。</div>
         <pre># GUI の「フォルダを開く」から選択
-# 保存: ⌘S (macOS) / Ctrl+S (Windows / Linux)
-# コマンドパレット: ⌘K (macOS) / Ctrl+K (Windows / Linux)</pre>
+# 保存: ⌘S
+# コマンドパレット: ⌘K</pre>
       </div>
     </div>
     <div class="tutorial-step">
@@ -1189,13 +1189,13 @@ Base URL: http://localhost:11434/v1
 
   <table class="shortcut-table">
     <thead>
-      <tr><th>操作</th><th>macOS</th><th>Windows / Linux</th></tr>
+      <tr><th>操作</th><th>キー</th></tr>
     </thead>
     <tbody>
-      <tr><td>保存</td><td><kbd>⌘</kbd> <kbd>S</kbd></td><td><kbd>Ctrl</kbd> <kbd>S</kbd></td></tr>
-      <tr><td>すべて保存</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd></td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>S</kbd></td></tr>
-      <tr><td>コマンドパレット</td><td><kbd>⌘</kbd> <kbd>K</kbd></td><td><kbd>Ctrl</kbd> <kbd>K</kbd></td></tr>
-      <tr><td>コマンドパレット（代替）</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd></td><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>P</kbd></td></tr>
+      <tr><td>保存</td><td><kbd>⌘</kbd> <kbd>S</kbd></td></tr>
+      <tr><td>すべて保存</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd></td></tr>
+      <tr><td>コマンドパレット</td><td><kbd>⌘</kbd> <kbd>K</kbd></td></tr>
+      <tr><td>コマンドパレット（代替）</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd></td></tr>
     </tbody>
   </table>
 </section>
@@ -1298,7 +1298,7 @@ Base URL: http://localhost:11434/v1
     <p class="section-desc">Vercel の LP とブラウザデモは、インストールせずに UI を試すためのサンプルです。製品版は GitHub Releases の DMG で配布しています。</p>
   </div>
   <div class="install-box">
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Windows / Linux は未検証）</p>
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Apple Silicon / Intel）のみ。Windows / Linux 版は提供していません。</p>
     <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.0" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。</p>
     <p style="color:var(--ink-muted);margin-bottom:0.5em;">ソースからビルドする場合</p>
     <pre>npm ci

@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.6-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.7-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 ## Download
 
-v0.3.6 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.7 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.6_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.6_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.7_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.7_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
@@ -38,7 +38,7 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), v0.3.3 adds LSP rename, references, code actions, and workspace symbol search, v0.3.4 adds a human-readable skill library and showcase window, v0.3.5 adds a verification loop (typecheck / lint / test) after skill runs, and v0.3.6 adds Git, terminal, and debug skill handlers.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), v0.3.3 adds LSP rename, references, code actions, and workspace symbol search, v0.3.4 adds a human-readable skill library and showcase window, v0.3.5 adds a verification loop (typecheck / lint / test) after skill runs, v0.3.6 adds Git, terminal, and debug skill handlers, and v0.3.7 adds a self-contained HTML report renderer for skill runs.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -86,6 +86,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Git skills (v0.3.6)** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` run through fixed handlers. Reads need no approval; writes pass through the native approval dialog and are recorded in the local audit log
 - **Terminal skill (v0.3.6)** — `terminal.run` executes npm / pnpm / yarn / cargo / node / python3 / pytest / make as `program + args`, never as a shell string, with an isolated process group, timeout, and output cap
 - **Debug skills (v0.3.6)** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` drive DAP request/response and share the Debug tab session. `debug.start` performs the initialize → launch → initialized → configurationDone handshake
+- **HTML reports (v0.3.7)** — turn a skill run into a self-contained HTML report with an inline SVG approval → run → verify → result flow, light/dark themes, parameters, changed files, and verification output. Preview it in the app or save it under `.agents/reports/`; no CDN or telemetry
 - **Theme** — dark theme, overlay title bar, native macOS window
 
 ### Architecture
@@ -266,7 +267,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.6 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.7 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
@@ -295,6 +296,14 @@ vercel --prod          # Deploy to production
 `vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
 
 ## Known limitations and roadmap
+
+### v0.3.7
+
+- [x] HTML renderer — convert skill runs into self-contained HTML with in-app preview and `.agents/reports/` export
+- [x] Archify elements — inline SVG flow for approval, run, verification, and result; light/dark themes; print styling; no external CDN
+- [x] Safe output — escape parameters, stdout/stderr, and verification output; preview inside a sandboxed iframe
+- [x] Constrained storage — validate the file name in Rust and write only under `.agents/reports/*.html`
+- [x] Tests — HTML escaping, diagram output, absence of external references, and file-name sanitization
 
 ### v0.3.6
 

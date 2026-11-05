@@ -220,6 +220,17 @@ interface SkillRunResult {
 }
 ```
 
+### `report_export`
+
+```ts
+report_export({ fileName: string, html: string }): Promise<string>;
+```
+
+スキル実行レポートをワークスペース内の `.agents/reports/<fileName>.html` に保存し、
+ワークスペースからの相対パスを返す。`fileName` は英数字と `.` `_` `-` のみ、
+拡張子は `.html` 必須。HTML は 4 MB まで。パス検証と `atomic_write` は Rust 側で行う。
+レポート本体は WebView の `src/lib/report.ts` が生成し、外部へ送信しない。
+
 `skill_run` に渡す引数は `{ request: SkillRequest }` の形にする。検証ループは
 v0.3.5 で `skill_verify` として追加した。v0.3.6 では `skill_run` のディスパッチに
 `git.*` / `terminal.run` / `debug.*` を追加した。デバッグ操作は同じ `sessionId` を

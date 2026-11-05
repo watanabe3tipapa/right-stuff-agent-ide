@@ -105,6 +105,7 @@ pub fn run() {
             commands::skills::skill_preview,
             commands::skills::skill_run,
             commands::skills::skill_verify,
+            commands::report::report_export,
             commands::policy::agent_policy_get,
             commands::policy::agent_policy_set,
             commands::policy::audit_log_add,

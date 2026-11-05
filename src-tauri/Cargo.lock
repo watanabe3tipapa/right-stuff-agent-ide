@@ -3209,7 +3209,7 @@ dependencies = [
 
 [[package]]
 name = "right-stuff-agent-ide"
-version = "0.3.6"
+version = "0.3.7"
 dependencies = [
  "chrono",
  "futures-util",

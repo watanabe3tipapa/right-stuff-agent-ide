@@ -710,3 +710,48 @@ v0.3.6 の `skill_run` は `editor.*` / `git.*` / `terminal.run` / `debug.*` の
 - ワークスペースに既にあるがライブラリに無いスキルは「カスタム」として一覧に追加する。
 - 別窓は通常のアプリ起動と同じバンドルを使い、`index.html?window=skills` で分岐する。
   権限は `src-tauri/capabilities/default.json` の `windows` に `skill-library` を追加して付与する。
+
+## 19. HTML レポート（v0.3.7）
+
+スキル実行の結果を、自己完結した 1 枚の HTML としてプレビュー・保存する。
+実装は WebView 側の `src/lib/report.ts` と、保存だけを担当する Rust の
+`report_export` に分ける。レポートの内容は外部へ送信しない。
+
+### 19.1 生成
+
+`buildSkillReport(input)` は次の入力から HTML 文字列を組み立てる。
+
+- `skill` / `action` / `params` — 実行した宣言と実際のパラメータ
+- `result` — status / decision / changedFiles / stdout / stderr / exitCode / durationMs / auditId
+- `verification` — 検証チェックの状態・コマンド・出力・終了コード
+- `generatedAt` — 生成日時（テストでは固定値）
+
+出力は外部 CSS・JavaScript・画像を参照しない。フォントはシステムフォント、
+図はインライン SVG で描く。
+
+### 19.2 Archify 要素
+
+Archify の考え方のうち、レポートに必要なものだけを小さく取り込む。
+
+- 承認 → 実行 → 検証 → 結果の 4 ノードをインライン SVG で表現し、
+  状態を `data-status` で色分けする。
+- SVG には `<title>` / `<desc>` を付け、色だけに依存しない。
+- 明暗テーマを切り替えられる。既定は `prefers-color-scheme` に従う。
+- 印刷時はテーマ切替ボタンを隠し、パネルを分割しない。
+- 動きのあるトレースや外部 Viewer は組み込まない。静的なレポートに限定する。
+
+### 19.3 プレビューと保存
+
+- Skills タブの実行結果から「HTML レポート」を押すと、`srcDoc` の iframe で
+  プレビューする。iframe は `sandbox="allow-scripts"` とし、同一オリジン権限を渡さない。
+- 「保存」は `report_export(fileName, html)` を呼び、ワークスペース内の
+  `.agents/reports/<fileName>.html` に書く。
+- Rust 側はファイル名を英数字と `.` `_` `-` に制限し、`.html` 拡張子を必須にする。
+  ディレクトリ作成と書き込みは `atomic_write` を使う。
+- ブラウザデモではワークスペースが無いため、Blob のダウンロードにフォールバックする。
+
+### 19.4 エスケープ
+
+`escapeHtml` を通してから埋め込む対象は、スキル名・説明・アクション・パラメータ・
+stdout / stderr・変更ファイル・検証コマンド / 出力・監査 ID などすべての可変値。
+レポート内の JavaScript はテーマ切替の固定コードだけで、可変値を script に埋め込まない。

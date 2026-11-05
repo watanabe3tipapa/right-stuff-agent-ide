@@ -36,7 +36,7 @@ body:
     attributes:
       label: バージョン
       description: アプリのバージョン、またはコミットハッシュ
-      placeholder: "例: 0.3.6 / <commit>"
+      placeholder: "例: 0.3.7 / <commit>"
     validations:
       required: true
 

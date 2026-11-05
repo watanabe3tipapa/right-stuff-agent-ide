@@ -260,6 +260,24 @@ export const api = {
       : demoApi.skillVerify(skillId, actionId, checks);
   },
 
+  /**
+   * Save a generated HTML report under `.agents/reports/`. In the browser demo
+   * there is no workspace, so the report is downloaded instead.
+   */
+  reportExport(fileName: string, html: string): Promise<string> {
+    if (isTauri) {
+      return call<string>("report_export", { fileName, html });
+    }
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+    return Promise.resolve(fileName);
+  },
+
   openshipConfig(): Promise<OpenShipSettings> {
     return isTauri
       ? call<OpenShipSettings>("openship_config_get")

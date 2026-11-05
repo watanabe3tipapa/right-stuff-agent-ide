@@ -68,7 +68,7 @@ npm run tauri dev
   "package.json": `{
   "name": "right-stuff-agent-ide",
   "private": true,
-  "version": "0.3.6",
+  "version": "0.3.7",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -425,7 +425,7 @@ export const demoApi = {
   async appInfo(): Promise<AppInfo> {
     return {
       name: "Right-Stuff Agent IDE",
-      version: "0.3.6-demo",
+      version: "0.3.7-demo",
       tauriVersion: "browser",
       platform: "browser",
       arch: "web",

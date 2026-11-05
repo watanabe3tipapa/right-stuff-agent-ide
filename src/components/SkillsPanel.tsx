@@ -9,6 +9,7 @@ import type {
   VerificationResult,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
+import { buildSkillReport, reportFileName } from "../lib/report";
 import { openSkillLibraryWindow } from "../lib/skillWindow";
 import { skillRiskLabel, validateSkillParams } from "../lib/skills";
 import { useAgentStore } from "../stores/agentStore";
@@ -144,6 +145,11 @@ function SkillActionCard({
     null,
   );
   const [busy, setBusy] = useState<"preview" | "run" | "verify" | null>(null);
+  const [report, setReport] = useState<{ html: string; name: string } | null>(
+    null,
+  );
+  const [reportPath, setReportPath] = useState<string | null>(null);
+  const [reportBusy, setReportBusy] = useState(false);
 
   const disabled = busy !== null || (mode === "passive" && action.risk !== "read");
   const params = useMemo(() => buildParams(action, values), [action, values]);
@@ -222,9 +228,39 @@ function SkillActionCard({
     }
   }
 
+  function openReport() {
+    if (!result) return;
+    setReportPath(null);
+    setReport({
+      html: buildSkillReport({
+        skill,
+        action,
+        params,
+        result,
+        verification,
+      }),
+      name: reportFileName(result),
+    });
+  }
+
+  async function saveReport() {
+    if (!report) return;
+    setReportBusy(true);
+    setPreviewError(null);
+    try {
+      const path = await api.reportExport(report.name, report.html);
+      setReportPath(path);
+    } catch (error) {
+      setPreviewError(errorMessage(error));
+    } finally {
+      setReportBusy(false);
+    }
+  }
+
   return (
-    <details className="skill-action">
-      <summary>
+    <>
+      <details className="skill-action">
+        <summary>
         <span className="skill-action-name">
           <code>{action.id}</code>
           <span className={`skill-risk ${action.risk}`}>
@@ -338,6 +374,16 @@ function SkillActionCard({
             </div>
             {result.stdout && <pre>{result.stdout}</pre>}
             {result.stderr && <pre>{result.stderr}</pre>}
+            <div className="skill-report-actions">
+              <button
+                type="button"
+                className="btn small"
+                onClick={openReport}
+              >
+                <Icon name="sparkles" size={12} />
+                HTML レポート
+              </button>
+            </div>
           </div>
         )}
 
@@ -384,7 +430,55 @@ function SkillActionCard({
           </div>
         )}
       </div>
-    </details>
+      </details>
+
+      {report && (
+        <div
+          className="skill-report-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="HTML レポートのプレビュー"
+        >
+          <div className="skill-report-window">
+            <header className="skill-report-head">
+              <div>
+                <h3>HTML レポート</h3>
+                <p>{report.name}</p>
+              </div>
+              <div className="skill-report-buttons">
+                <button
+                  type="button"
+                  className="btn small primary"
+                  onClick={() => void saveReport()}
+                  disabled={reportBusy}
+                >
+                  <Icon name="save" size={12} />
+                  {reportBusy ? "保存中…" : reportPath ? "再保存" : "保存"}
+                </button>
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={() => setReport(null)}
+                >
+                  閉じる
+                </button>
+              </div>
+            </header>
+            {reportPath && (
+              <p className="skill-report-path">
+                保存しました: <code>{reportPath}</code>
+              </p>
+            )}
+            <iframe
+              className="skill-report-frame"
+              title="HTML レポート"
+              sandbox="allow-scripts"
+              srcDoc={report.html}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

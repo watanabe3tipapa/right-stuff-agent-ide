@@ -207,7 +207,10 @@ request/response 相関とイベント購読を使い、Debug タブと同じ DA
 `allow` / `ask` / `block` の実行ポリシーを実装済み。マニフェストはリポジトリ内の
 宣言に限定し、実行は Rust の閉じたハンドラだけが行う。`code-edit`（読み取り・
 一意一致の文字列置換・作成）、Git、ターミナル、デバッグの実行・承認・監査と、
-検証ループ（typecheck / lint / test）が動作する。
+検証ループ（typecheck / lint / test）が動作する。v0.3.7 では、実行結果を
+`src/lib/report.ts` で自己完結 HTML に変換し、承認 → 実行 → 検証 → 結果の
+インライン SVG フロー図、明暗テーマ、パラメータ、変更ファイル、検証出力を含める。
+保存は Rust の `report_export` が `.agents/reports/*.html` だけを受け付ける。
 
 スキーマ、承認フロー、パス・コマンドの制限、監査項目、API、テスト計画は
 [SKILLS.md](./SKILLS.md) を参照。機械可読スキーマは

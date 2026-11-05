@@ -5419,3 +5419,86 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+.skill-report-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.skill-report-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: color-mix(in oklab, #000 62%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.skill-report-window {
+  display: flex;
+  flex-direction: column;
+  width: min(1120px, 100%);
+  height: min(86vh, 900px);
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+}
+
+.skill-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+
+.skill-report-head h3 {
+  margin: 0 0 2px;
+  font-size: 14px;
+}
+
+.skill-report-head p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.skill-report-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.skill-report-path {
+  margin: 0;
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in oklab, var(--accent) 7%, transparent);
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+.skill-report-frame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #f4f3ef;
+}
+
+@media (max-width: 720px) {
+  .skill-report-overlay {
+    padding: 10px;
+  }
+
+  .skill-report-window {
+    height: 92vh;
+  }
+}

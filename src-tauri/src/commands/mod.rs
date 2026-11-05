@@ -7,6 +7,7 @@ pub mod llm;
 pub mod lsp;
 pub mod openship;
 pub mod policy;
+pub mod report;
 pub mod settings;
 pub mod skills;
 pub mod terminal;

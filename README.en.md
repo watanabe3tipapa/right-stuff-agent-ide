@@ -236,7 +236,7 @@ Detection order:
 
 - The app itself is not distributed over the web
 - v0.3.0 is available both as a DMG on GitHub Releases and as a build from source
-- The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned)
+- The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
 ## Sample deployment (Vercel)
@@ -325,11 +325,10 @@ vercel --prod          # Deploy to production
 - [ ] Skill execution and verification loop
 - [ ] LSP / DAP
 - [ ] Anthropic-specific API adapter
-- [ ] Release packaging (Developer ID signing and notarization)
 
 ### Constraints
 
-- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is not implemented, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
+- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
 - Plans can only run allowlisted Agent Desktop actions. Editor, Git, and terminal skill execution is not implemented yet

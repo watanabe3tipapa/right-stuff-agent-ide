@@ -1039,7 +1039,7 @@ footer .footer-links a:hover { color: var(--accent); }
         <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みですが、実行できるのは Agent Desktop の許可アクションだけです。エディタ・Git・ターミナルのスキル実行と検証ループは今後対応</li>
         <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしで、Intel 実機での起動確認は未実施です</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
-        <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は今後対応</li>
+        <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は先送り</li>
       </ul>
     </div>
   </div>
@@ -1084,9 +1084,9 @@ footer .footer-links a:hover { color: var(--accent); }
     </div>
     <div class="roadmap-item">
       <div class="roadmap-phase">Phase 4</div>
-      <div class="roadmap-title">配布品質の向上</div>
-      <div class="roadmap-meta">2週間 / 優先度: 中</div>
-      <p>Developer ID 署名と公証、DMG の自動ビルド・配布を整備し、初回起動時の警告をなくします。</p>
+      <div class="roadmap-title">署名・公証（先送り）</div>
+      <div class="roadmap-meta">保留 / 優先度: 低</div>
+      <p>Developer ID 署名と公証は先送りし、当面は未署名・未公証の DMG を配布します。</p>
     </div>
   </div>
 </section>

@@ -237,7 +237,7 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 
 - アプリ本体は Web 配信しません
 - v0.3.0 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
-- DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
+- DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。署名・公証は先送りとし、当面はこの状態で配布します
 - 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません
 
 ## サンプル公開（Vercel）
@@ -326,11 +326,10 @@ vercel --prod          # 本番環境へデプロイ
 - [ ] スキル実行と検証ループ
 - [ ] LSP / DAP
 - [ ] Anthropic 固有 API のアダプター
-- [ ] リリースパッケージング（Developer ID 署名・公証）
 
 ### 制約
 
-- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。動作確認は macOS（Apple Silicon）のみで、Intel 実機での起動確認は未実施です。公証は未対応で、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
+- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。動作確認は macOS（Apple Silicon）のみで、Intel 実機での起動確認は未実施です。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
 - 計画の実行対象は Agent Desktop の許可アクションに限られます。エディタ・Git・ターミナルのスキル実行は未実装です

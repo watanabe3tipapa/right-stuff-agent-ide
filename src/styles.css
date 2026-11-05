@@ -4251,3 +4251,18 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   flex-shrink: 0;
   padding: 3px 6px;
 }
+
+/* ---------- Lazy panel fallback ---------- */
+
+.panel-fallback {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 24px;
+  color: var(--ink-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}

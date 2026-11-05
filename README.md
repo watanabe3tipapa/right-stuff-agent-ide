@@ -107,6 +107,8 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - API キーと Openship の PAT は OS キーチェーンにのみ保存し、SQLite・ログ・エラーメッセージには含めません。LLM と Openship への通信は Rust 側で行い、WebView から外部 API を直接呼びません
 - Openship の REST 接続はセルフホストを想定し、`http://` は localhost / 127.0.0.1 / ::1 のみ許可します。デプロイ・ロールバックは Passive モードでは無効で、それ以外のモードでもネイティブ承認を省略できません
 - CSP は Tauri（本番 / 開発で別ポリシー）と Vercel の両方に `default-src 'self'` ベースで設定しています
+- 脆弱性は公開 Issue ではなく [SECURITY.md](./SECURITY.md) の非公開報告フォームから連絡してください
+- 依存関係は Dependabot で週次更新し、CI で `cargo-audit` を実行します
 
 ## インストールとビルド
 
@@ -188,6 +190,16 @@ npm run dev
 | `npm run check` | 型検査 + `cargo check` |
 | `npm run tauri build` | macOS アプリ（`.app` / `.dmg`）をビルド |
 | `npm run preview` | `dist/` をローカルでプレビュー |
+
+### 依存関係の監査
+
+```bash
+npm audit
+cargo install cargo-audit --locked   # 初回のみ
+cargo audit --file src-tauri/Cargo.lock
+```
+
+GitHub Actions の `Dependency audit (RustSec)` ジョブでも同じ監査を実行します。npm と Cargo の依存更新は Dependabot が週次で提案します。
 
 ### Agent Desktop の指定
 
@@ -384,13 +396,14 @@ right-stuff-agent-ide-lp.html
 
 ## ドキュメント
 
-1. [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — レイヤー、プロセスモデル、保存フロー
-2. [API.md](./docs/API.md) — Tauri コマンドと型
-3. [SECURITY.md](./docs/SECURITY.md) — パス検証、エージェント権限、保存データ
-4. [実装設計書](./right-stuff-agent-ide-implementation-plan.html) — 全体設計とロードマップ
-5. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
-6. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
-7. [README（English）](./README.en.md) — English overview
+1. [SECURITY.md](./SECURITY.md) — 脆弱性報告、サポート対象、調査の範囲
+2. [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — レイヤー、プロセスモデル、保存フロー
+3. [API.md](./docs/API.md) — Tauri コマンドと型
+4. [docs/SECURITY.md](./docs/SECURITY.md) — パス検証、エージェント権限、保存データ
+5. [実装設計書](./right-stuff-agent-ide-implementation-plan.html) — 全体設計とロードマップ
+6. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
+7. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
+8. [README（English）](./README.en.md) — English overview
 
 ## ライセンス
 

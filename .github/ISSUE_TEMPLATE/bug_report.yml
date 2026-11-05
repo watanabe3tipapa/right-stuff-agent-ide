@@ -1,0 +1,93 @@
+name: バグ報告
+description: 動作不良や予期しない挙動を報告する
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        バグ報告ありがとうございます。再現手順と環境をできるだけ具体的に記載してください。
+        セキュリティ上の問題は公開 Issue ではなく [非公開の脆弱性報告](https://github.com/watanabe3tipapa/right-stuff-agent-ide/security/advisories/new) を利用してください。
+
+  - type: checkboxes
+    id: precondition
+    attributes:
+      label: 確認事項
+      options:
+        - label: 同じ内容の Issue が既にないことを確認しました
+          required: true
+        - label: これはセキュリティ脆弱性の報告ではありません
+          required: true
+
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: 実行環境
+      options:
+        - Tauri デスクトップ版（`npm run tauri dev` / 配布ビルド）
+        - ブラウザデモ（`npm run dev` / Vercel）
+        - ランディングページ
+        - その他
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: バージョン
+      description: アプリのバージョン、またはコミットハッシュ
+      placeholder: "例: 0.3.0 / d115a6d"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS とバージョン
+      placeholder: "例: macOS 15.1 (Apple Silicon)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 最小の手順を番号付きで記載してください
+      placeholder: |
+        1. ワークスペースを開く
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待した動作
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の動作
+      description: エラーメッセージや画面の状態を含めてください
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: ログ・スクリーンショット
+      description: ターミナル出力、開発者コンソールのエラーなど。機密情報は伏せてください
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 補足
+      description: ワークスペースの種類、有効な設定、追加の状況など
+    validations:
+      required: false

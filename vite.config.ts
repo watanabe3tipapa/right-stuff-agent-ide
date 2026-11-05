@@ -12,6 +12,11 @@ export default defineConfig(() => ({
   //
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
+  build: {
+    // Monaco is lazy-loaded (see `src/App.tsx`) into its own chunk. The
+    // startup payload stays small, so only flag chunks larger than Monaco core.
+    chunkSizeWarningLimit: 2500,
+  },
   // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,

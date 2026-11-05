@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 
 import Editor from "@monaco-editor/react";
 
@@ -6,7 +6,10 @@ import { defineThemes, monaco, monacoTheme } from "../lib/monaco";
 import { isDirty, useEditorStore } from "../stores/editorStore";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Icon } from "./Icon";
-import { MarkdownPreview } from "./MarkdownPreview";
+
+const MarkdownPreview = lazy(() =>
+  import("./MarkdownPreview").then((module) => ({ default: module.MarkdownPreview })),
+);
 
 const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
   fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
@@ -185,7 +188,9 @@ export function EditorPane() {
             </div>
             {showPreview && (
               <div className="preview-pane">
-                <MarkdownPreview content={file.content} />
+                <Suspense fallback={<div className="editor-loading">プレビューを準備中…</div>}>
+                  <MarkdownPreview content={file.content} />
+                </Suspense>
               </div>
             )}
           </div>

@@ -30,6 +30,17 @@
 - 統合ターミナルは Rust 内で PTY を確保し、読み取り専用スレッドが出力を `terminal://output` イベントで WebView へ流す。
 - ブラウザで `npm run dev` した場合、`src/lib/demo.ts` の仮想ワークスペースに切り替わる。
 
+## フロントエンドの読み込み
+
+起動時の JavaScript を小さく保つため、次のコンポーネントは `React.lazy` + `Suspense` で遅延読み込みする。
+
+- `EditorPane`（Monaco Editor）
+- `TerminalDock`（xterm.js。ターミナルを開いたときのみ）
+- `MarkdownPreview`（react-markdown / remark-gfm。プレビュー表示時のみ）
+- `SettingsDialog` / `HistoryDialog` / `CommandPalette` / `QuickOpen`
+
+Monaco の worker（editor / json / css / html / typescript）は Vite の `?worker` import で個別アセットになり、編集中の言語に応じて読み込まれる。これにより初期バンドルは数百 kB 程度に収まり、数 MB の Monaco 本体と言語 worker は必要になるまで転送されない。
+
 ## 状態
 
 | 場所 | 内容 |

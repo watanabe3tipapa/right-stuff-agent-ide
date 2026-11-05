@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 
 import type { AppInfo, FileEntry } from "./shared/types";
 import { api, errorMessage } from "./lib/api";
@@ -7,18 +7,43 @@ import { confirmUnsavedChanges, useEditorStore } from "./stores/editorStore";
 import { useGitStore } from "./stores/gitStore";
 import { useWorkspaceStore } from "./stores/workspaceStore";
 import { AgentPanel } from "./components/AgentPanel";
-import { CommandPalette } from "./components/CommandPalette";
-import { EditorPane } from "./components/EditorPane";
 import { FileTree } from "./components/FileTree";
-import { HistoryDialog } from "./components/HistoryDialog";
 import { Icon } from "./components/Icon";
-import { QuickOpen } from "./components/QuickOpen";
-import { SettingsDialog } from "./components/SettingsDialog";
 import { StatusBar } from "./components/StatusBar";
-import { TerminalDock } from "./components/TerminalDock";
 import { TopBar } from "./components/TopBar";
 import { UnsavedChangesDialog } from "./components/UnsavedChangesDialog";
 import { Welcome } from "./components/Welcome";
+
+// Monaco, xterm and the Markdown renderer dominate the bundle. They are only
+// needed once the user opens a file, the terminal or a preview, so keep them
+// out of the startup payload.
+const EditorPane = lazy(() =>
+  import("./components/EditorPane").then((module) => ({ default: module.EditorPane })),
+);
+const TerminalDock = lazy(() =>
+  import("./components/TerminalDock").then((module) => ({ default: module.TerminalDock })),
+);
+const CommandPalette = lazy(() =>
+  import("./components/CommandPalette").then((module) => ({ default: module.CommandPalette })),
+);
+const QuickOpen = lazy(() =>
+  import("./components/QuickOpen").then((module) => ({ default: module.QuickOpen })),
+);
+const HistoryDialog = lazy(() =>
+  import("./components/HistoryDialog").then((module) => ({ default: module.HistoryDialog })),
+);
+const SettingsDialog = lazy(() =>
+  import("./components/SettingsDialog").then((module) => ({ default: module.SettingsDialog })),
+);
+
+function PanelFallback({ label }: { label: string }) {
+  return (
+    <div className="panel-fallback" role="status" aria-live="polite">
+      <span className="boot-spinner" />
+      {label}
+    </div>
+  );
+}
 
 function findEntry(entries: FileEntry[], predicate: (entry: FileEntry) => boolean): FileEntry | null {
   for (const entry of entries) {
@@ -42,6 +67,8 @@ export function App() {
   const clearEditorError = useEditorStore((state) => state.clearError);
   const notice = useEditorStore((state) => state.notice);
   const clearNotice = useEditorStore((state) => state.clearNotice);
+  const historyPath = useEditorStore((state) => state.historyPath);
+  const settingsOpen = useAgentStore((state) => state.settingsOpen);
   const refreshAgentStatus = useAgentStore((state) => state.refreshStatus);
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
   const refreshPolicy = useAgentStore((state) => state.refreshPolicy);
@@ -242,18 +269,50 @@ export function App() {
       <div className="workbench">
         <FileTree />
         <main className="main-area">
-          {info ? <EditorPane /> : <Welcome />}
-          <TerminalDock open={terminalOpen} onClose={() => setTerminalOpen(false)} />
+          {info ? (
+            <Suspense fallback={<PanelFallback label="エディタを準備しています…" />}>
+              <EditorPane />
+            </Suspense>
+          ) : (
+            <Welcome />
+          )}
+          {terminalOpen && (
+            <Suspense
+              fallback={
+                <div className="terminal-dock">
+                  <PanelFallback label="ターミナルを準備しています…" />
+                </div>
+              }
+            >
+              <TerminalDock open onClose={() => setTerminalOpen(false)} />
+            </Suspense>
+          )}
         </main>
         <AgentPanel />
       </div>
 
       <StatusBar appInfo={appInfo} />
 
-      {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
-      {quickOpen && <QuickOpen onClose={() => setQuickOpen(false)} />}
-      <HistoryDialog />
-      <SettingsDialog />
+      {paletteOpen && (
+        <Suspense fallback={null}>
+          <CommandPalette onClose={() => setPaletteOpen(false)} />
+        </Suspense>
+      )}
+      {quickOpen && (
+        <Suspense fallback={null}>
+          <QuickOpen onClose={() => setQuickOpen(false)} />
+        </Suspense>
+      )}
+      {historyPath && (
+        <Suspense fallback={null}>
+          <HistoryDialog />
+        </Suspense>
+      )}
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsDialog />
+        </Suspense>
+      )}
       <UnsavedChangesDialog />
 
       {notice && (

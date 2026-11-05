@@ -107,6 +107,8 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - API keys and the Openship PAT are stored only in the OS keychain and never in SQLite, logs, or error messages. LLM and Openship requests are sent from Rust; the WebView never calls external APIs directly
 - Openship REST connections assume a self-hosted server, and `http://` is allowed only for localhost / 127.0.0.1 / ::1. Deploy and rollback are disabled in Passive mode and always require native approval in the other modes
 - CSP is configured with a `default-src 'self'` baseline for both Tauri (separate production and development policies) and Vercel
+- Report vulnerabilities through the private form in [SECURITY.md](./SECURITY.md), not in public issues
+- Dependencies are updated weekly by Dependabot, and CI runs `cargo-audit`
 
 ## Install and build
 
@@ -188,6 +190,16 @@ Open `http://localhost:1420` to use the in-memory workspace from `src/lib/demo.t
 | `npm run check` | Type check + `cargo check` |
 | `npm run tauri build` | Build the macOS app (`.app` / `.dmg`) |
 | `npm run preview` | Preview `dist/` locally |
+
+### Dependency audit
+
+```bash
+npm audit
+cargo install cargo-audit --locked   # first run only
+cargo audit --file src-tauri/Cargo.lock
+```
+
+The `Dependency audit (RustSec)` GitHub Actions job runs the same check. Dependabot proposes npm and Cargo updates weekly.
 
 ### Pointing at Agent Desktop
 
@@ -383,13 +395,14 @@ right-stuff-agent-ide-lp.html
 
 ## Documentation
 
-1. [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — layers, process model, save flow
-2. [API.md](./docs/API.md) — Tauri commands and types
-3. [SECURITY.md](./docs/SECURITY.md) — path validation, agent permissions, stored data
-4. [Implementation plan (JA)](./right-stuff-agent-ide-implementation-plan.html) — overall design and roadmap
-5. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
-6. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
-7. [README (Japanese)](./README.md) — 日本語の概要
+1. [SECURITY.md](./SECURITY.md) — vulnerability reporting, supported versions, research scope
+2. [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — layers, process model, save flow
+3. [API.md](./docs/API.md) — Tauri commands and types
+4. [docs/SECURITY.md](./docs/SECURITY.md) — path validation, agent permissions, stored data
+5. [Implementation plan (JA)](./right-stuff-agent-ide-implementation-plan.html) — overall design and roadmap
+6. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
+7. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
+8. [README (Japanese)](./README.md) — 日本語の概要
 
 ## License
 

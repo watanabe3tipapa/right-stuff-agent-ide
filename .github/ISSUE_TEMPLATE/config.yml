@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: セキュリティ脆弱性の報告
+    url: https://github.com/watanabe3tipapa/right-stuff-agent-ide/security/advisories/new
+    about: 脆弱性は公開 Issue ではなく、非公開の報告フォームから送信してください。
+  - name: ドキュメント
+    url: https://github.com/watanabe3tipapa/right-stuff-agent-ide#ドキュメント
+    about: セットアップ、アーキテクチャ、API、セキュリティ設計を確認できます。

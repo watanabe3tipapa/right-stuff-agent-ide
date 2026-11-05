@@ -32,7 +32,10 @@ v0.3.6 は、スキルから Git・ターミナル・デバッガを操作する
 
 ## ダウンロード
 
-DMG はビルド後にこのセクションへ追記します。
+| アーキテクチャ | ファイル | サイズ | SHA-256 |
+|---|---|---|---|
+| Apple Silicon (arm64) | [Right-Stuff.Agent.IDE_0.3.6_aarch64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.6/Right-Stuff.Agent.IDE_0.3.6_aarch64.dmg) | 8.2 MB | `4a433b40021b4056de6621636bab0d5f9063e177dbc5b767326bf73618f956dd` |
+| Intel (x86_64) | [Right-Stuff.Agent.IDE_0.3.6_x64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.6/Right-Stuff.Agent.IDE_0.3.6_x64.dmg) | 8.7 MB | `d9d61dea9c97f4b9d3a216d77fce6fac067581e5779989d6d48f90ec4c00f541` |
 
 > **注意:** どちらのビルドも Apple の公証（notarization）を受けていません。ダウンロードした Mac では初回起動時に Gatekeeper の警告が表示されます。「システム設定 > プライバシーとセキュリティ」から許可するか、アプリを右クリックして「開く」を選んでください。arm64 版は ad-hoc 署名済み、x64 版は未署名です。Apple Silicon で x64 版を動かす場合は Rosetta 2 が必要です。
 

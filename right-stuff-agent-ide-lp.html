@@ -867,7 +867,8 @@ footer .footer-links a:hover { color: var(--accent); }
 
 <div class="sample-banner">
   <strong>Sample</strong>
-  <span>Tauri 版は GitHub Releases の DMG で配布中です。この LP とブラウザデモは、インストールせずに UI を試すための参考実装として公開しています。</span>
+  <span>Tauri 版（macOS 専用）は DMG で配布中です。この LP とブラウザデモは、インストールせずに UI を試すための参考実装です。</span>
+  <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.0">DMG をダウンロード</a>
   <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide">GitHub</a>
 </div>
 
@@ -902,8 +903,8 @@ footer .footer-links a:hover { color: var(--accent); }
   <h1>エージェントが IDE を<span class="highlight block-line">直接操作する</span></h1>
   <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。Tauri 2.0 のネイティブ IDE を、ブラウザで試せるサンプルとともに紹介します。</p>
   <div class="cta-group">
-    <a href="/app/" class="cta-btn cta-primary">ブラウザデモを試す</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary">Tauri 版の構成を見る</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.0" class="cta-btn cta-primary">DMG をダウンロード</a>
+    <a href="/app/" class="cta-btn cta-secondary">ブラウザデモを試す</a>
   </div>
 
   <div class="hero-mockup">
@@ -1017,7 +1018,7 @@ footer .footer-links a:hover { color: var(--accent); }
   <div class="section-header">
     <div class="section-label">Evaluation</div>
     <h2>特徴・良い点・注意点</h2>
-    <p class="section-desc">現在の実装を率直に評価したものです。機能の全体像は上の「Tauri 版の構成と実装」に、実装済みの範囲は README にまとめています。</p>
+    <p class="section-desc">現在の実装を現時点で評価したものです。機能の全体像は上の「Tauri 版の構成と実装」に、実装済みの範囲は README にまとめています。</p>
   </div>
   <div class="eval-grid">
     <div class="eval-card good">
@@ -1035,7 +1036,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <h3>注意点</h3>
       <ul>
         <li><strong>LLM は OpenAI 互換 API に対応</strong> — Tauri 版では OpenAI / Ollama / LM Studio / OpenRouter などに接続できます。ブラウザデモでは利用できません。Anthropic 固有 API は今後対応</li>
-        <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か <code>AGENT_DESKTOP_BIN</code> で指定する</li>
+        <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か環境変数 <code>AGENT_DESKTOP_BIN</code> で指定する</li>
         <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みですが、実行できるのは Agent Desktop の許可アクションだけです。エディタ・Git・ターミナルのスキル実行と検証ループは今後対応</li>
         <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしで、Intel 実機での起動確認は未実施です</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
@@ -1326,7 +1327,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>このサイトは製品版ですか？</summary>
     <div class="faq-answer">
-      いいえ。Tauri 版は GitHub Releases の DMG で配布中です。この LP とブラウザデモは、インストールせずに構成と UI を試すための参考実装として公開しています。
+      このページは Web 上で UI を試すためのサンプルです。製品版は macOS 専用の Tauri アプリで、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.0" style="color:var(--accent);">GitHub Releases</a> の DMG からインストールできます。
     </div>
   </details>
   <details class="faq-item">
@@ -1338,13 +1339,13 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>どの機能が実装済みですか？</summary>
     <div class="faq-answer">
-      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存、計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。v0.2.0 ではローカルファーストの Openship 連携（Deploy タブ、CLI / REST、履歴・ログ・ロールバック）も追加しています。検証ループとスキル実行は今後追加します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
+      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存、計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。v0.2.0 ではローカルファーストの Openship 連携（Deploy タブ、CLI / REST、履歴・ログ・ロールバック）を追加。v0.3.0 ではクイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。検証ループとスキル実行は今後追加します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
     </div>
   </details>
   <details class="faq-item">
     <summary>Agent Desktop は同梱されていますか？</summary>
     <div class="faq-answer">
-      同梱していません。<a href="https://github.com/vercel-labs/agent-desktop" style="color:var(--accent);">Agent Desktop</a>（Apache-2.0）を <code>npm install -g agent-desktop</code> で別途インストールし、PATH に通すか <code>AGENT_DESKTOP_BIN</code> で指定してください。macOS では <code>agent-desktop permissions --guide</code> でアクセシビリティ権限を付与します。バージョン固定の要件はありません。
+      同梱していません。<a href="https://github.com/vercel-labs/agent-desktop" style="color:var(--accent);">Agent Desktop</a>（Apache-2.0）を <code>npm install -g agent-desktop</code> で別途インストールし、PATH に通すか環境変数 <code>AGENT_DESKTOP_BIN</code> で指定してください。macOS では <code>agent-desktop permissions --guide</code> でアクセシビリティ権限を付与します。バージョン固定の要件はありません。
     </div>
   </details>
   <details class="faq-item">

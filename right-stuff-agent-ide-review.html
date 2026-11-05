@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Right-Stuff Agent IDE 論評レポート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b1120;
+  --surface: #111827;
+  --surface-raised: #1f2937;
+  --ink: #f8fafc;
+  --ink-muted: #94a3b8;
+  --ink-dim: #64748b;
+  --accent: #38bdf8;
+  --accent-weak: rgba(56, 189, 248, 0.10);
+  --accent-medium: rgba(56, 189, 248, 0.25);
+  --pro: #34d399;
+  --pro-weak: rgba(52, 211, 153, 0.10);
+  --con: #f87171;
+  --con-weak: rgba(248, 113, 113, 0.10);
+  --neutral: #fbbf24;
+  --neutral-weak: rgba(251, 191, 36, 0.10);
+  --line: rgba(148, 163, 184, 0.15);
+  --radius: 10px;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --step--1: clamp(0.85rem, 0.82rem + 0.2vw, 0.95rem);
+  --step-0: clamp(0.95rem, 0.9rem + 0.3vw, 1.05rem);
+  --step-1: clamp(1.15rem, 1.05rem + 0.5vw, 1.35rem);
+  --step-2: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  --step-3: clamp(2rem, 1.6rem + 2vw, 3rem);
+  --space: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.8;
+  font-size: var(--step-0);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
+h1 { font-size: var(--step-3); }
+h2 { font-size: var(--step-2); }
+h3 { font-size: var(--step-1); }
+
+p, li {
+  max-width: 70ch;
+  overflow-wrap: anywhere;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+code, kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9em;
+  background: var(--surface-raised);
+  padding: 0.15em 0.4em;
+  border-radius: 5px;
+  color: var(--accent);
+  border: 1px solid var(--line);
+}
+
+/* Layout */
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 0.5rem + 2vw, 2rem);
+}
+
+header {
+  padding: var(--space) 0 calc(var(--space) * 0.8);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--space);
+  position: relative;
+}
+
+header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--pro), var(--neutral));
+}
+
+.meta {
+  color: var(--ink-dim);
+  font-size: var(--step--1);
+  margin-top: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Sections */
+.section {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: calc(var(--space) * 0.9);
+  margin-bottom: calc(var(--space) * 0.8);
+  box-shadow: var(--shadow);
+}
+
+.section > h2, .section > h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  margin-bottom: 1rem;
+}
+
+.section > h2::before, .section > h3::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 1.1em;
+  background: var(--accent);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.section > h3::before {
+  height: 0.9em;
+  background: var(--ink-muted);
+}
+
+/* Labels */
+.label {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: 700;
+  padding: 0.2em 0.6em;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  margin-right: 0.4em;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.label-pro { background: var(--pro-weak); color: var(--pro); border: 1px solid rgba(52,211,153,0.25); }
+.label-con { background: var(--con-weak); color: var(--con); border: 1px solid rgba(248,113,113,0.25); }
+.label-neutral { background: var(--neutral-weak); color: var(--neutral); border: 1px solid rgba(251,191,36,0.25); }
+
+/* Lists */
+ul {
+  padding-left: 1.4em;
+  margin: 0.8em 0;
+}
+
+li {
+  margin-bottom: 0.7em;
+  color: var(--ink-muted);
+}
+
+li strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.2em 0;
+  font-size: var(--step--1);
+}
+
+th, td {
+  padding: 0.7em 0.9em;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--surface-raised);
+  white-space: nowrap;
+}
+
+tr:last-child td { border-bottom: none; }
+
+/* Summary box */
+.summary-box {
+  background: linear-gradient(135deg, var(--accent-weak), transparent);
+  border-left: 4px solid var(--accent);
+  padding: 1.2em 1.4em;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  margin-top: 1.2em;
+}
+
+.summary-box p {
+  color: var(--ink-muted);
+  margin-bottom: 0.8em;
+}
+
+.summary-box p:last-child { margin-bottom: 0; }
+
+.summary-box strong { color: var(--ink); }
+
+/* Part header */
+.part-header {
+  font-size: var(--step-1);
+  font-weight: 700;
+  color: var(--accent);
+  margin: calc(var(--space) * 1.2) 0 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--accent-medium);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+/* Print */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .section {
+    background: #fff;
+    border-color: #ccc;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+  header::before { display: none; }
+  a { color: #0066cc; }
+  code, kbd {
+    background: #f4f4f4;
+    color: #333;
+    border-color: #ddd;
+  }
+  .label-pro { background: #e6f4ea; color: #137333; }
+  .label-con { background: #fce8e8; color: #c5221f; }
+  .label-neutral { background: #fef3e8; color: #b06000; }
+}
+
+@page {
+  size: A4;
+  margin: 16mm;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* Focus */
+a:focus-visible, :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>Right-Stuff Agent IDE 論評レポート</h1>
+    <div class="meta">
+      対象: <a href="https://right-stuff-agent-ide.vercel.app">LP</a> /
+      <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide">GitHub リポジトリ</a> (v0.3.0) /
+      作成日: 2026-11-04
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+<div class="part-header">PART 1 — LP（ランディングページ）論評</div>
+
+<div class="section">
+<h2>1.1 総評</h2>
+<p>「エージェントが IDE を直接操作する」とうコンセプトを前面に出し、Tauri 2.0 によるネイティブアプリの軽量さと、ファイルを主役としたローカルファーストの設計思想を明確に伝えようとしている。製品版ではなく「サンプル」という謙虚な位置付けを最初から示している点は、技術的な誠実さが感じられ、評価に値する。ただし、ブラウザデモと Tauri 版の境界が、初見のユーザーにはやや分かりにくい箇所も残っている。</p>
+</div>
+
+<div class="section">
+<h2>1.2 強み</h2>
+<ul>
+<li><span class="label label-pro">Good</span><strong>コンセプトの明確さ:</strong> 「書く、任せる、確かめる」という3つの体験軸で整理されており、エディタとエージェントを同一画面に統合する価値が伝わる。</li>
+<li><span class="label label-pro">Good</span><strong>制約の正直な開示:</strong> 「LLM は未接続」「デモは永続化しない」「macOS のみ検証」など、サンプル公開時点の限界を率直に記載している。これにより、開発者からの信頼を獲得しやすい。</li>
+<li><span class="label label-pro">Good</span><strong>技術的説得力:</strong> Tauri 2.0、Monaco Editor、SQLite、Agent Desktop ブリッジといった技術スタックが、解決しようとしている課題と適切に対応している。</li>
+<li><span class="label label-pro">Good</span><strong>権限設計の視覚化:</strong> Passive / Assistive / Autonomous の3段階モードを図解し、エージェントの自律性を段階的に導入する方針が視覚的に理解できる。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>1.3 弱み・改善点</h2>
+<ul>
+<li><span class="label label-con">Issue</span><strong>ブラウザデモと製品版の分離が曖昧:</strong> LP上では「サンプル」と明記されているが、<code>/app/</code> へのリンクが「ブラウザデモを開く」という表現であり、Tauri版との機能差がスクロールしないと分からない。ヘッダー付近に「このページは Web 上のサンプルです。製品版は DMG をダウンロードしてください」という固定バナーがあると親切。</li>
+<li><span class="label label-con">Issue</span><strong>名前の認知コスト:</strong> 「Right-Stuff Agent IDE」はやや長く、略称（RSAIDE等）が提示されていない。SNSや口頭での言及を考えると、もう少し短い愛称や略称の提示が欲しい。</li>
+<li><span class="label label-con">Issue</span><strong>ビジュアルの単調さ:</strong> スクリーンショットや実際の UI アニメーションが少なく、コードスニペットとテキスト中心の構成になっいる。エージェントパネルの動作イメージ（GIFや短い動画）があれば、訴求力が大きく向上する。</li>
+<li><span class="label label-con">Issue</span><strong>FAQ の過剰な謙虚さ:</strong> 「このサイトは製品版ですか？いいえ。」という自己否定は誠実だが、初見のユーザーに「では何をダウンロードすればいいのか」という迷いを生む。ダウンロードセクションへの導線をもう少し強調すべき。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>1.4 情報設計</h2>
+<p>「サンプルが目指す構成」「特徴・良い点・注意点」「動かし方」の順序は論理的だが、「動かし方」がページ下部にあるため、興味を持った開発者がスクロールを強いられる。技術系 LP では、インストール or デモへの導線をファーストビューにもう1つ配置するのが一般的で、それに従うと離脱率が下がる可能性がある。</p>
+</div>
+
+<div class="part-header">PART 2 — リポジトリ論評</div>
+
+<div class="section">
+<h2>2.1 総評</h2>
+<p>v0.3.0 時点で、ワークスペース管理、Monaco エディタ、SQLite バージョン履歴、Git パネル、統合ターミナル、LLM チャット、計画立案・承認フロー、監査ログ、Openship 連携まで、単一開発者のプロジェクトとしては驚異的な実装密度を持つ。Tauri 2.0 + React 18 + Rust 2024 edition という現代的なスタックを採用し、キュリティとローカルファーストを重視した設計思想が一貫している。一方で、macOS への強い依存、未署名バイナリの配布、スキル実行の未実装など、実用化に向けた課題も明確に残されている。</p>
+</div>
+
+<div class="section">
+<h2>2.2 アーキテクチャ評価</h2>
+<ul>
+<li><span class="label label-pro">Good</span><strong>技術選定の適切性:</strong> Vite 8 + React 18.3 + TypeScript 6 + Zustand 5 というフロントエンド構成は、過度な複雑化を避けつつ保守性を確保している。Monaco Editor を <code>@monaco-editor/react</code> でラップする判断も妥当。</li>
+<li><span class="label label-pro">Good</span><strong>Rust バックエンドの堅実さ:</strong> ファイル I/O、パス検証、atomic write、SQLite (WAL) 管理を Rust 側で担っており、WebView から OS リソースへの直接アクセスを遮断している。セキュリティを考慮した責務の分離ができている。</li>
+<li><span class="label label-pro">Good</span><strong>Git / ターミナル統合:</strong> Phase 2 で追加されたクイックオープン、Git パネル、PTY による統合ターミナルは、IDE としての完成度を大きく引き上げている。特に <code>portable-pty</code> + xterm.js の組み合わせは標準的で安定している。</li>
+<li><span class="label label-con">Issue</span><strong>Agent Desktop 外部依存:</strong> 中核となる「エージェントによる OS 操作」が Agent Desktop CLI の別途インストールに依存しており、導入ハードルが高い。同梱または自動ダウンロードの仕組みがないと、一般開発者の体験が大きく損なわれる。</li>
+<li><span class="label label-con">Issue</span><strong>プラットフォーム縛り:</strong> 検証環境が macOS のみであり、Windows / Linux は「今後検討」に留まっている。Tauri 2.0 はマルチプラットフォームを謳うため、Rust コード内のプラットフォーム分岐が今後どこまで膨れるかが懸念される。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>2.3 セキュリティ設計</h2>
+<ul>
+<li><span class="label label-pro">Good</span><strong>多層的な防御:</strong> パス検証（絶対ス、<code>..</code>、ワークスペース外書き込みの拒否）、シンボリックリンクの無視、atomic write、ゴミ箱へのソフトデリート、Agent Desktop の許可リストと引数検証、出力の 200,000 文字打ち切りなど、実用的な安全装置が多数実装されている。</li>
+<li><span class="label label-pro">Good</span><strong>秘密情報の管理:</strong> API キーと Openship PAT を OS キーチェーンに保存し、SQLite やログに含めない設計は適切。LLM / Openship 通信を Rust 側で行い、WebView から外部 API を直接呼ばない点も評価できる。</li>
+<li><span class="label label-pro">Good</span><strong>監査ログ:</strong> 計画の承認・却下・実行などを SQLite に記録し、自動削除（30日、5,000件超過）の仕組みを持つ。企業利用や個人の振り返りに有用。</li>
+<li><span class="label label-con">Issue</span><strong>未署名配布:</strong> DMG が Developer ID 署名・公証を受けていないため、macOS の Gatekeeper が初回起動をブロックする。一般ユーザーへの配布を狙うなら、Apple Developer Program への加入と署名パイプラインの構築が急務。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>2.4 コード品質</h2>
+<ul>
+<li><span class="label label-pro">Good</span><strong>構造の整然さ:</strong> <code>src/components/</code>, <code>src/stores/</code>, <code>src/lib/</code>, <code>src/shared/</code>, <code>src-tauri/src/</code> といったディレクトリ構成が役割ごとに分離されており、短中期の保守は容易そうである。</li>
+<li><span class="label label-pro">Good</span><strong>型安性:</strong> TypeScript の厳格な運用（<code>typecheck</code> スクリプトの整備）と Rust の型システムを活かし、フロントエンドとバックエンドの両方で型安全性を確保している。</li>
+<li><span class="label label-pro">Good</span><strong>エラーハンドリング:</strong> Rust 側で <code>thiserror</code> を用いたエラー定義を行い、フロントエンドには安全なメッセージに変換して伝達する設計が見られる。</li>
+<li><span class="label label-con">Issue</span><strong>スキル実行の未実装:</strong> <code>.agents/skills/*.json</code> の配置は示されているが、実行は未実装。これはロードマップ上の課題だが、リポジトリの「完成度」としては未消化部分として目立つ。</li>
+<li><span class="label label-con">Issue</span><strong>App.tsx の肥大化傾向:</span> キーボードショートカット、ウィンドウクローズ制御、ワークスペース自動復元、Git リフレッシュなど、初期化と副作用が多数集中している。カスタムフックへの抽出でさらに可読性が上がる余地がある。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>2.5 ドキュメント</h2>
+<ul>
+<li><span class="label label-pro">Good</span><strong>README の充実度:</strong> 日本語・英語の両言語対応、インストール手順、アーキテクチャ、セキュリティ方針、既知の制約とロードマップまで網羅されている。自己分析として「率直な評価」を掲載する姿勢は、オープンソースとして信頼を生む。</li>
+<li><span class="label label-pro">Good</span><strong>設計書・図の存在:</strong> <code>docs/</code> ディレクトリにアーキテクチャ、API、セキュリティ、Openship 構成図を置しており、コントリビューターの参入障壁を下げている。</li>
+<li><span class="label label-con">Issue</span><strong>英語版の鮮度:</strong> 日本語版が v0.3.0 相当に更新されている一方で、英語版 README の更新タイミングが追従していない可能性がある。多言語展開を継続するなら、バージョンタグと同時に更新を自動化する仕組みが欲しい。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>2.6 課題と懸</h2>
+<ul>
+<li><span class="label label-con">Issue</span><strong>一般ユーザーへの届け方:</strong> 現状は「開発者がソースからビルドする」か「未署名 DMG をダウンロードする」しかなく、Homebrew や公式サイトによる安定的な配布経路がない。</li>
+<li><span class="label label-con">Issue</span><strong>エコシステム依存:</strong> Agent Desktop、Openship、Ollama / LM Studio など、周辺ツールへの依存が多い。これらのインストール・設定が煩雑だと、IDE 本体の評価に影響する。</li>
+<li><span class="label label-neutral">Note</span><strong>テストの可視性:</strong> Vitest と cargo check の実行スクリプトは存在するが、CI の詳細なカバレッジ報告や、Tauri 側の E2E テスト戦略が README からは読み取れない。</li>
+</ul>
+</div>
+
+<div class="part-header">PART 3 — タイポチェック・表記統一報告</div>
+
+<div class="section">
+<h2>3.1 明確な誤り・不自然な表記</h2>
+<ul>
+<li><span class="label label-con">Typo</span><strong>README 日本語版:</strong> <code>.right-stuff/trash/ /</code> と記載されている箇所（ファイル操作セクション）。パス表記として明らかに不要な半角スペースが含まれおり、<code>.right-stuff/trash/</code> への修正が必要。</li>
+<li><span class="label label-neutral">Style</span><strong>LP:</strong> 「Agent Desktop が別途必要 — CLI は同梱していない。」の直後に「PATH か AGENT_DESKTOP_BIN で指定する」とあるが、<code>AGENT_DESKTOP_BIN</code> は環境変数なので「環境変数 <code>AGENT_DESKTOP_BIN</code>」と補足すると親切。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>3.2 表記揺れ・統一の余地</h2>
+<ul>
+<li><span class="label label-neutral">Style</span><strong>「インメモリ」表記:</strong> README では「インメモリ・ワークスペース」と「インメモリ・デモワークスペース」が混在。LP では「インメモリ・ワークスペース」。統一するとより洗練される。</li>
+<li><span class="label label-neutral">Style</span><strong>モード名の言語混在:</strong> LP の「3 段階のエージェントモード」では、見出しが「受動的支援」「Assistive」「能動的支援」「Autonomous」「自律実行」と日英が交互に出る。これは意図的なバイリンガル設計の可能性もあるが、日本語 LP 内では「受動的（Passive）」「能動的（Assistive）」「自律（Autonomous）」のように括弧書きで統一すると読みやすさが向上する。</li>
+<li><span class="label label-neutral">Style</span><strong>「ad-hoc 署名」:</strong> ハイフンありの「ad-hoc」は英語として正しいが、日本語文脈では「アドホック署名」または「臨時署名」と註を入れると、一般ユーザーに優しい。</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>3.3 軽微なスタイル指摘</h2>
+<ul>
+<li><span class="label label-neutral">Style</span><strong>LP の口表現:</strong> 「率直な評価です」はブログ調としては良いが、製品 LP としてはややカジュアル。「現時点での評価」や「開発者向けノート」といった表現に切り替えると、よりプロダクトの信頼性が増す。</li>
+<li><span class="label label-neutral">Style</span><strong>README のバージョン表記:</strong> GitHub 上の About セクションや README 冒頭のバッジは v0.3.0 だが、LP 内の記述が v0.1.1 のままの箇所（ダウンロードセクション）が残存している可能性がある。LP と README のバージョン同期を徹底すべき。</li>
+</ul>
+</div>
+
+<div class="part-header">総括</div>
+
+<div class="section">
+<h2>結論</h2>
+<div class="summary-box">
+<p><strong>Right-Stuff Agent IDE</strong> は、「エージェントとエディタを同一画面に統合する」という明確なビジョンのもと、Tauri 2.0 と Rust を活用した堅牢なローカルファースト IDE を目指す野心的なプロジェクトです。v0.3.0 時点で、ワークスペース管理、編集、履歴、Git、ターミナル、LLM 連携、承認フローまで短期間で実装しており、技術的な実現力は高く評価できます。</p>
+<p>一方で、macOS 依存、未署名バイナリ、Agent Desktop など外部ツールへの強い依存、およびスキル実行の未実装は、一般ユーザーへの普及における現実的な障壁となっています。LP については、サンプルと製品版の違いをより直感的に伝え、ビジュアル訴求を強化することで、開発者コミュニティからの関心をさらに高められるでしょう。</p>
+<p>タイポ・表記面では、パス表記の不自然なスペースと、日英混在モード表記の整理が最も優先すべき改善点です。これらを修正し、ドキュメントと LP のバージョン同期を徹底すれ、オープンソースプロジェクトとしての信頼性は一層高まります。</p>
+</div>
+</div>
+
+</main>
+
+</body>
+</html>

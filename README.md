@@ -11,6 +11,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
 [![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
@@ -78,7 +79,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェント、Git、ターミナルの操作を検索して実行。`⌘P` はクイックオープン、`⌘J` はターミナルの表示切替
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
-- **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリのデモワークスペースを操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
+- **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリ・ワークスペース（デモ）を操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
 - **スキル定義** — `.agents/skills/*.json` にエージェント向けの操作定義を配置（スキル実行は未実装）
 - **テーマ** — ダークテーマ、Overlay タイトルバー、macOS ネイティブウィンドウ
 
@@ -366,7 +367,7 @@ src/
 │   └── ConfirmDialog.tsx           # 確認モーダル
 ├── lib/
 │   ├── api.ts                      # Tauri invoke ラッパー
-│   ├── demo.ts                     # ブラウザ用インメモリワークスペース
+│   ├── demo.ts                     # ブラウザ用インメモリ・ワークスペース
 │   ├── llm.ts                      # LLM プロンプト・リクエスト変換
 │   ├── plan.ts                     # 計画プロンプト・JSON 解析・引数検証
 │   ├── policy.ts                   # ポリシー既定値・表示ラベル

@@ -108,7 +108,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - Openship の REST 接続はセルフホストを想定し、`http://` は localhost / 127.0.0.1 / ::1 のみ許可します。デプロイ・ロールバックは Passive モードでは無効で、それ以外のモードでもネイティブ承認を省略できません
 - CSP は Tauri（本番 / 開発で別ポリシー）と Vercel の両方に `default-src 'self'` ベースで設定しています
 - 脆弱性は公開 Issue ではなく [SECURITY.md](./SECURITY.md) の非公開報告フォームから連絡してください
-- 依存関係は Dependabot で週次更新し、CI で `cargo-audit` を実行します
+- 依存関係は Dependabot の週次更新とセキュリティ更新で追従し、CI で `cargo-audit` を実行します
 
 ## インストールとビルド
 

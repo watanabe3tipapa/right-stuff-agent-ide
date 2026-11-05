@@ -108,7 +108,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - Openship REST connections assume a self-hosted server, and `http://` is allowed only for localhost / 127.0.0.1 / ::1. Deploy and rollback are disabled in Passive mode and always require native approval in the other modes
 - CSP is configured with a `default-src 'self'` baseline for both Tauri (separate production and development policies) and Vercel
 - Report vulnerabilities through the private form in [SECURITY.md](./SECURITY.md), not in public issues
-- Dependencies are updated weekly by Dependabot, and CI runs `cargo-audit`
+- Dependabot handles weekly and security updates for dependencies, and CI runs `cargo-audit`
 
 ## Install and build
 

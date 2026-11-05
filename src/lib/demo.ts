@@ -16,12 +16,19 @@ import type {
   OpenShipSettings,
   OpenShipStatus,
   SaveResult,
+  SkillCatalog,
+  SkillDecisionResult,
+  SkillPolicy,
+  SkillPreviewResult,
+  SkillRequest,
+  SkillRunResult,
   VersionContent,
   VersionSummary,
   WorkspaceInfo,
 } from "../shared/types";
 import { DEFAULT_LLM_CONFIG } from "./llm";
 import { defaultAgentPolicy } from "./policy";
+import { DEFAULT_SKILL_POLICY } from "./skills";
 
 /**
  * In-browser fallback used by `npm run dev` when the app is not running inside
@@ -238,6 +245,178 @@ function record(path: string, content: string): number {
     createdAt: Date.now(),
   });
   return id;
+}
+
+function demoSkillCatalog(): SkillCatalog {
+  return {
+    warnings: [],
+    skills: [
+      {
+        schemaVersion: 1,
+        id: "code-edit",
+        name: "Code Edit",
+        description: "ワークスペース内のファイルを読み取り、文字列を置換して保存する",
+        version: "0.1.0",
+        category: "editor",
+        risk: "write",
+        actions: [
+          {
+            id: "editor.readFile",
+            handler: "editor.readFile",
+            description: "ファイルを読み取る",
+            risk: "read",
+            params: {
+              path: {
+                type: "string",
+                description: "ワークスペースからの相対パス",
+                required: true,
+                maxLength: 1024,
+              },
+            },
+            timeoutMs: 5_000,
+          },
+          {
+            id: "editor.replaceText",
+            handler: "editor.replaceText",
+            description: "一意に一致する文字列を置換する",
+            risk: "write",
+            params: {
+              path: {
+                type: "string",
+                description: "ワークスペースからの相対パス",
+                required: true,
+                maxLength: 1024,
+              },
+              oldText: {
+                type: "string",
+                description: "置換前の文字列。ファイル内で 1 回だけ一致すること",
+                required: true,
+                maxLength: 100_000,
+              },
+              newText: {
+                type: "string",
+                description: "置換後の文字列",
+                required: true,
+                maxLength: 100_000,
+              },
+            },
+            timeoutMs: 30_000,
+          },
+          {
+            id: "editor.createFile",
+            handler: "editor.createFile",
+            description: "存在しないファイルを作成する",
+            risk: "write",
+            params: {
+              path: {
+                type: "string",
+                description: "ワークスペースからの相対パス",
+                required: true,
+                maxLength: 1024,
+              },
+              content: {
+                type: "string",
+                description: "初期内容",
+                required: false,
+                maxLength: 100_000,
+              },
+            },
+            timeoutMs: 30_000,
+          },
+        ],
+        permissions: {
+          paths: { read: ["**/*"], write: ["**/*"] },
+          commands: [],
+          env: [],
+        },
+        approval: { default: null, overrides: {} },
+        verification: {
+          mode: "auto",
+          checks: ["typecheck", "lint", "test"],
+          timeoutMs: 300_000,
+          stopOnFailure: true,
+        },
+        limits: {
+          maxFiles: 20,
+          maxBytes: 1_048_576,
+          timeoutMs: 300_000,
+          maxOutputChars: 50_000,
+        },
+      },
+    ],
+  };
+}
+
+let demoSkillPolicy = DEFAULT_SKILL_POLICY();
+
+function demoSkillDecision(skillId: string, actionId: string): SkillDecisionResult {
+  const catalog = demoSkillCatalog();
+  const action = catalog.skills
+    .find((skill) => skill.id === skillId)
+    ?.actions.find((entry) => entry.id === actionId);
+  if (!action) {
+    throw new Error(`スキルが見つかりません: ${skillId} / ${actionId}`);
+  }
+  const requested =
+    demoSkillPolicy.actions[actionId] ??
+    demoSkillPolicy.skills[skillId] ??
+    (action.risk === "read" ? "allow" : "ask");
+  const decision =
+    requested === "allow" && action.risk !== "read" ? "ask" : requested;
+  return { skillId, actionId, decision, risk: action.risk };
+}
+
+function demoSkillPreview(
+  skillId: string,
+  actionId: string,
+  params: Record<string, unknown>,
+): SkillPreviewResult {
+  const decision = demoSkillDecision(skillId, actionId);
+  const path = typeof params.path === "string" ? params.path : null;
+  const result: SkillPreviewResult = {
+    skillId,
+    actionId,
+    decision: decision.decision,
+    risk: decision.risk,
+    path,
+    addedLines: 0,
+    removedLines: 0,
+    diff: "",
+    warnings: [],
+  };
+
+  if (actionId === "editor.readFile") {
+    if (!path || !files.has(path)) throw new Error(`見つかりません: ${path ?? ""}`);
+    return result;
+  }
+
+  if (actionId === "editor.replaceText") {
+    if (!path) throw new Error("path が必要です。");
+    const content = files.get(path);
+    if (content === undefined) throw new Error(`見つかりません: ${path}`);
+    const oldText = typeof params.oldText === "string" ? params.oldText : "";
+    const newText = typeof params.newText === "string" ? params.newText : "";
+    const first = content.indexOf(oldText);
+    if (!oldText || first < 0) throw new Error("置換前の文字列がファイル内にありません。");
+    if (content.indexOf(oldText, first + 1) >= 0) {
+      throw new Error("置換前の文字列がファイル内で複数一致します。");
+    }
+    result.diff = `-${oldText}\n+${newText}`;
+    result.removedLines = oldText ? oldText.split("\n").length : 0;
+    result.addedLines = newText ? newText.split("\n").length : 0;
+    return result;
+  }
+
+  if (actionId === "editor.createFile") {
+    if (!path) throw new Error("path が必要です。");
+    if (files.has(path)) throw new Error(`既に存在します: ${path}`);
+    const content = typeof params.content === "string" ? params.content : "";
+    result.diff = content;
+    result.addedLines = content ? content.split("\n").length : 0;
+    return result;
+  }
+
+  throw new Error(`ブラウザデモでは未対応のアクションです: ${actionId}`);
 }
 
 export const demoApi = {
@@ -467,6 +646,100 @@ export const demoApi = {
 
   async gitLog(): Promise<GitCommit[]> {
     return [];
+  },
+
+  async skillsList(): Promise<SkillCatalog> {
+    return demoSkillCatalog();
+  },
+
+  async skillPolicy(): Promise<SkillPolicy> {
+    return demoSkillPolicy;
+  },
+
+  async skillPolicySet(policy: SkillPolicy): Promise<SkillPolicy> {
+    demoSkillPolicy = { ...DEFAULT_SKILL_POLICY(), ...policy, version: 1 };
+    return demoSkillPolicy;
+  },
+
+  async skillDecision(
+    skillId: string,
+    actionId: string,
+  ): Promise<SkillDecisionResult> {
+    return demoSkillDecision(skillId, actionId);
+  },
+
+  async skillPreview(
+    skillId: string,
+    actionId: string,
+    params: Record<string, unknown>,
+  ): Promise<SkillPreviewResult> {
+    return demoSkillPreview(skillId, actionId, params);
+  },
+
+  async skillRun(request: SkillRequest): Promise<SkillRunResult> {
+    const started = Date.now();
+    const decision = demoSkillDecision(request.skillId, request.actionId);
+    if (decision.decision === "block") {
+      return {
+        runId: `demo-${started}`,
+        status: "blocked",
+        decision: decision.decision,
+        changedFiles: [],
+        stdout: "",
+        stderr: "ポリシーによりブロックされました。",
+        exitCode: null,
+        durationMs: Date.now() - started,
+        auditId: 0,
+        errorCode: "policy_blocked",
+      };
+    }
+
+    const preview = demoSkillPreview(
+      request.skillId,
+      request.actionId,
+      request.params,
+    );
+    let stdout = "";
+    const changedFiles: string[] = [];
+    const path = typeof request.params.path === "string" ? request.params.path : "";
+
+    if (request.actionId === "editor.readFile") {
+      stdout = files.get(path) ?? "";
+    } else if (request.actionId === "editor.replaceText") {
+      const content = files.get(path) ?? "";
+      const oldText =
+        typeof request.params.oldText === "string" ? request.params.oldText : "";
+      const newText =
+        typeof request.params.newText === "string" ? request.params.newText : "";
+      const index = content.indexOf(oldText);
+      record(path, content);
+      files.set(
+        path,
+        `${content.slice(0, index)}${newText}${content.slice(index + oldText.length)}`,
+      );
+      changedFiles.push(path);
+      stdout = `${path} を更新しました (+${preview.addedLines} / -${preview.removedLines} 行)`;
+    } else if (request.actionId === "editor.createFile") {
+      const content =
+        typeof request.params.content === "string" ? request.params.content : "";
+      ensureParent(path);
+      record(path, "");
+      files.set(path, content);
+      changedFiles.push(path);
+      stdout = `${path} を作成しました`;
+    }
+
+    return {
+      runId: `demo-${started}`,
+      status: "ok",
+      decision: decision.decision,
+      changedFiles,
+      stdout,
+      stderr: "",
+      exitCode: null,
+      durationMs: Date.now() - started,
+      auditId: 0,
+    };
   },
 
   async llmConfig(): Promise<LlmSettings> {

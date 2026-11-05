@@ -6,6 +6,7 @@ import type {
   PlanStepStatus,
 } from "../shared/types";
 import { MAX_PLAN_INTENT_CHARS } from "../lib/plan";
+import { skillRiskLabel } from "../lib/skills";
 import { useAgentStore } from "../stores/agentStore";
 import { Icon } from "./Icon";
 
@@ -66,14 +67,25 @@ function PlanCard({ plan }: { plan: AgentPlan }) {
                 <span className="plan-step-index">{index + 1}</span>
                 <span className="plan-step-title">{step.title}</span>
                 <span className={`plan-risk ${step.risk}`}>
-                  {step.risk === "read" ? "読取" : "変更"}
+                  {skillRiskLabel(step.risk)}
                 </span>
                 <span className={`plan-step-status ${step.status}`}>
                   {stepStatusCopy[step.status]}
                 </span>
               </div>
 
-              <code className="plan-command">{step.command.join(" ")}</code>
+              <code className="plan-command">
+                {step.kind === "skill"
+                  ? `${step.skillId} / ${step.skillActionId}`
+                  : step.command.join(" ")}
+              </code>
+
+              {step.kind === "skill" && step.params && (
+                <details className="plan-output">
+                  <summary>パラメータ</summary>
+                  <pre>{JSON.stringify(step.params, null, 2)}</pre>
+                </details>
+              )}
 
               {step.rationale && (
                 <p className="plan-rationale">{step.rationale}</p>
@@ -313,6 +325,9 @@ export function PlanPanel() {
           </p>
           <ul>
             <li>各手順は許可アクションと引数検証を通ったものだけを表示します</li>
+            <li>
+              スキル手順は <code>skills_list</code> のカタログと照合してから実行します
+            </li>
             <li>変更操作は実行時に OS の承認ダイアログでも確認します</li>
             <li>
               Assistive は手順ごと、Autonomous は承認後にまとめて実行します

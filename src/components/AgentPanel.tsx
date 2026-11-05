@@ -8,6 +8,7 @@ import { DeployPanel } from "./DeployPanel";
 import { GitPanel } from "./GitPanel";
 import { Icon } from "./Icon";
 import { PlanPanel } from "./PlanPanel";
+import { SkillsPanel } from "./SkillsPanel";
 
 const modeCopy: Record<AgentMode, { label: string; description: string }> = {
   passive: {
@@ -326,6 +327,7 @@ export function AgentPanel() {
   const mode = useAgentStore((state) => state.mode);
   const status = useAgentStore((state) => state.status);
   const plan = useAgentStore((state) => state.plan);
+  const skillCount = useAgentStore((state) => state.skills?.skills.length ?? 0);
   const openSettings = useAgentStore((state) => state.openSettings);
   const gitStaged = useGitStore((state) => state.status?.staged.length ?? 0);
 
@@ -357,6 +359,14 @@ export function AgentPanel() {
                 onClick={() => setTab("plan")}
               >
                 Plan
+              </button>
+              <button
+                type="button"
+                className={tab === "skills" ? "active" : ""}
+                onClick={() => setTab("skills")}
+              >
+                Skills
+                {skillCount > 0 && <span className="tab-count">{skillCount}</span>}
               </button>
               <button
                 type="button"
@@ -411,6 +421,8 @@ export function AgentPanel() {
         <ChatView />
       ) : tab === "plan" ? (
         <PlanPanel />
+      ) : tab === "skills" ? (
+        <SkillsPanel />
       ) : tab === "audit" ? (
         <AuditPanel />
       ) : tab === "deploy" ? (

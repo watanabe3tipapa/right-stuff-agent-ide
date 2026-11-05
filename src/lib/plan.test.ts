@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { SkillCatalog } from "../shared/types";
 import {
   actionRisk,
   ALLOWED_ACTIONS,
@@ -11,6 +12,63 @@ import {
 
 function plan(steps: unknown[]): string {
   return JSON.stringify({ goal: "テスト", steps });
+}
+
+function skillCatalog(): SkillCatalog {
+  return {
+    warnings: [],
+    skills: [
+      {
+        schemaVersion: 1,
+        id: "code-edit",
+        name: "Code Edit",
+        description: "テスト用",
+        version: "0.1.0",
+        category: "editor",
+        risk: "write",
+        actions: [
+          {
+            id: "editor.readFile",
+            handler: "editor.readFile",
+            description: "読み取る",
+            risk: "read",
+            params: {
+              path: { type: "string", description: "パス", required: true },
+            },
+          },
+          {
+            id: "editor.replaceText",
+            handler: "editor.replaceText",
+            description: "置換する",
+            risk: "write",
+            params: {
+              path: { type: "string", description: "パス", required: true },
+              oldText: { type: "string", description: "置換前", required: true },
+              newText: { type: "string", description: "置換後", required: true },
+            },
+          },
+        ],
+        permissions: {
+          paths: { read: ["**/*"], write: ["**/*"] },
+          commands: [],
+          env: [],
+        },
+        approval: { default: null, overrides: {} },
+        verification: {
+          mode: "auto",
+          checks: ["typecheck", "lint", "test"],
+          timeoutMs: 300_000,
+          stopOnFailure: true,
+        },
+        limits: {
+          maxFiles: 20,
+          maxBytes: 1_048_576,
+          timeoutMs: 300_000,
+          maxOutputChars: 50_000,
+        },
+      },
+    ],
+  };
 }
 
 describe("parsePlan", () => {
@@ -140,6 +198,111 @@ describe("plan prompt", () => {
       content: PLAN_SYSTEM_PROMPT,
     });
     expect(messages[1]?.content).toContain("Safari を開く");
+  });
+
+  it("includes the skill catalog in the system message", () => {
+    const messages = buildPlanMessages("型を直す", skillCatalog());
+
+    expect(messages[0]?.content).toContain(PLAN_SYSTEM_PROMPT);
+    expect(messages[0]?.content).toContain("code-edit.editor.replaceText");
+  });
+});
+
+describe("skill plan steps", () => {
+  it("parses a valid skill step", () => {
+    const result = parsePlan(
+      plan([
+        {
+          kind: "skill",
+          skillId: "code-edit",
+          actionId: "editor.replaceText",
+          params: { path: "app.ts", oldText: "a", newText: "b" },
+          rationale: "修正",
+        },
+      ]),
+      "修正",
+      skillCatalog(),
+    );
+
+    expect(result.steps[0]).toMatchObject({
+      kind: "skill",
+      skillId: "code-edit",
+      skillActionId: "editor.replaceText",
+      risk: "write",
+      command: ["skill code-edit editor.replaceText"],
+      params: { path: "app.ts", oldText: "a", newText: "b" },
+    });
+  });
+
+  it("infers a skill step from skillId without kind", () => {
+    const result = parsePlan(
+      plan([
+        {
+          skillId: "code-edit",
+          actionId: "editor.readFile",
+          params: { path: "app.ts" },
+        },
+      ]),
+      "読む",
+      skillCatalog(),
+    );
+
+    expect(result.steps[0]?.kind).toBe("skill");
+    expect(result.steps[0]?.risk).toBe("read");
+    expect(result.steps[0]?.title).toBe("code-edit / editor.readFile");
+  });
+
+  it("rejects a skill that is not in the catalog", () => {
+    expect(() =>
+      parsePlan(
+        plan([{ kind: "skill", skillId: "unknown", actionId: "editor.readFile" }]),
+        "読む",
+        skillCatalog(),
+      ),
+    ).toThrow(/カタログ/);
+  });
+
+  it("rejects a missing action id", () => {
+    expect(() =>
+      parsePlan(
+        plan([{ kind: "skill", skillId: "code-edit" }]),
+        "読む",
+        skillCatalog(),
+      ),
+    ).toThrow(/actionId/);
+  });
+
+  it("rejects invalid params", () => {
+    expect(() =>
+      parsePlan(
+        plan([
+          {
+            kind: "skill",
+            skillId: "code-edit",
+            actionId: "editor.replaceText",
+            params: { path: "app.ts" },
+          },
+        ]),
+        "修正",
+        skillCatalog(),
+      ),
+    ).toThrow(/必須/);
+  });
+
+  it("requires a catalog for skill steps", () => {
+    expect(() =>
+      parsePlan(
+        plan([
+          {
+            kind: "skill",
+            skillId: "code-edit",
+            actionId: "editor.readFile",
+            params: { path: "app.ts" },
+          },
+        ]),
+        "読む",
+      ),
+    ).toThrow(/カタログ/);
   });
 });
 

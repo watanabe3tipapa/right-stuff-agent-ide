@@ -48,6 +48,7 @@ function plan(): AgentPlan {
     steps: [
       {
         id: "step-1",
+        kind: "agent",
         title: "状態確認",
         command: ["snapshot", "--json"],
         action: "snapshot",
@@ -56,6 +57,7 @@ function plan(): AgentPlan {
       },
       {
         id: "step-2",
+        kind: "agent",
         title: "アプリを開く",
         command: ["launch", "Safari"],
         action: "launch",

@@ -18,6 +18,8 @@ import type {
   OpenShipLogs,
   OpenShipSettings,
   OpenShipStatus,
+  SkillCatalog,
+  SkillPolicy,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
 import { toRequestMessages } from "../lib/llm";
@@ -78,6 +80,12 @@ interface AgentState {
   policy: AgentPolicy | null;
   policyLoading: boolean;
   policyError: string | null;
+  skills: SkillCatalog | null;
+  skillsLoading: boolean;
+  skillsError: string | null;
+  skillPolicy: SkillPolicy | null;
+  skillPolicyLoading: boolean;
+  skillPolicyError: string | null;
   audit: AuditEntry[];
   auditLoading: boolean;
   auditError: string | null;
@@ -110,6 +118,9 @@ interface AgentState {
   executePlan: () => Promise<void>;
   refreshPolicy: () => Promise<void>;
   savePolicy: (policy: AgentPolicy) => Promise<AgentPolicy>;
+  refreshSkills: () => Promise<void>;
+  refreshSkillPolicy: () => Promise<void>;
+  saveSkillPolicy: (policy: SkillPolicy) => Promise<SkillPolicy>;
   refreshAudit: () => Promise<void>;
   loadMoreAudit: () => Promise<void>;
   refreshOpenShip: () => Promise<void>;
@@ -168,6 +179,12 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   policy: null,
   policyLoading: false,
   policyError: null,
+  skills: null,
+  skillsLoading: false,
+  skillsError: null,
+  skillPolicy: null,
+  skillPolicyLoading: false,
+  skillPolicyError: null,
   audit: [],
   auditLoading: false,
   auditError: null,
@@ -635,8 +652,16 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     let streamError: string | null = null;
     let cancelled = false;
 
+    let catalog: SkillCatalog | null = get().skills;
     try {
-      await api.llmChat(buildPlanMessages(trimmed), (event) => {
+      catalog = await api.skillsList();
+      set({ skills: catalog, skillsError: null });
+    } catch {
+      // A missing or broken catalog must not block agent-only plans.
+    }
+
+    try {
+      await api.llmChat(buildPlanMessages(trimmed, catalog), (event) => {
         switch (event.type) {
           case "delta":
             raw += event.text;
@@ -664,7 +689,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         throw new Error("計画が空でした。モデル名とプロバイダーの設定を確認してください。");
       }
 
-      const draft = parsePlan(raw, trimmed);
+      const draft = parsePlan(raw, trimmed, catalog);
       const plan: AgentPlan = {
         id: newId(),
         goal: draft.goal,
@@ -782,14 +807,48 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     };
 
     try {
-      const result = await api.agentRun(step.command, audit);
-      const output = [result.stdout.trim(), result.stderr.trim()]
-        .filter(Boolean)
-        .join("\n")
-        .slice(0, 8_000);
-      const errorText = result.ok
-        ? ""
-        : result.stderr.trim() || `終了コード ${result.code ?? "不明"}`;
+      let ok: boolean;
+      let output: string;
+      let errorText: string;
+
+      if (step.kind === "skill") {
+        if (!step.skillId || !step.skillActionId) {
+          throw new Error("スキル手順に skillId または actionId がありません。");
+        }
+        const result = await api.skillRun({
+          skillId: step.skillId,
+          actionId: step.skillActionId,
+          params: step.params ?? {},
+          planId: plan.id,
+          stepId: step.id,
+          title: step.title,
+          mode,
+        });
+        ok = result.status === "ok";
+        output = [
+          result.stdout.trim(),
+          result.changedFiles.length > 0
+            ? `変更: ${result.changedFiles.join(", ")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("\n")
+          .slice(0, 8_000);
+        errorText = ok
+          ? ""
+          : result.stderr.trim() ||
+            `スキルを実行できませんでした (${result.status})`;
+      } else {
+        const result = await api.agentRun(step.command, audit);
+        ok = result.ok;
+        output = [result.stdout.trim(), result.stderr.trim()]
+          .filter(Boolean)
+          .join("\n")
+          .slice(0, 8_000);
+        errorText = result.ok
+          ? ""
+          : result.stderr.trim() || `終了コード ${result.code ?? "不明"}`;
+      }
 
       set((state) => {
         if (!state.plan) return { executingStepId: null };
@@ -797,7 +856,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           entry.id === stepId
             ? {
                 ...entry,
-                status: result.ok ? ("done" as const) : ("failed" as const),
+                status: ok ? ("done" as const) : ("failed" as const),
                 output,
                 error: errorText || undefined,
               }
@@ -898,6 +957,32 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   async savePolicy(policy) {
     const saved = await api.agentPolicySet(policy);
     set({ policy: saved, policyError: null });
+    return saved;
+  },
+
+  async refreshSkills() {
+    set({ skillsLoading: true, skillsError: null });
+    try {
+      const skills = await api.skillsList();
+      set({ skills, skillsLoading: false });
+    } catch (error) {
+      set({ skillsLoading: false, skillsError: errorMessage(error) });
+    }
+  },
+
+  async refreshSkillPolicy() {
+    set({ skillPolicyLoading: true, skillPolicyError: null });
+    try {
+      const skillPolicy = await api.skillPolicy();
+      set({ skillPolicy, skillPolicyLoading: false });
+    } catch (error) {
+      set({ skillPolicyLoading: false, skillPolicyError: errorMessage(error) });
+    }
+  },
+
+  async saveSkillPolicy(policy) {
+    const saved = await api.skillPolicySet(policy);
+    set({ skillPolicy: saved, skillPolicyError: null });
     return saved;
   },
 

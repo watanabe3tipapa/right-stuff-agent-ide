@@ -1,8 +1,16 @@
 import type {
   AgentPlanStep,
   LlmChatMessage,
+  PlanStepKind,
   PlanStepRisk,
+  SkillCatalog,
 } from "../shared/types";
+import {
+  describeSkillCatalog,
+  findSkillAction,
+  skillCommandLabel,
+  validateSkillParams,
+} from "./skills";
 
 /**
  * Planning support for the agent panel.
@@ -57,10 +65,14 @@ export const READ_ONLY_ACTIONS = [
 export type AgentAction = (typeof ALLOWED_ACTIONS)[number];
 
 export interface PlanDraftStep {
+  kind: PlanStepKind;
   title: string;
   command: string[];
   action: string;
   risk: PlanStepRisk;
+  skillId?: string;
+  skillActionId?: string;
+  params?: Record<string, unknown>;
   rationale?: string;
 }
 
@@ -86,9 +98,18 @@ export function actionRisk(action: string): PlanStepRisk {
     : "write";
 }
 
-export function buildPlanMessages(intent: string): LlmChatMessage[] {
+export function buildPlanMessages(
+  intent: string,
+  catalog: SkillCatalog | null = null,
+): LlmChatMessage[] {
+  const skills = describeSkillCatalog(catalog);
   return [
-    { role: "system", content: PLAN_SYSTEM_PROMPT },
+    {
+      role: "system",
+      content: skills
+        ? `${PLAN_SYSTEM_PROMPT}\n\n利用可能なスキル:\n${skills}`
+        : PLAN_SYSTEM_PROMPT,
+    },
     {
       role: "user",
       content: `次の意図を実行可能な計画にしてください。\n\n${intent.trim()}`,
@@ -104,12 +125,15 @@ export const PLAN_SYSTEM_PROMPT = [
   "読み取り専用の手順を先に置き、変更操作は必要最小限にしてください。",
   "確認できないアプリ名や対象を推測しないでください。情報が足りない場合は、snapshot や list-apps で確認する手順にしてください。",
   "最大 12 手順です。",
+  "スキルを使う手順は kind を \"skill\" にし、skillId、actionId、params を指定してください。",
+  "スキルを使わない手順は kind を \"agent\" にし、command に CLI 引数を指定してください。",
   "",
   "許可アクション:",
   ALLOWED_ACTIONS.join(", "),
   "",
   "次の JSON オブジェクトだけを出力してください。説明、前置き、Markdown のコードフェンスは不要です。",
-  '{"goal":"計画の目的","steps":[{"title":"短い手順名","command":["snapshot","--json"],"rationale":"この手順が必要な理由"}]}',
+  '{"goal":"計画の目的","steps":[{"kind":"agent","title":"短い手順名","command":["snapshot","--json"],"rationale":"この手順が必要な理由"}]}',
+  '{"goal":"コードを直す","steps":[{"kind":"skill","title":"型を修正","skillId":"code-edit","actionId":"editor.replaceText","params":{"path":"src/App.tsx","oldText":"const value: string = 1;","newText":"const value: number = 1;"},"rationale":"型エラーを解消する"}]}',
   "steps が空の計画は無効です。",
 ].join("\n");
 
@@ -219,9 +243,65 @@ function validateCommand(value: unknown, index: number): {
   return { command, action, risk: actionRisk(action) };
 }
 
-function parseStep(value: unknown, index: number): PlanDraftStep {
+function parseStep(
+  value: unknown,
+  index: number,
+  catalog: SkillCatalog | null,
+): PlanDraftStep {
   if (!isRecord(value)) {
     throw new PlanParseError(`手順 ${index + 1} がオブジェクトではありません。`);
+  }
+
+  const rawTitle =
+    typeof value.title === "string" ? value.title.trim() : "";
+  const rawRationale =
+    typeof value.rationale === "string" ? value.rationale.trim() : "";
+  const rationale = rawRationale
+    ? truncate(rawRationale, MAX_RATIONALE_CHARS)
+    : undefined;
+
+  const kind =
+    value.kind === "skill" || (value.kind !== "agent" && typeof value.skillId === "string")
+      ? "skill"
+      : "agent";
+
+  if (kind === "skill") {
+    const skillId =
+      typeof value.skillId === "string" ? value.skillId.trim() : "";
+    const actionId =
+      typeof value.actionId === "string" ? value.actionId.trim() : "";
+    if (!skillId || !actionId) {
+      throw new PlanParseError(
+        `手順 ${index + 1} のスキルに skillId または actionId がありません。`,
+      );
+    }
+
+    const action = findSkillAction(catalog, skillId, actionId);
+    if (!action) {
+      throw new PlanParseError(
+        `手順 ${index + 1} のスキルがカタログにありません: ${skillId} / ${actionId}`,
+      );
+    }
+
+    const params = value.params === undefined ? {} : value.params;
+    const paramsError = validateSkillParams(action, params);
+    if (paramsError) {
+      throw new PlanParseError(`手順 ${index + 1}: ${paramsError}`);
+    }
+
+    return {
+      kind: "skill",
+      title: rawTitle
+        ? truncate(rawTitle, MAX_TITLE_CHARS)
+        : truncate(`${skillId} / ${actionId}`, MAX_TITLE_CHARS),
+      command: [skillCommandLabel(skillId, actionId)],
+      action: actionId,
+      risk: action.risk,
+      skillId,
+      skillActionId: actionId,
+      params: params as Record<string, unknown>,
+      rationale,
+    };
   }
 
   let commandValue = value.command;
@@ -233,23 +313,15 @@ function parseStep(value: unknown, index: number): PlanDraftStep {
 
   const { command, action, risk } = validateCommand(commandValue, index);
 
-  const rawTitle =
-    typeof value.title === "string" ? value.title.trim() : "";
-  const title = rawTitle
-    ? truncate(rawTitle, MAX_TITLE_CHARS)
-    : truncate(command.join(" "), MAX_TITLE_CHARS);
-
-  const rawRationale =
-    typeof value.rationale === "string" ? value.rationale.trim() : "";
-
   return {
-    title,
+    kind: "agent",
+    title: rawTitle
+      ? truncate(rawTitle, MAX_TITLE_CHARS)
+      : truncate(command.join(" "), MAX_TITLE_CHARS),
     command,
     action,
     risk,
-    rationale: rawRationale
-      ? truncate(rawRationale, MAX_RATIONALE_CHARS)
-      : undefined,
+    rationale,
   };
 }
 
@@ -257,7 +329,11 @@ function parseStep(value: unknown, index: number): PlanDraftStep {
  * Parse and validate a model-generated plan. Throws `PlanParseError` with a
  * user-facing message when the response cannot be executed safely.
  */
-export function parsePlan(raw: string, fallbackGoal: string): PlanDraft {
+export function parsePlan(
+  raw: string,
+  fallbackGoal: string,
+  catalog: SkillCatalog | null = null,
+): PlanDraft {
   let payload: unknown;
   try {
     payload = JSON.parse(extractJson(raw));
@@ -287,7 +363,9 @@ export function parsePlan(raw: string, fallbackGoal: string): PlanDraft {
 
   return {
     goal,
-    steps: payload.steps.map((step, index) => parseStep(step, index)),
+    steps: payload.steps.map((step, index) =>
+      parseStep(step, index, catalog),
+    ),
   };
 }
 

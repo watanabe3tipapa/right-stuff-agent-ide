@@ -29,6 +29,11 @@ export const AUDIT_KIND_LABELS: Record<AuditKind, string> = {
   action_blocked: "ポリシー拒否",
   action_cancelled: "操作キャンセル",
   policy_updated: "ポリシー更新",
+  skill_run: "スキル実行",
+  skill_blocked: "スキル拒否",
+  skill_cancelled: "スキルキャンセル",
+  verification_run: "検証実行",
+  skill_policy_updated: "スキルポリシー更新",
 };
 
 export const AUDIT_OUTCOME_LABELS: Record<AuditOutcome, string> = {

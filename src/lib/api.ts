@@ -30,6 +30,12 @@ import type {
   OpenShipSettings,
   OpenShipStatus,
   SaveResult,
+  SkillCatalog,
+  SkillDecisionResult,
+  SkillPolicy,
+  SkillPreviewResult,
+  SkillRequest,
+  SkillRunResult,
   TerminalExit,
   TerminalOutput,
   TerminalStart,
@@ -175,6 +181,59 @@ export const api = {
     return isTauri
       ? call<AuditEntry[]>("audit_log_list", { limit, offset })
       : Promise.resolve([]);
+  },
+
+  skillsList(): Promise<SkillCatalog> {
+    return isTauri
+      ? call<SkillCatalog>("skills_list")
+      : demoApi.skillsList();
+  },
+
+  skillPolicy(): Promise<SkillPolicy> {
+    return isTauri
+      ? call<SkillPolicy>("skill_policy_get")
+      : demoApi.skillPolicy();
+  },
+
+  skillPolicySet(policy: SkillPolicy): Promise<SkillPolicy> {
+    return isTauri
+      ? call<SkillPolicy>("skill_policy_set", { policy })
+      : demoApi.skillPolicySet(policy);
+  },
+
+  skillDecision(
+    skillId: string,
+    actionId: string,
+  ): Promise<SkillDecisionResult> {
+    return isTauri
+      ? call<SkillDecisionResult>("skill_decision", { skillId, actionId })
+      : demoApi.skillDecision(skillId, actionId);
+  },
+
+  skillPreview(
+    skillId: string,
+    actionId: string,
+    params: Record<string, unknown>,
+    mode?: string,
+  ): Promise<SkillPreviewResult> {
+    return isTauri
+      ? call<SkillPreviewResult>("skill_preview", {
+          skillId,
+          actionId,
+          params,
+          mode: mode ?? null,
+        })
+      : demoApi.skillPreview(skillId, actionId, params);
+  },
+
+  /**
+   * Executes a validated skill action. Rust resolves the policy and shows the
+   * native approval dialog when required.
+   */
+  skillRun(request: SkillRequest): Promise<SkillRunResult> {
+    return isTauri
+      ? call<SkillRunResult>("skill_run", { request })
+      : demoApi.skillRun(request);
   },
 
   openshipConfig(): Promise<OpenShipSettings> {

@@ -40,10 +40,15 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
       )}
       {entry.detail && <p className="audit-detail">{entry.detail}</p>}
 
-      {(entry.planId || entry.stepId) && (
+      {(entry.planId ||
+        entry.stepId ||
+        entry.skillId ||
+        entry.actionId) && (
         <div className="audit-ids">
           {entry.planId && <span>plan: {entry.planId}</span>}
           {entry.stepId && <span>step: {entry.stepId}</span>}
+          {entry.skillId && <span>skill: {entry.skillId}</span>}
+          {entry.actionId && <span>action: {entry.actionId}</span>}
         </div>
       )}
     </li>

@@ -53,3 +53,102 @@ describe("demo workspace", () => {
     await expect(demoApi.llmChat()).rejects.toThrow("ブラウザデモでは LLM を利用できません");
   });
 });
+
+describe("demo skills", () => {
+  it("lists the sample code-edit catalog", async () => {
+    const catalog = await demoApi.skillsList();
+
+    expect(catalog.warnings).toEqual([]);
+    expect(catalog.skills).toHaveLength(1);
+    expect(catalog.skills[0]?.id).toBe("code-edit");
+    expect(catalog.skills[0]?.actions.map((action) => action.id)).toEqual([
+      "editor.readFile",
+      "editor.replaceText",
+      "editor.createFile",
+    ]);
+  });
+
+  it("previews a replace and reports a missing match", async () => {
+    const preview = await demoApi.skillPreview(
+      "code-edit",
+      "editor.replaceText",
+      { path: "README.md", oldText: "# Right-Stuff Agent IDE", newText: "# Demo" },
+    );
+
+    expect(preview.decision).toBe("ask");
+    expect(preview.risk).toBe("write");
+    expect(preview.path).toBe("README.md");
+    expect(preview.diff).toContain("# Right-Stuff Agent IDE");
+
+    await expect(
+      demoApi.skillPreview("code-edit", "editor.replaceText", {
+        path: "README.md",
+        oldText: "not present",
+        newText: "x",
+      }),
+    ).rejects.toThrow("ありません");
+  });
+
+  it("runs a replace and keeps the previous content in history", async () => {
+    const path = "notes/skill-test.md";
+    await demoApi.writeFile(path, "let value = 1;\n");
+    const before = await demoApi.readFile(path);
+
+    const result = await demoApi.skillRun({
+      skillId: "code-edit",
+      actionId: "editor.replaceText",
+      params: { path, oldText: "let value = 1;", newText: "let value = 2;" },
+    });
+
+    expect(result.status).toBe("ok");
+    expect(result.changedFiles).toEqual([path]);
+    await expect(demoApi.readFile(path)).resolves.toMatchObject({
+      content: "let value = 2;\n",
+    });
+
+    const history = await demoApi.history(path);
+    const previous = history[0];
+    expect(previous).toBeDefined();
+    const version = await demoApi.version(previous!.id);
+    expect(version.content).toBe(before.content);
+  });
+
+  it("creates a file and rejects an existing path", async () => {
+    const path = "notes/skill-created.md";
+    const result = await demoApi.skillRun({
+      skillId: "code-edit",
+      actionId: "editor.createFile",
+      params: { path, content: "# created" },
+    });
+
+    expect(result.status).toBe("ok");
+    expect(result.changedFiles).toEqual([path]);
+    await expect(demoApi.readFile(path)).resolves.toMatchObject({
+      content: "# created",
+    });
+
+    await expect(
+      demoApi.skillPreview("code-edit", "editor.createFile", { path }),
+    ).rejects.toThrow("既に存在");
+  });
+
+  it("blocks writes when the policy says block", async () => {
+    const policy = await demoApi.skillPolicy();
+    await demoApi.skillPolicySet({
+      ...policy,
+      actions: { ...policy.actions, "editor.replaceText": "block" },
+    });
+
+    const result = await demoApi.skillRun({
+      skillId: "code-edit",
+      actionId: "editor.replaceText",
+      params: { path: "README.md", oldText: "a", newText: "b" },
+    });
+
+    expect(result.status).toBe("blocked");
+    expect(result.decision).toBe("block");
+    expect(result.errorCode).toBe("policy_blocked");
+
+    await demoApi.skillPolicySet(policy);
+  });
+});

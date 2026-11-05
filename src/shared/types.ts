@@ -68,7 +68,14 @@ export interface AppInfo {
 
 export type AgentMode = "passive" | "assistive" | "autonomous";
 
-export type AgentPanelTab = "chat" | "plan" | "git" | "deploy" | "audit" | "runtime";
+export type AgentPanelTab =
+  | "chat"
+  | "plan"
+  | "skills"
+  | "git"
+  | "deploy"
+  | "audit"
+  | "runtime";
 
 export type AgentPolicyDecision = "allow" | "ask" | "block";
 
@@ -86,7 +93,12 @@ export type AuditKind =
   | "action_run"
   | "action_blocked"
   | "action_cancelled"
-  | "policy_updated";
+  | "policy_updated"
+  | "skill_run"
+  | "skill_blocked"
+  | "skill_cancelled"
+  | "verification_run"
+  | "skill_policy_updated";
 
 export type AuditOutcome = "ok" | "error" | "blocked" | "cancelled";
 
@@ -97,6 +109,8 @@ export interface AuditEntry {
   mode: AgentMode | null;
   planId: string | null;
   stepId: string | null;
+  skillId: string | null;
+  actionId: string | null;
   title: string | null;
   command: string[] | null;
   outcome: AuditOutcome | null;
@@ -108,6 +122,8 @@ export interface AuditInput {
   mode?: AgentMode | null;
   planId?: string | null;
   stepId?: string | null;
+  skillId?: string | null;
+  actionId?: string | null;
   title?: string | null;
   command?: string[] | null;
   outcome?: AuditOutcome | null;
@@ -121,7 +137,136 @@ export interface AgentAuditMeta {
   mode?: AgentMode;
 }
 
-export type PlanStepRisk = "read" | "write";
+export type SkillCategory = "editor" | "git" | "terminal" | "debug";
+export type SkillRisk = "read" | "write" | "destructive";
+export type SkillParamType = "string" | "number" | "boolean" | "string[]";
+export type SkillDecision = "allow" | "ask" | "block";
+
+export interface SkillParamDef {
+  type: SkillParamType;
+  description: string;
+  required?: boolean;
+  maxLength?: number;
+  maxItems?: number;
+  enum?: (string | number | boolean)[];
+  pattern?: string;
+}
+
+export interface SkillAction {
+  id: string;
+  handler: string;
+  description: string;
+  risk: SkillRisk;
+  params: Record<string, SkillParamDef>;
+  timeoutMs?: number;
+  maxOutputChars?: number;
+}
+
+export interface SkillManifest {
+  schemaVersion: number;
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  category: SkillCategory;
+  risk: SkillRisk;
+  actions: SkillAction[];
+  permissions: {
+    paths: { read: string[]; write: string[] };
+    commands: { program: string; args: string[] }[];
+    env: string[];
+  };
+  approval: {
+    default: SkillDecision | null;
+    overrides: Record<string, SkillDecision>;
+  };
+  verification: {
+    mode: "none" | "auto";
+    checks: ("typecheck" | "lint" | "test")[];
+    timeoutMs: number;
+    stopOnFailure: boolean;
+  };
+  limits: {
+    maxFiles: number;
+    maxBytes: number;
+    timeoutMs: number;
+    maxOutputChars: number;
+  };
+}
+
+export interface SkillWarning {
+  file: string;
+  message: string;
+}
+
+export interface SkillCatalog {
+  skills: SkillManifest[];
+  warnings: SkillWarning[];
+}
+
+export interface SkillPolicy {
+  version: number;
+  skills: Record<string, SkillDecision>;
+  actions: Record<string, SkillDecision>;
+  verification: {
+    autoRun: boolean;
+    allowChecks: ("typecheck" | "lint" | "test")[];
+  };
+  limits: {
+    maxFiles: number;
+    maxBytes: number;
+    timeoutMs: number;
+    maxOutputChars: number;
+  };
+}
+
+export interface SkillDecisionResult {
+  skillId: string;
+  actionId: string;
+  decision: SkillDecision;
+  risk: SkillRisk;
+}
+
+export interface SkillPreviewResult {
+  skillId: string;
+  actionId: string;
+  decision: SkillDecision;
+  risk: SkillRisk;
+  path: string | null;
+  addedLines: number;
+  removedLines: number;
+  diff: string;
+  warnings: string[];
+}
+
+export interface SkillRequest {
+  skillId: string;
+  actionId: string;
+  params: Record<string, unknown>;
+  planId?: string;
+  stepId?: string;
+  title?: string;
+  mode?: AgentMode;
+}
+
+export type SkillRunStatus = "ok" | "blocked" | "cancelled" | "failed";
+
+export interface SkillRunResult {
+  runId: string;
+  status: SkillRunStatus;
+  decision: SkillDecision;
+  changedFiles: string[];
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  durationMs: number;
+  auditId: number;
+  errorCode?: string;
+}
+
+export type PlanStepRisk = "read" | "write" | "destructive";
+
+export type PlanStepKind = "agent" | "skill";
 
 export type PlanStepStatus =
   | "pending"
@@ -141,11 +286,16 @@ export type AgentPlanStatus =
 
 export interface AgentPlanStep {
   id: string;
+  kind: PlanStepKind;
   title: string;
-  /** Full CLI arguments, starting with the allowlisted action. */
+  /** Full CLI arguments, starting with the allowlisted action (agent steps). */
   command: string[];
   action: string;
   risk: PlanStepRisk;
+  /** Skill steps: id of the manifest and action executed by `skill_run`. */
+  skillId?: string;
+  skillActionId?: string;
+  params?: Record<string, unknown>;
   rationale?: string;
   status: PlanStepStatus;
   output?: string;

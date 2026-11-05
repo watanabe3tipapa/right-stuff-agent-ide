@@ -12,6 +12,7 @@ import { useAgentStore } from "../stores/agentStore";
 import { AgentPolicySettings } from "./AgentPolicySettings";
 import { Icon } from "./Icon";
 import { OpenShipSettings } from "./OpenShipSettings";
+import { SkillPolicySettings } from "./SkillPolicySettings";
 
 function configFromSettings(settings: LlmSettings): LlmConfig {
   return {
@@ -38,7 +39,9 @@ export function SettingsDialog() {
   const closeSettings = useAgentStore((state) => state.closeSettings);
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
 
-  const [section, setSection] = useState<"llm" | "agent" | "openship">("llm");
+  const [section, setSection] = useState<
+    "llm" | "agent" | "skills" | "openship"
+  >("llm");
   const [config, setConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
   const [configured, setConfigured] = useState(false);
   const [savedConfig, setSavedConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
@@ -268,6 +271,15 @@ export function SettingsDialog() {
           <button
             type="button"
             role="tab"
+            aria-selected={section === "skills"}
+            className={section === "skills" ? "active" : ""}
+            onClick={() => setSection("skills")}
+          >
+            スキル
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={section === "openship"}
             className={section === "openship" ? "active" : ""}
             onClick={() => setSection("openship")}
@@ -283,6 +295,7 @@ export function SettingsDialog() {
         )}
 
         {section === "agent" && <AgentPolicySettings />}
+        {section === "skills" && <SkillPolicySettings />}
         {section === "openship" && <OpenShipSettings />}
 
         {section === "llm" && (

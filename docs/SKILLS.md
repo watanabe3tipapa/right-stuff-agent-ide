@@ -644,7 +644,7 @@ interface VerificationResult {
 | スキル監査（`skill_id` / `action_id`） | 実装済み | `src-tauri/src/commands/policy.rs` |
 | 検証ループ | 未実装（v0.5） | — |
 | `skill_cancel` / タイムアウト | 未実装（v0.4.x） | — |
-| フロントエンドのスキルカタログ UI | 未実装 | — |
+| フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |\n| フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |
 
 v0.4.0 の `skill_run` は `editor.*` の同期ハンドラだけを実行する。`allow` は読み取り専用に限り、
 `ask` はネイティブダイアログで都度承認し、`block` と受動モードは実行せず `status: "blocked"` を返す。

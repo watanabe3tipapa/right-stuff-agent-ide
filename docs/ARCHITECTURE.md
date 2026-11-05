@@ -183,6 +183,18 @@ OpenAI 互換 API のチャット（ストリーミング・停止・接続テ�
 計画の生成・承認・実行、監査ログまでを実装している。スキル定義
 (`.agents/skills/*.json`) の実行と検証ループは未実装。
 
+### スキル実行と検証ループ（設計済み・未実装）
+
+v0.4.0 では、エディタ・Git・ターミナルの操作を宣言するスキルマニフェストと、
+`allow` / `ask` / `block` の実行ポリシー、変更後の typecheck / lint / test を
+実行する検証ループを追加する。マニフェストはリポジトリ内の宣言に限定し、
+実行は Rust の閉じたハンドラだけが行う。v0.4.0 の最小垂直スライスは
+`code-edit`（読み取り・一意一致の文字列置換・作成）とする。
+
+スキーマ、承認フロー、パス・コマンドの制限、監査項目、API、テスト計画は
+[SKILLS.md](./SKILLS.md) を参照。機械可読スキーマは
+[skills.schema.json](./skills.schema.json)。
+
 ## Openship 連携（ローカルファースト）
 
 ![Openship ローカルファースト構成図](diagrams/openship-local-first.png)

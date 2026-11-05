@@ -19,7 +19,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
-**クイックリンク:** [公開サイト](https://right-stuff-agent-ide.vercel.app/) · [ブラウザデモ](https://right-stuff-agent-ide.vercel.app/app/) · [設計書](./right-stuff-agent-ide-implementation-plan.html) · [アーキテクチャ](./docs/ARCHITECTURE.md) · [API](./docs/API.md) · [セキュリティ](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+**クイックリンク:** [公開サイト](https://right-stuff-agent-ide.vercel.app/) · [ブラウザデモ](https://right-stuff-agent-ide.vercel.app/app/) · [設計書](./right-stuff-agent-ide-implementation-plan.html) · [アーキテクチャ](./docs/ARCHITECTURE.md) · [スキル設計](./docs/SKILLS.md) · [API](./docs/API.md) · [セキュリティ](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 
 ## ダウンロード
 
@@ -399,12 +399,14 @@ right-stuff-agent-ide-lp.html
 
 1. [SECURITY.md](./SECURITY.md) — 脆弱性報告、サポート対象、調査の範囲
 2. [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — レイヤー、プロセスモデル、保存フロー
-3. [API.md](./docs/API.md) — Tauri コマンドと型
-4. [docs/SECURITY.md](./docs/SECURITY.md) — パス検証、エージェント権限、保存データ
-5. [実装設計書](./right-stuff-agent-ide-implementation-plan.html) — 全体設計とロードマップ
-6. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
-7. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
-8. [README（English）](./README.en.md) — English overview
+3. [SKILLS.md](./docs/SKILLS.md) — スキルマニフェスト、実行ポリシー、承認、検証ループ
+4. [skills.schema.json](./docs/skills.schema.json) — スキルマニフェスト v1 の JSON Schema
+5. [API.md](./docs/API.md) — Tauri コマンドと型
+6. [docs/SECURITY.md](./docs/SECURITY.md) — パス検証、エージェント権限、保存データ
+7. [実装設計書](./right-stuff-agent-ide-implementation-plan.html) — 全体設計とロードマップ
+8. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
+9. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
+10. [README（English）](./README.en.md) — English overview
 
 ## ライセンス
 

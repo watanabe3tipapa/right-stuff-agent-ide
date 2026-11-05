@@ -19,7 +19,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
-**Quick links:** [Live site](https://right-stuff-agent-ide.vercel.app/) · [Browser demo](https://right-stuff-agent-ide.vercel.app/app/) · [Design document (JA)](./right-stuff-agent-ide-implementation-plan.html) · [Architecture](./docs/ARCHITECTURE.md) · [API](./docs/API.md) · [Security](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+**Quick links:** [Live site](https://right-stuff-agent-ide.vercel.app/) · [Browser demo](https://right-stuff-agent-ide.vercel.app/app/) · [Design document (JA)](./right-stuff-agent-ide-implementation-plan.html) · [Architecture](./docs/ARCHITECTURE.md) · [Skill design (JA)](./docs/SKILLS.md) · [API](./docs/API.md) · [Security](./docs/SECURITY.md) · [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) · [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 
 ## Download
 
@@ -398,12 +398,14 @@ right-stuff-agent-ide-lp.html
 
 1. [SECURITY.md](./SECURITY.md) — vulnerability reporting, supported versions, research scope
 2. [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — layers, process model, save flow
-3. [API.md](./docs/API.md) — Tauri commands and types
-4. [docs/SECURITY.md](./docs/SECURITY.md) — path validation, agent permissions, stored data
-5. [Implementation plan (JA)](./right-stuff-agent-ide-implementation-plan.html) — overall design and roadmap
-6. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
-7. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
-8. [README (Japanese)](./README.md) — 日本語の概要
+3. [SKILLS.md (JA)](./docs/SKILLS.md) — skill manifests, execution policy, approval, verification loop
+4. [skills.schema.json](./docs/skills.schema.json) — JSON Schema for skill manifest v1
+5. [API.md](./docs/API.md) — Tauri commands and types
+6. [docs/SECURITY.md](./docs/SECURITY.md) — path validation, agent permissions, stored data
+7. [Implementation plan (JA)](./right-stuff-agent-ide-implementation-plan.html) — overall design and roadmap
+8. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
+9. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
+10. [README (Japanese)](./README.md) — 日本語の概要
 
 ## License
 

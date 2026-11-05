@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/watanabe3tipapa/right-stuff-agent-ide/main/docs/skills.schema.json",
+  "title": "Right-Stuff Agent IDE skill manifest v1",
+  "description": "A declarative skill manifest. Execution handlers are implemented in Rust; manifests cannot run arbitrary code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "description", "version", "category", "actions"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/skillId" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "category": { "enum": ["editor", "git", "terminal", "debug"] },
+    "risk": { "$ref": "#/$defs/risk" },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/action" }
+    },
+    "permissions": { "$ref": "#/$defs/permissions" },
+    "approval": { "$ref": "#/$defs/approval" },
+    "verification": { "$ref": "#/$defs/verification" },
+    "limits": { "$ref": "#/$defs/limits" }
+  },
+  "$defs": {
+    "skillId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "actionId": {
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9]*(\\.[a-z][a-zA-Z0-9]*)+$",
+      "maxLength": 96
+    },
+    "risk": { "enum": ["read", "write", "destructive"] },
+    "decision": { "enum": ["allow", "ask", "block"] },
+    "glob": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "handler", "description", "risk"],
+      "properties": {
+        "id": { "$ref": "#/$defs/actionId" },
+        "handler": {
+          "type": "string",
+          "pattern": "^[a-z][a-zA-Z0-9]*(\\.[a-z][a-zA-Z0-9]*)+$",
+          "maxLength": 96
+        },
+        "description": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "risk": { "$ref": "#/$defs/risk" },
+        "params": {
+          "type": "object",
+          "maxProperties": 16,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9]*$",
+            "maxLength": 64
+          },
+          "additionalProperties": { "$ref": "#/$defs/param" }
+        },
+        "timeoutMs": { "type": "integer", "minimum": 1000, "maximum": 600000 },
+        "maxOutputChars": { "type": "integer", "minimum": 1000, "maximum": 200000 }
+      }
+    },
+    "param": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description"],
+      "properties": {
+        "type": { "enum": ["string", "number", "boolean", "string[]"] },
+        "description": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "required": { "type": "boolean" },
+        "maxLength": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "maxItems": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "enum": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": { "type": ["string", "number", "boolean"] }
+        },
+        "pattern": { "type": "string", "maxLength": 200 }
+      }
+    },
+    "commandRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["program"],
+      "properties": {
+        "program": { "type": "string", "pattern": "^[a-zA-Z0-9._-]+$", "maxLength": 64 },
+        "args": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "type": "string", "maxLength": 500 }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "paths": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "read": {
+              "type": "array",
+              "maxItems": 32,
+              "items": { "$ref": "#/$defs/glob" }
+            },
+            "write": {
+              "type": "array",
+              "maxItems": 32,
+              "items": { "$ref": "#/$defs/glob" }
+            }
+          }
+        },
+        "commands": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/commandRule" }
+        },
+        "env": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$",
+            "maxLength": 64
+          }
+        }
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "default": { "$ref": "#/$defs/decision" },
+        "overrides": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": { "$ref": "#/$defs/actionId" },
+          "additionalProperties": { "$ref": "#/$defs/decision" }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["none", "auto"] },
+        "checks": {
+          "type": "array",
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["typecheck", "lint", "test"] }
+        },
+        "timeoutMs": { "type": "integer", "minimum": 1000, "maximum": 900000 },
+        "stopOnFailure": { "type": "boolean" }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxFiles": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "maxBytes": { "type": "integer", "minimum": 1, "maximum": 10485760 },
+        "timeoutMs": { "type": "integer", "minimum": 1000, "maximum": 600000 },
+        "maxOutputChars": { "type": "integer", "minimum": 1000, "maximum": 200000 }
+      }
+    }
+  }
+}

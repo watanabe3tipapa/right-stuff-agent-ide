@@ -4,6 +4,7 @@ import type { AgentMode } from "../shared/types";
 import { useAgentStore } from "../stores/agentStore";
 import { useEditorStore } from "../stores/editorStore";
 import { useWorkspaceStore } from "../stores/workspaceStore";
+import { openSkillLibraryWindow } from "../lib/skillWindow";
 import { Icon, type IconName } from "./Icon";
 import { PromptDialog } from "./PromptDialog";
 
@@ -112,6 +113,14 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       shortcut: "⌘T",
       keywords: "symbol workspace lsp definition go to symbol シンボル 定義",
       run: () => window.dispatchEvent(new Event("rsai:symbol-search")),
+    },
+    {
+      id: "skills:library",
+      label: "スキルライブラリを開く",
+      hint: "スキルを読める形で一覧・追加する別窓",
+      icon: "sparkles",
+      keywords: "skill library catalog showcase スキル ライブラリ 一覧",
+      run: () => void openSkillLibraryWindow(),
     },
     {
       id: "git:panel",

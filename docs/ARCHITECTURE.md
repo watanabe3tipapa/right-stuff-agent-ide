@@ -188,6 +188,11 @@ OpenAI 互換 API のチャット（ストリーミング・停止・接続テ�
 計画の生成・承認・実行、監査ログまでを実装している。スキル実行は
 `code-edit` の `editor.*` ハンドラ、ポリシー、承認、監査、Agent パネルの
 Skills タブと設定のスキルタブまで実装済みで、検証ループは未実装。
+v0.3.4 では、キュレーション済みのスキルを人間が読める形で提示する
+スキルライブラリ（`src/lib/skillLibrary.ts`）と、`skill-library` ラベルの
+別 WebviewWindow（`src/components/SkillLibrary.tsx`）を追加した。別窓は
+`index.html?window=skills` で通常起動と分岐し、`ready` のマニフェストだけを
+`.agents/skills/<id>.json` へ書き出せる。
 
 ### スキル実行と検証ループ（一部実装済み）
 
@@ -312,7 +317,7 @@ Debug タブ
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
+├── components/ (AgentPanel, PlanPanel, GitPanel, DebugPanel, SkillLibrary, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
 ├── lib/{api,demo,llm,plan,policy,monaco,lsp,lspMapping,dap}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent,git,lsp,dap}Store.ts

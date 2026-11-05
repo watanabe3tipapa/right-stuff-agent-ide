@@ -108,7 +108,7 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
           {modeLabels[mode]}
         </button>
         <span className="status-item status-version">
-          v{appInfo?.version ?? "0.3.3"}
+          v{appInfo?.version ?? "0.3.4"}
         </span>
       </div>
     </footer>

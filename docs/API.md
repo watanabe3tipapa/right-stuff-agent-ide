@@ -123,6 +123,12 @@ session, trace, --version, --help
 [SKILLS.md](./SKILLS.md)、機械可読スキーマは
 [skills.schema.json](./skills.schema.json) を参照。
 
+スキルライブラリ（v0.3.4）は新しい Tauri コマンドを追加しない。キュレーション済みの
+マニフェストは `workspace_write_file` で `.agents/skills/<id>.json` へ書き込み、
+一覧は既存の `skills_list` を使う。別窓の起動は
+`@tauri-apps/api/webviewWindow` の `WebviewWindow` で行い、権限は
+`core:webview:allow-create-webview-window` と `core:window:allow-set-focus` に限定する。
+
 `skill_policy_set` は保存前に `allow` の書き込みアクションを `ask` へ丸め、
 `test` を自動許可の対象から外す。`skill_decision` はポリシーとマニフェストの
 優先順位を Rust 側で解決して返す。

@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.3-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.4-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 ## Download
 
-v0.3.3 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.4 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.3_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.3_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.4_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.4_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
@@ -38,7 +38,7 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), and v0.3.3 adds LSP rename, references, code actions, and workspace symbol search.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), v0.3.3 adds LSP rename, references, code actions, and workspace symbol search, and v0.3.4 adds a human-readable skill library and showcase window.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -263,7 +263,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.3 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.4 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
@@ -292,6 +292,14 @@ vercel --prod          # Deploy to production
 `vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
 
 ## Known limitations and roadmap
+
+### v0.3.4
+
+- [x] Skill library — a catalog that explains each skill by purpose, risk, parameters, and manifest
+- [x] Showcase window — open the `skill-library` window from the Skills tab or the command palette (a new tab in the browser)
+- [x] Add to workspace — write the manifest to `.agents/skills/<id>.json`, confirming before overwriting an existing file
+- [x] Planned skills — show Git / terminal / debug design cards and state clearly that they are not implemented
+- [x] Standalone route — render `index.html?window=skills` separately from the normal app
 
 ### v0.3.3
 

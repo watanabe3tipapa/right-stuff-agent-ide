@@ -8,6 +8,7 @@ import type {
   SkillRunResult,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
+import { openSkillLibraryWindow } from "../lib/skillWindow";
 import { skillRiskLabel, validateSkillParams } from "../lib/skills";
 import { useAgentStore } from "../stores/agentStore";
 import { Icon } from "./Icon";
@@ -314,6 +315,9 @@ export function SkillsPanel() {
 
   useEffect(() => {
     void refreshSkills();
+    const onFocus = () => void refreshSkills();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, [refreshSkills]);
 
   return (
@@ -326,15 +330,25 @@ export function SkillsPanel() {
             のハンドラだけで実行します。
           </p>
         </div>
-        <button
-          type="button"
-          className="btn small"
-          onClick={() => void refreshSkills()}
-          disabled={skillsLoading}
-        >
-          <Icon name="refresh" size={12} />
-          再読み込み
-        </button>
+        <div className="skills-head-actions">
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => void openSkillLibraryWindow()}
+          >
+            <Icon name="sparkles" size={12} />
+            ライブラリを開く
+          </button>
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => void refreshSkills()}
+            disabled={skillsLoading}
+          >
+            <Icon name="refresh" size={12} />
+            再読み込み
+          </button>
+        </div>
       </div>
 
       {skillsError && (

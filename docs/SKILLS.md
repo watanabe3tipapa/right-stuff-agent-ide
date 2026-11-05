@@ -644,7 +644,9 @@ interface VerificationResult {
 | スキル監査（`skill_id` / `action_id`） | 実装済み | `src-tauri/src/commands/policy.rs` |
 | 検証ループ | 未実装（v0.5） | — |
 | `skill_cancel` / タイムアウト | 未実装（v0.4.x） | — |
-| フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |\n| フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |
+| フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |
+| フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |
+| 人間向けスキルライブラリ / ショーケース窓（v0.3.4） | 実装済み | `src/lib/skillLibrary.ts` / `src/components/SkillLibrary.tsx` |
 
 v0.4.0 の `skill_run` は `editor.*` の同期ハンドラだけを実行する。`allow` は読み取り専用に限り、
 `ask` はネイティブダイアログで都度承認し、`block` と受動モードは実行せず `status: "blocked"` を返す。
@@ -653,3 +655,19 @@ v0.4.0 の `skill_run` は `editor.*` の同期ハンドラだけを実行する
 ローダーは `.agents/skills/*.json` だけを読み、シンボリックリンク、256 KB を超えるファイル、
 未知のフィールド、未知のハンドラ、書き込みアクションの `allow` を拒否する。
 壊れたマニフェストは `warnings` として返し、他のスキルの読み込みを止めない。
+
+## 18. 人間向けスキルライブラリ（v0.3.4）
+
+`src/lib/skillLibrary.ts` は、実行用マニフェストの上に「読むための層」を重ねる。
+エージェントパネルの Skills タブまたはコマンドパレットの「スキルライブラリを開く」から、
+`skill-library` ラベルの別 WebviewWindow（ブラウザでは別タブ）を開く。
+
+- 各エントリは `id` / `name` / `tagline` / `description` / `category` / `status` / `tags` /
+  `useCases` / `examples` / `manifest` を持つ。
+- `status: "ready"` のエントリだけが `manifest` を持ち、`.agents/skills/<id>.json` へ書き出せる。
+  既存ファイルがある場合は上書き確認を挟む。
+- `status: "planned"` のエントリ（Git / ターミナル / デバッグ）は設計カードとして表示し、
+  インストール操作を無効にする。ハンドラ未実装のスキルを実行可能に見せないため。
+- ワークスペースに既にあるがライブラリに無いスキルは「カスタム」として一覧に追加する。
+- 別窓は通常のアプリ起動と同じバンドルを使い、`index.html?window=skills` で分岐する。
+  権限は `src-tauri/capabilities/default.json` の `windows` に `skill-library` を追加して付与する。

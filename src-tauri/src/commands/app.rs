@@ -28,5 +28,7 @@ pub fn app_quit(app: tauri::AppHandle) {
     use tauri::Manager;
     let state = app.state::<crate::state::AppState>();
     crate::commands::terminal::shutdown_terminals(&state.terminals);
+    crate::commands::lsp::shutdown_lsp(&state);
+    crate::commands::dap::shutdown_dap(&state);
     app.exit(0);
 }

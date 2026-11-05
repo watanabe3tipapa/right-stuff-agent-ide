@@ -54,7 +54,7 @@ export function Welcome() {
           <article className="welcome-card">
             <div className="welcome-card-icon amber"><Icon name="terminal" size={16} /></div>
             <h2>IDE 機能</h2>
-            <p>Monaco、ターミナル、Git、LSP を段階的に統合していく。</p>
+            <p>Monaco、ターミナル、Git、LSP、DAP を段階的に統合していく。</p>
             <span className="welcome-tag">Phase 2</span>
           </article>
         </div>

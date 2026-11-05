@@ -12,7 +12,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 
 ## ダウンロード
 
-v0.3.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.3.1 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.0_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.0_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.1_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.1_x64.dmg`
 
 対応 OS は **macOS 11 以降（Apple Silicon / Intel）のみ**です。Windows / Linux 版は提供しません。
 
@@ -38,7 +38,7 @@ v0.3.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。Phase 2 では、クイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。
+Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。Phase 2 では、クイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。v0.3.1 では LSP（補完・定義・ホバー・診断）と DAP（lldb-dap / debugpy）を追加しました。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -48,7 +48,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 | 守る | atomic write、パス検証、ゴミ箱へのソフトデリート |
 | つなぐ | Agent Desktop CLI の検出、スナップショット、許可アクションの実行 |
 | 任せる | LLM チャット（OpenAI 互換）、計画立案と計画単位の承認 |
-| 広げる | クイックオープン、Git パネル、統合ターミナル (PTY)、LSP / DAP（今後） |
+| 広げる | クイックオープン、Git パネル、統合ターミナル (PTY)、LSP、DAP デバッグ |
 
 ### 設計方針
 
@@ -67,7 +67,9 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **Markdown プレビュー** — `react-markdown` + `remark-gfm` による GFM プレビューを分割表示
 - **バージョン履歴** — 保存のたびに SQLite (WAL) へ記録。ファイルあたり最新 100 版を保持し、任意の版をプレビューしてエディタへ復元
 - **ファイル操作** — 新規作成、名前変更、削除。削除は `.right-stuff/trash/<timestamp>/` へ移動するソフトデリート
-- **エージェントパネル** — Chat / Plan / Git / Deploy / Audit / Runtime の 6 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan`・`/ship`・`/deploy`・`/logs`・`/rollback` コマンド
+- **エージェントパネル** — Chat / Plan / Skills / Git / Debug / Deploy / Audit / Runtime の 8 タブ。Passive / Assistive / Autonomous のモード切替、`/status`・`/snapshot`・`/plan`・`/ship`・`/deploy`・`/logs`・`/rollback` コマンド
+- **Language Server (LSP)** — rust-analyzer / typescript-language-server / pyright / gopls / clangd / sourcekit-lsp / lua-language-server を固定レジストリから検出し、Monaco の補完・定義ジャンプ・ホバー・診断に接続。開いているタブを didOpen / didChange / didSave / didClose で同期し、診断件数をステータスバーに表示
+- **デバッガ (DAP)** — lldb-dap（C / C++ / Rust / Swift / Objective-C）と debugpy（Python）を固定レジストリから検出。Debug タブで起動・停止、ブレークポイント、コールスタック、変数、出力を操作。ブレークポイントは行番号左のクリックまたは F9 で切り替え
 - **クイックオープン** — `⌘P` でワークスペース内のファイルを名前から絞り込み、キーボードだけで開けます
 - **Git パネル** — 現在のブランチ、ahead / behind、変更・ステージ済み・未追跡を表示。ステージ / アンステージ、一括操作、差分プレビュー、コミット、直近の履歴に対応。Git リポジトリでないフォルダでは `git init` を実行できます
 - **統合ターミナル** — `⌘J` でワークスペース直下に PTY を開き、xterm.js で対話的に操作。リサイズ、再起動、クリアに対応し、シェルは `RIGHT_STUFF_SHELL` → `SHELL` → `/bin/zsh` の順で解決します
@@ -87,10 +89,11 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 
 - **フロントエンド**: Vite 8 + React 18.3 + TypeScript 6
 - **エディタ**: Monaco Editor 0.52（`@monaco-editor/react`）
-- **状態管理**: Zustand 5（workspace / editor / agent / git）
+- **状態管理**: Zustand 5（workspace / editor / agent / git / lsp / dap）
 - **デスクトップ基盤**: Tauri 2.0（Rust 2024 edition）
-- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / openship / git / terminal / settings / app）、パス検証、atomic write
+- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / openship / git / terminal / lsp / dap / settings / app）、パス検証、atomic write
 - **Git / ターミナル**: `git` CLI を `std::process::Command` 経由で実行（シェル文字列を組み立てない）。ターミナルは `portable-pty` で PTY を確保し、出力を Tauri イベントで xterm.js へストリーミング
+- **LSP / DAP**: Content-Length フレーミングの JSON-RPC トランスポート（`src-tauri/src/rpc.rs`）を共用。サーバー / アダプタは固定レジストリのみで、WebView から任意のコマンドは起動できません
 - **データベース**: SQLite（WAL、`rusqlite` bundled）。バージョン履歴、設定、監査ログを保存
 - **ブリッジ**: `src/lib/api.ts` が `invoke` を薄くラップし、ブラウザでは `src/lib/demo.ts` にフォールバック
 - **パッケージ**: `tauri build`（`.app` / `.dmg`）
@@ -105,6 +108,7 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - Agent Desktop の実行はアクション名の許可リスト、引数の長さ・形式の検証、エージェントポリシー、変更操作のネイティブ承認ダイアログを通し、出力は 200,000 文字で打ち切ります
 - Git 操作は `git` CLI をシェル経由せずに実行し、ステージ対象のパスはワークスペース内の相対パスに限定します。差分・コマンド出力は上限付きで UI に表示します
 - 統合ターミナルは絶対パスのシェルのみを起動し、作業ディレクトリをワークスペース直下に固定します。PTY の入出力はローカルで完結し、外部へ送信しません
+- LSP / DAP は固定レジストリの実行ファイルだけを起動し、任意のコマンドやシェル文字列を受け付けません。デバッグ対象はワークスペース内の実行ファイルに限定し、LSP / DAP の通信はローカルで完結します。ワークスペース切替時とアプリ終了時には全セッションを停止します
 - 監査ログはローカルの SQLite にのみ保存し、外部へ送信しません。コマンド引数・出力・エラーの抜粋を含むため、バックアップや共有の際は注意してください
 - スナップショットはメモリ上にのみ保持し、SQLite へ永続化しません
 - API キーと Openship の PAT は OS キーチェーンにのみ保存し、SQLite・ログ・エラーメッセージには含めません。LLM と Openship への通信は Rust 側で行い、WebView から外部 API を直接呼びません
@@ -219,6 +223,27 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 3. `PATH` 上の `agent-desktop-cli`
 4. `PATH` 上の `agent`
 
+### LSP / DAP ツールの指定
+
+Language Server とデバッグアダプターは、アプリが固定レジストリから検出します。導入されていない場合は、設定ダイアログの「ツール」タブ、またはステータスバーの LSP 表示から状態を確認できます。
+
+| 言語 | Language Server | 導入例 |
+|---|---|---|
+| Rust | `rust-analyzer` | `rustup component add rust-analyzer` |
+| TypeScript / JavaScript | `typescript-language-server` | `npm install -g typescript-language-server typescript` |
+| Python | `pyright-langserver` | `npm install -g pyright` |
+| Go | `gopls` | `go install golang.org/x/tools/gopls@latest` |
+| C / C++ / Objective-C | `clangd` | `xcode-select --install` |
+| Swift | `sourcekit-lsp` | `xcode-select --install` |
+| Lua | `lua-language-server` | `brew install lua-language-server` |
+
+| デバッガ | 対象 | 導入例 |
+|---|---|---|
+| `lldb-dap` | C / C++ / Rust / Swift / Objective-C | `xcode-select --install`（`xcrun -f lldb-dap` でも解決） |
+| `debugpy` | Python | `pip install debugpy` |
+
+GUI から起動したアプリでは `PATH` が限られるため、検出時は `/opt/homebrew/bin`、`/usr/local/bin`、`/usr/bin`、`~/.cargo/bin` も確認します。
+
 ## 使い方
 
 1. 起動後、サイドバーのフォルダ名からワークスペースを選択します
@@ -230,14 +255,16 @@ AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev
 7. `⌘K` でコマンドパレットを開き、操作を検索して実行します。`⌘P` のクイックオープンでファイル名から直接開けます
 8. エージェントパネルの Git タブで変更を確認し、ステージ・コミット・差分・履歴を操作します
 9. `⌘J` で統合ターミナルを開き、ワークスペース直下でコマンドを実行します
-10. エージェントパネルで `/status` を実行し、Agent Desktop の検出状態を確認します
-11. `/snapshot` でデスクトップのスナップショットを取得できます
-12. Openship を使う場合は「設定 > Openship」で Base URL と PAT を登録するか、`openship` CLI を `PATH` に配置します。Deploy タブの「デプロイ」はネイティブ承認を経て実行され、履歴・ログ・ロールバックも同じ画面から操作できます
+10. LSP が検出されていれば、コード補完・定義ジャンプ・ホバーが使えます。診断はエディタとステータスバーに表示されます
+11. エージェントパネルの Debug タブでアダプターと実行ファイルを選び、デバッグを開始します。行番号左のクリックまたは F9 でブレークポイントを切り替え、コールスタック・変数・出力を確認できます
+12. エージェントパネルで `/status` を実行し、Agent Desktop の検出状態を確認します
+13. `/snapshot` でデスクトップのスナップショットを取得できます
+14. Openship を使う場合は「設定 > Openship」で Base URL と PAT を登録するか、`openship` CLI を `PATH` に配置します。Deploy タブの「デプロイ」はネイティブ承認を経て実行され、履歴・ログ・ロールバックも同じ画面から操作できます
 
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.3.0 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
+- v0.3.1 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。署名・公証は先送りとし、当面はこの状態で配布します
 - 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません
 
@@ -266,6 +293,17 @@ vercel --prod          # 本番環境へデプロイ
 `vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内のメモリ上で動作し、変更は保存されません。
 
 ## 既知の制約とロードマップ
+
+### v0.3.1
+
+- [x] LSP クライアント — 固定レジストリの言語サーバーを検出し、補完・定義ジャンプ・ホバー・診断を Monaco に接続
+- [x] ファイル同期 — タブの開閉・編集（300ms デバウンス）・保存を didOpen / didChange / didSave / didClose で送信
+- [x] DAP クライアント — `lldb-dap` / `debugpy` を検出し、Debug タブから起動・停止・再開・ステップ実行
+- [x] ブレークポイント — グリフマージンのクリックと F9 で切り替え、セッション中は即時反映
+- [x] コールスタック・変数・出力の表示
+- [x] 設定ダイアログの「ツール」タブで LSP / DAP の検出状態を確認
+- [x] ワークスペース切替・アプリ終了時の LSP / DAP セッション停止
+- [x] macOS 専用化（グローバルショートカットを Command に統一）
 
 ### v0.3.0
 
@@ -325,7 +363,6 @@ vercel --prod          # 本番環境へデプロイ
 ### 次の候補
 
 - [ ] スキル実行と検証ループ
-- [ ] LSP / DAP
 - [ ] Anthropic 固有 API のアダプター
 
 ### 制約
@@ -336,6 +373,7 @@ vercel --prod          # 本番環境へデプロイ
 - 計画の実行対象は Agent Desktop の許可アクションに限られます。エディタ・Git・ターミナルのスキル実行は未実装です
 - Git パネルはローカルの `git` CLI を利用します。`git` がインストールされていない場合はエラーを表示します。マージ・リベース・プッシュなどの履歴操作は未対応です
 - 統合ターミナルは Tauri 版でのみ利用できます。ブラウザデモでは Git とターミナルは無効です。PTY はアプリ終了時に停止します
+- LSP は補完・定義ジャンプ・ホバー・診断のみ、DAP は起動・停止・ステップ実行・ブレークポイント・変数表示のみ対応します。rename / references / code action、attach、条件付きブレークポイントは未対応です。言語サーバー / デバッグアダプターは別途インストールが必要です
 - ターミナルのシェルは `RIGHT_STUFF_SHELL` または `SHELL` で変更できます。絶対パスで存在する実行ファイルのみ起動します
 - 計画と実行結果はメモリ上にのみ保持され、再起動すると失われます。変更操作は計画承認後も、実行時に OS のネイティブ承認ダイアログで確認します（ポリシーで「許可」にすることはできません）
 - 監査ログはローカルの SQLite に保存され、保持期間の既定は 30 日、上限は 5,000 件です。監査ログを無効にしても既存の記録は残ります

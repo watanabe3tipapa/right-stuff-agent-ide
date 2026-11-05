@@ -2,6 +2,8 @@ import { Suspense, lazy, useEffect, useRef, useState } from "react";
 
 import type { AppInfo, FileEntry } from "./shared/types";
 import { api, errorMessage } from "./lib/api";
+import { initDap } from "./lib/dap";
+import { disposeLsp, initLsp, syncLspFiles } from "./lib/lsp";
 import { useAgentStore } from "./stores/agentStore";
 import { confirmUnsavedChanges, useEditorStore } from "./stores/editorStore";
 import { useGitStore } from "./stores/gitStore";
@@ -90,6 +92,10 @@ export function App() {
     void refreshAgentStatus();
     void refreshLlm();
     void refreshPolicy();
+    if (api.isTauri) {
+      void initLsp();
+      void initDap();
+    }
     void api
       .appInfo()
       .then((next) => {
@@ -183,6 +189,24 @@ export function App() {
   }, [info?.root, refreshGit]);
 
   useEffect(() => {
+    if (!api.isTauri) return;
+    return () => {
+      void disposeLsp();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!api.isTauri) return;
+    const root = info?.root ?? null;
+    void syncLspFiles(root, useEditorStore.getState().files);
+    return useEditorStore.subscribe((state, previous) => {
+      if (state.files !== previous.files) {
+        void syncLspFiles(root, state.files);
+      }
+    });
+  }, [info?.root]);
+
+  useEffect(() => {
     const openQuick = () => setQuickOpen(true);
     const toggleTerminal = () => setTerminalOpen((value) => !value);
     window.addEventListener("rsai:quick-open", openQuick);
@@ -201,10 +225,9 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      // On macOS, Ctrl belongs to the shell and text fields; only Command is
-      // the global modifier. Other platforms use Ctrl.
-      const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
-      const mod = isMac ? event.metaKey : event.ctrlKey;
+      // macOS-only app: Command is the global modifier. Ctrl stays available
+      // to the terminal and text fields.
+      const mod = event.metaKey;
       const key = event.key.toLowerCase();
 
       if (mod && key === "k") {

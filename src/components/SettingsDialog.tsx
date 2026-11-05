@@ -13,6 +13,7 @@ import { AgentPolicySettings } from "./AgentPolicySettings";
 import { Icon } from "./Icon";
 import { OpenShipSettings } from "./OpenShipSettings";
 import { SkillPolicySettings } from "./SkillPolicySettings";
+import { ToolsSettings } from "./ToolsSettings";
 
 function configFromSettings(settings: LlmSettings): LlmConfig {
   return {
@@ -40,7 +41,7 @@ export function SettingsDialog() {
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
 
   const [section, setSection] = useState<
-    "llm" | "agent" | "skills" | "openship"
+    "llm" | "agent" | "skills" | "openship" | "tools"
   >("llm");
   const [config, setConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
   const [configured, setConfigured] = useState(false);
@@ -286,6 +287,15 @@ export function SettingsDialog() {
           >
             Openship
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={section === "tools"}
+            className={section === "tools" ? "active" : ""}
+            onClick={() => setSection("tools")}
+          >
+            ツール
+          </button>
         </div>
 
         {demo && section === "llm" && (
@@ -297,6 +307,7 @@ export function SettingsDialog() {
         {section === "agent" && <AgentPolicySettings />}
         {section === "skills" && <SkillPolicySettings />}
         {section === "openship" && <OpenShipSettings />}
+        {section === "tools" && <ToolsSettings />}
 
         {section === "llm" && (
           <>

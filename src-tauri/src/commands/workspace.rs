@@ -218,6 +218,10 @@ pub async fn workspace_open(path: String, state: State<'_, AppState>) -> AppResu
         db::set_setting(&conn, SETTING_LAST_WORKSPACE, &root.to_string_lossy())?;
     }
 
+    // Language servers and debug adapters are bound to the previous root.
+    crate::commands::lsp::shutdown_lsp(&state);
+    crate::commands::dap::shutdown_dap(&state);
+
     let info = workspace_info(&root);
     *state
         .root
@@ -247,6 +251,10 @@ pub async fn workspace_last(state: State<'_, AppState>) -> AppResult<Option<Work
     if !root.is_dir() {
         return Ok(None);
     }
+
+    // Language servers and debug adapters are bound to the previous root.
+    crate::commands::lsp::shutdown_lsp(&state);
+    crate::commands::dap::shutdown_dap(&state);
 
     let info = workspace_info(&root);
     *state

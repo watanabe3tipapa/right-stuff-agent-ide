@@ -11,6 +11,10 @@ import type {
   AppInfo,
   AuditEntry,
   AuditInput,
+  DapAdapterInfo,
+  DapLog,
+  DapMessage,
+  DapStart,
   FileContent,
   FileEntry,
   GitCommandResult,
@@ -22,6 +26,10 @@ import type {
   LlmSettings,
   LlmStreamEvent,
   LlmTestResult,
+  LspLog,
+  LspMessage,
+  LspServerInfo,
+  LspStart,
   OpenShipConfig,
   OpenShipDeployResult,
   OpenShipDeployment,
@@ -385,6 +393,70 @@ export const api = {
     return listen<TerminalExit>("terminal://exit", (event) => handler(event.payload));
   },
 
+  lspServers(): Promise<LspServerInfo[]> {
+    return isTauri ? call<LspServerInfo[]>("lsp_servers") : Promise.resolve([]);
+  },
+
+  lspStart(language: string): Promise<LspStart> {
+    if (!isTauri) return Promise.reject(new Error("LSP は Tauri 版でのみ利用できます。"));
+    return call<LspStart>("lsp_start", { language });
+  },
+
+  lspSend(id: string, message: unknown): Promise<void> {
+    return isTauri ? call<void>("lsp_send", { id, message }) : Promise.resolve();
+  },
+
+  lspStop(id: string): Promise<void> {
+    return isTauri ? call<void>("lsp_stop", { id }) : Promise.resolve();
+  },
+
+  onLspMessage(handler: (payload: LspMessage) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<LspMessage>("lsp://message", (event) => handler(event.payload));
+  },
+
+  onLspExit(handler: (payload: { id: string }) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<{ id: string }>("lsp://exit", (event) => handler(event.payload));
+  },
+
+  onLspLog(handler: (payload: LspLog) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<LspLog>("lsp://log", (event) => handler(event.payload));
+  },
+
+  dapAdapters(): Promise<DapAdapterInfo[]> {
+    return isTauri ? call<DapAdapterInfo[]>("dap_adapters") : Promise.resolve([]);
+  },
+
+  dapStart(adapter: string, program: string | null): Promise<DapStart> {
+    if (!isTauri) return Promise.reject(new Error("デバッガは Tauri 版でのみ利用できます。"));
+    return call<DapStart>("dap_start", { adapter, program });
+  },
+
+  dapSend(id: string, message: unknown): Promise<void> {
+    return isTauri ? call<void>("dap_send", { id, message }) : Promise.resolve();
+  },
+
+  dapStop(id: string): Promise<void> {
+    return isTauri ? call<void>("dap_stop", { id }) : Promise.resolve();
+  },
+
+  onDapMessage(handler: (payload: DapMessage) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<DapMessage>("dap://message", (event) => handler(event.payload));
+  },
+
+  onDapExit(handler: (payload: { id: string }) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<{ id: string }>("dap://exit", (event) => handler(event.payload));
+  },
+
+  onDapLog(handler: (payload: DapLog) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<DapLog>("dap://log", (event) => handler(event.payload));
+  },
+
   llmConfig(): Promise<LlmSettings> {
     return isTauri
       ? call<LlmSettings>("llm_config_get")
@@ -436,6 +508,16 @@ export const api = {
       directory: true,
       multiple: false,
       title: "ワークスペースを開く",
+    });
+    return typeof selected === "string" ? selected : null;
+  },
+
+  async pickFile(title = "ファイルを選択"): Promise<string | null> {
+    if (!isTauri) return null;
+    const selected = await open({
+      directory: false,
+      multiple: false,
+      title,
     });
     return typeof selected === "string" ? selected : null;
   },

@@ -4528,3 +4528,308 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   gap: 6px;
   font-size: 10.5px;
 }
+
+/* --- Debug panel (DAP) --- */
+.breakpoint-glyph::before {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: 7px auto 0;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--danger) 25%, transparent);
+}
+
+.debug-panel {
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.debug-status {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+}
+
+.debug-status.running {
+  color: var(--accent2);
+  border-color: var(--accent2);
+}
+
+.debug-status.paused {
+  color: var(--accent3);
+  border-color: var(--accent3);
+}
+
+.debug-status.error {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.debug-launch {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.debug-launch .field-label {
+  margin-top: 8px;
+}
+
+.debug-start {
+  margin-top: 12px;
+  align-self: flex-start;
+}
+
+.debug-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.debug-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  overflow-wrap: anywhere;
+}
+
+.debug-section {
+  margin-top: 14px;
+}
+
+.debug-section h4 {
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+
+.debug-scope h5 {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin: 6px 0 3px;
+}
+
+.debug-stack,
+.debug-vars,
+.debug-breakpoints {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.debug-stack button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  text-align: left;
+  font-size: 10.5px;
+}
+
+.debug-stack button:hover,
+.debug-stack button.active {
+  background: var(--accent-weak);
+  border-color: var(--accent-glow);
+}
+
+.debug-frame-name {
+  color: var(--ink);
+  font-family: var(--mono);
+}
+
+.debug-frame-path {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+
+.debug-var {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  min-width: 0;
+}
+
+.debug-var-name {
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.debug-var-type {
+  color: var(--accent);
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+.debug-var-value {
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debug-vars .debug-vars {
+  padding-left: 12px;
+}
+
+.debug-breakpoints li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.debug-breakpoint-open {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debug-breakpoint-open:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.debug-output {
+  max-height: 220px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* --- Tools settings --- */
+.tools-heading {
+  margin: 16px 0 6px;
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tools-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tools-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.tools-row-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tools-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--ink-dim);
+  flex-shrink: 0;
+}
+
+.tools-dot.on {
+  background: var(--accent2);
+  box-shadow: 0 0 0 3px var(--accent2-weak);
+}
+
+.tools-row-main strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tools-langs {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+}
+
+.tools-row-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  min-width: 0;
+  text-align: right;
+}
+
+.tools-badge {
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 9px;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.tools-badge.ok {
+  color: var(--accent2);
+  border-color: color-mix(in oklab, var(--accent2) 45%, transparent);
+  background: var(--accent2-weak);
+}
+
+.tools-command {
+  max-width: 220px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-dim);
+  overflow-wrap: anywhere;
+}

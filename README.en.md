@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 ## Download
 
-v0.3.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.0_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.0_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.1_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.1_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
@@ -38,7 +38,7 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace.
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy).
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -48,7 +48,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 | Protect | Atomic writes, path validation, trash-based soft delete |
 | Connect | Agent Desktop CLI detection, snapshots, allowlisted actions |
 | Delegate | LLM chat over OpenAI-compatible APIs, plan generation, and plan-level approval |
-| Extend | Quick Open, Git panel, integrated terminal (PTY), LSP / DAP (planned) |
+| Extend | Quick Open, Git panel, integrated terminal (PTY), LSP, DAP debugging |
 
 ### Design principles
 
@@ -67,7 +67,9 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Markdown preview** — GFM rendering via `react-markdown` + `remark-gfm` in a split pane
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
-- **Agent panel** — Chat, Plan, Git, Deploy, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, `/plan`, `/ship`, `/deploy`, `/logs`, and `/rollback` commands
+- **Agent panel** — Chat, Plan, Skills, Git, Debug, Deploy, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, `/plan`, `/ship`, `/deploy`, `/logs`, and `/rollback` commands
+- **Language Server (LSP)** — detects rust-analyzer / typescript-language-server / pyright / gopls / clangd / sourcekit-lsp / lua-language-server from a fixed registry and wires Monaco completion, go-to-definition, hover, and diagnostics. Open tabs are synchronized with didOpen / didChange / didSave / didClose, and diagnostic counts appear in the status bar
+- **Debugger (DAP)** — detects lldb-dap (C / C++ / Rust / Swift / Objective-C) and debugpy (Python) from a fixed registry. The Debug tab starts and stops sessions, manages breakpoints, and shows the call stack, variables, and output. Toggle breakpoints from the glyph margin or with F9
 - **Quick Open** — press `⌘P` to filter workspace files by name and open one without leaving the keyboard
 - **Git panel** — shows the current branch, ahead / behind counts, changes, staged files, and untracked files. Stage / unstage individual files or everything, preview diffs, commit, and browse recent history. Folders that are not repositories can run `git init`
 - **Integrated terminal** — press `⌘J` to open a PTY rooted at the workspace and interact through xterm.js. Resize, restart, and clear are supported; the shell resolves from `RIGHT_STUFF_SHELL` → `SHELL` → `/bin/zsh`
@@ -87,10 +89,11 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 
 - **Frontend**: Vite 8 + React 18.3 + TypeScript 6
 - **Editor**: Monaco Editor 0.52 (`@monaco-editor/react`)
-- **State**: Zustand 5 (workspace / editor / agent / git)
+- **State**: Zustand 5 (workspace / editor / agent / git / lsp / dap)
 - **Desktop shell**: Tauri 2.0 (Rust 2024 edition)
-- **Backend**: Tauri commands (workspace / editor / agent / policy / llm / openship / git / terminal / settings / app), path validation, atomic writes
+- **Backend**: Tauri commands (workspace / editor / agent / policy / llm / openship / git / terminal / lsp / dap / settings / app), path validation, atomic writes
 - **Git / terminal**: the `git` CLI runs through `std::process::Command` without shell string construction. The terminal allocates a PTY with `portable-pty` and streams output to xterm.js through Tauri events
+- **LSP / DAP**: a shared Content-Length framed JSON-RPC transport (`src-tauri/src/rpc.rs`). Only servers and adapters in the fixed registry can be launched; the WebView cannot start arbitrary commands
 - **Database**: SQLite (WAL, bundled `rusqlite`) for version history, settings, and the audit log
 - **Bridge**: `src/lib/api.ts` wraps `invoke` and falls back to `src/lib/demo.ts` in the browser
 - **Packaging**: `tauri build` (`.app` / `.dmg`)
@@ -105,6 +108,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - Agent Desktop enforces an action allowlist plus argument length/shape checks, the agent policy, and a native approval dialog for mutating actions; output is truncated at 200,000 characters
 - Git operations run the `git` CLI without a shell, and staged paths are limited to relative paths inside the workspace. Diffs and command output are capped before display
 - The integrated terminal only launches an absolute shell path and fixes the working directory to the workspace root. PTY input and output stay local and are never sent off-device
+- LSP / DAP launch only executables from the fixed registry and never accept arbitrary commands or shell strings. Debug targets are limited to executables inside the workspace, and all LSP / DAP traffic stays local. Every session is terminated when the workspace changes and when the app exits
 - The audit log is stored only in local SQLite and is never sent externally. It contains command arguments, output excerpts, and errors, so take care when backing up or sharing it
 - Snapshots are held in memory only and are not persisted to SQLite
 - API keys and the Openship PAT are stored only in the OS keychain and never in SQLite, logs, or error messages. LLM and Openship requests are sent from Rust; the WebView never calls external APIs directly
@@ -219,6 +223,27 @@ Detection order:
 3. `agent-desktop-cli` on `PATH`
 4. `agent` on `PATH`
 
+### LSP / DAP tools
+
+Language servers and debug adapters are detected from a fixed registry. If one is missing, check its status under Settings → Tools or from the LSP indicator in the status bar.
+
+| Language | Language server | Install example |
+|---|---|---|
+| Rust | `rust-analyzer` | `rustup component add rust-analyzer` |
+| TypeScript / JavaScript | `typescript-language-server` | `npm install -g typescript-language-server typescript` |
+| Python | `pyright-langserver` | `npm install -g pyright` |
+| Go | `gopls` | `go install golang.org/x/tools/gopls@latest` |
+| C / C++ / Objective-C | `clangd` | `xcode-select --install` |
+| Swift | `sourcekit-lsp` | `xcode-select --install` |
+| Lua | `lua-language-server` | `brew install lua-language-server` |
+
+| Debugger | Targets | Install example |
+|---|---|---|
+| `lldb-dap` | C / C++ / Rust / Swift / Objective-C | `xcode-select --install` (also resolved through `xcrun -f lldb-dap`) |
+| `debugpy` | Python | `pip install debugpy` |
+
+Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`, and `~/.cargo/bin`.
+
 ## Usage
 
 1. On launch, choose a workspace from the folder name in the sidebar
@@ -230,13 +255,15 @@ Detection order:
 7. Press `⌘K` to search and run commands from the palette, or `⌘P` to open a file by name
 8. Use the Git tab in the agent panel to review changes and stage, commit, inspect diffs, and browse history
 9. Press `⌘J` to open the integrated terminal at the workspace root
-10. Run `/status` in the agent panel to check whether Agent Desktop was detected
-11. Run `/snapshot` to capture a desktop snapshot
+10. When an LSP server is detected, completion, go-to-definition, and hover are available; diagnostics appear in the editor and status bar
+11. In the Debug tab of the agent panel, choose an adapter and executable to start debugging. Toggle breakpoints from the glyph margin or with F9, and inspect the call stack, variables, and output
+12. Run `/status` in the agent panel to check whether Agent Desktop was detected
+13. Run `/snapshot` to capture a desktop snapshot
 
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.0 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.1 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
@@ -265,6 +292,17 @@ vercel --prod          # Deploy to production
 `vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
 
 ## Known limitations and roadmap
+
+### v0.3.1
+
+- [x] LSP client — detect fixed-registry language servers and connect completion, go-to-definition, hover, and diagnostics to Monaco
+- [x] File synchronization — send open, edit (300 ms debounce), save, and close as didOpen / didChange / didSave / didClose
+- [x] DAP client — detect `lldb-dap` / `debugpy` and start, stop, resume, and step from the Debug tab
+- [x] Breakpoints — toggle from the glyph margin or F9; changes are applied immediately while a session is running
+- [x] Call stack, variables, and output views
+- [x] A Tools tab in settings shows LSP / DAP detection status
+- [x] Stop LSP / DAP sessions when the workspace changes or the app exits
+- [x] macOS-only cleanup (global shortcuts use Command only)
 
 ### v0.3.0
 
@@ -324,7 +362,6 @@ vercel --prod          # Deploy to production
 ### Next candidates
 
 - [ ] Skill execution and verification loop
-- [ ] LSP / DAP
 - [ ] Anthropic-specific API adapter
 
 ### Constraints

@@ -1,8 +1,10 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 
 import Editor from "@monaco-editor/react";
 
+import { toggleDebugBreakpoint } from "../lib/dap";
 import { defineThemes, monaco, monacoTheme } from "../lib/monaco";
+import { useDapStore } from "../stores/dapStore";
 import { isDirty, useEditorStore } from "../stores/editorStore";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Icon } from "./Icon";
@@ -35,6 +37,7 @@ const editorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
   },
   stickyScroll: { enabled: false },
   guides: { indentation: true, bracketPairs: false },
+  glyphMargin: true,
 };
 
 function baseName(path: string): string {
@@ -70,6 +73,52 @@ export function EditorPane() {
   const loadHistory = useEditorStore((state) => state.loadHistory);
 
   const [pendingClose, setPendingClose] = useState<string | null>(null);
+  const [editorReady, setEditorReady] = useState(false);
+  const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const decorationsRef = useRef(new Map<string, string[]>());
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const applyDecorations = () => {
+      const model = editor.getModel();
+      if (!model) return;
+      const key = model.uri.toString();
+      const path = model.uri.path.replace(/^\/+/, "");
+      const lines = useDapStore.getState().breakpoints[path] ?? [];
+      const previous = decorationsRef.current.get(key) ?? [];
+      const next = model.deltaDecorations(
+        previous,
+        lines.map((line) => ({
+          range: new monaco.Range(line, 1, line, 1),
+          options: {
+            glyphMarginClassName: "breakpoint-glyph",
+            stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+          },
+        })),
+      );
+      decorationsRef.current.set(key, next);
+    };
+
+    applyDecorations();
+    const unsubscribe = useDapStore.subscribe((state, previous) => {
+      if (state.breakpoints !== previous.breakpoints) applyDecorations();
+    });
+    const modelListener = editor.onDidChangeModel(applyDecorations);
+    return () => {
+      unsubscribe();
+      modelListener.dispose();
+    };
+  }, [editorReady]);
+
+  const toggleBreakpointAtCursor = () => {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    const line = editor?.getPosition()?.lineNumber;
+    if (!model || !line) return;
+    toggleDebugBreakpoint(model.uri.path.replace(/^\/+/, ""), line);
+  };
 
   const requestClose = (path: string) => {
     const target = useEditorStore.getState().files[path];
@@ -178,6 +227,23 @@ export function EditorPane() {
                 value={file.content}
                 theme={monacoTheme}
                 beforeMount={defineThemes}
+                onMount={(editor, instance) => {
+                  editorRef.current = editor;
+                  editor.addCommand(instance.KeyCode.F9, toggleBreakpointAtCursor);
+                  editor.onMouseDown((event) => {
+                    if (
+                      event.target.type !==
+                      instance.editor.MouseTargetType.GUTTER_GLYPH_MARGIN
+                    ) {
+                      return;
+                    }
+                    const line = event.target.position?.lineNumber;
+                    const model = editor.getModel();
+                    if (!line || !model) return;
+                    toggleDebugBreakpoint(model.uri.path.replace(/^\/+/, ""), line);
+                  });
+                  setEditorReady(true);
+                }}
                 options={{
                   ...editorOptions,
                   wordWrap: file.language === "markdown" ? "on" : "off",

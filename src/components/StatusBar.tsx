@@ -2,6 +2,7 @@ import type { AgentMode, AppInfo } from "../shared/types";
 import { isDirty, useEditorStore } from "../stores/editorStore";
 import { useAgentStore } from "../stores/agentStore";
 import { useGitStore } from "../stores/gitStore";
+import { lspSummary, useLspStore } from "../stores/lspStore";
 import { useWorkspaceStore } from "../stores/workspaceStore";
 import { Icon } from "./Icon";
 
@@ -25,6 +26,7 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
   const status = useAgentStore((state) => state.status);
   const setPanelTab = useAgentStore((state) => state.setPanelTab);
   const gitStatus = useGitStore((state) => state.status);
+  const lspStatuses = useLspStore((state) => state.statuses);
 
   const dirtyCount = order.filter((path) => {
     const file = files[path];
@@ -32,6 +34,19 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
   }).length;
 
   const activeFile = activePath ? files[activePath] : undefined;
+  const activeLsp = activeFile ? lspStatuses[activeFile.language] : undefined;
+  const lsp = lspSummary(lspStatuses);
+  const lspLabel = activeLsp
+    ? activeLsp.status === "ready"
+      ? activeLsp.label
+      : activeLsp.status === "starting"
+        ? `${activeLsp.label} 起動中`
+        : activeLsp.status === "unsupported"
+          ? "LSP なし"
+          : "LSP エラー"
+    : lsp.ready > 0
+      ? `LSP ${lsp.ready}`
+      : null;
 
   const cycleMode = () => {
     const index = modeOrder.indexOf(mode);
@@ -63,6 +78,18 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
           <span className="status-item status-dirty">{dirtyCount} 未保存</span>
         )}
         <span className="status-item">{activeFile?.language ?? "—"}</span>
+        {lspLabel && (
+          <span
+            className={`status-item status-lsp ${activeLsp?.status ?? "ready"}`}
+            title={activeLsp?.message ?? "Language Server"}
+          >
+            <span className="health-dot" />
+            {lspLabel}
+            {lsp.diagnostics > 0 && (
+              <span className="status-lsp-count">{lsp.diagnostics}</span>
+            )}
+          </span>
+        )}
         <span className="status-item">UTF-8</span>
         <span
           className={`status-item status-agent${status?.available ? " online" : ""}`}
@@ -81,7 +108,7 @@ export function StatusBar({ appInfo }: { appInfo: AppInfo | null }) {
           {modeLabels[mode]}
         </button>
         <span className="status-item status-version">
-          v{appInfo?.version ?? "0.3.0"}
+          v{appInfo?.version ?? "0.3.1"}
         </span>
       </div>
     </footer>

@@ -32,6 +32,7 @@
 - Agent Desktop は Rust から子プロセスとして起動する。stdout / stderr はそのまま UI に返す。
 - Git は Rust から `git` CLI を子プロセスとして起動する。シェルを介さず、引数を配列で渡す。
 - 統合ターミナルは Rust 内で PTY を確保し、読み取り専用スレッドが出力を `terminal://output` イベントで WebView へ流す。
+- LSP サーバーと DAP アダプターは Rust から子プロセスとして起動する。共通の Content-Length フレーミング (`rpc.rs`) で JSON を送受信し、`lsp://message` / `dap://message` イベントで WebView へ流す。
 - ブラウザで `npm run dev` した場合、`src/lib/demo.ts` の仮想ワークスペースに切り替わる。
 
 ## フロントエンドの読み込み
@@ -52,10 +53,14 @@ Monaco の worker（editor / json / css / html / typescript）は Vite の `?wor
 | `AppState.root` | 現在のワークスペース (canonical path) |
 | `AppState.db` | SQLite 接続 (履歴・設定) |
 | `AppState.terminals` | 起動中の PTY セッション (writer / master / child) |
+| `AppState.lsp_sessions` | 起動中の Language Server セッション |
+| `AppState.dap_sessions` | 起動中のデバッグアダプターセッション |
 | `workspaceStore` | ツリー、選択、展開状態 |
 | `editorStore` | 開いているタブ、未保存内容、履歴モーダル |
 | `agentStore` | モード、Agent Desktop の検出状態、チャット、計画と実行状態 |
 | `gitStore` | Git の状態、差分、ログ、実行中フラグ |
+| `lspStore` | 検出済みサーバー、言語ごとの状態、診断件数 |
+| `dapStore` | アダプター、デバッグ状態、ブレークポイント、スタック、変数、出力 |
 
 `localStorage` に保存するのはエージェントモードのみ。それ以外の永続データは
 SQLite (`right-stuff.db`) とワークスペース内のファイルに置く。
@@ -256,6 +261,46 @@ TerminalDock (⌘J)
   `terminal_start` の前にイベントを登録し、ID 確定までの出力をバッファする。
 - PTY はワークスペースごとではなくアプリ全体で保持し、終了時に全セッションを停止する。
 
+## LSP フロー
+
+```
+エディタのタブ状態 (editorStore)
+  → syncLspFiles (App.tsx の購読)
+  → 初回は lsp_start (言語ごとに 1 サーバー)
+      → 固定レジストリから実行ファイルを検出 (PATH + Homebrew + ~/.cargo/bin)
+      → initialize / initialized
+  → textDocument/didOpen
+  → 編集は 300ms デバウンスで textDocument/didChange
+  → 保存時に textDocument/didSave、タブを閉じると didClose
+  → lsp://message (JSON-RPC) を LspClient が処理
+      → completion / definition / hover は Monaco プロバイダーへ
+      → publishDiagnostics は setModelMarkers と lspStore へ
+```
+
+- サーバーは言語ごとに 1 つだけ起動し、最後のタブが閉じたときに停止する。
+- ワークスペースを切り替えると全セッションを停止し、`rootUri` を新しいルートで作り直す。
+- サーバーからの `workspace/configuration` や未知のリクエストにも応答し、サーバーが待ち続けないようにする。
+
+## DAP フロー
+
+```
+Debug タブ
+  → dap_start (adapter, program)
+      → 固定レジストリからアダプターを検出 (lldb-dap は xcrun -f にフォールバック)
+      → program はワークスペース内の実行ファイルに限定
+  → initialize
+  → launch (応答は停止 / 終了まで待たない)
+  → initialized イベントで setBreakpoints と configurationDone
+  → stopped イベントで threads → stackTrace → scopes → variables
+  → Debug タブがコールスタック・変数・出力を表示
+  → グリフマージン / F9 → ブレークポイントを更新し setBreakpoints を送信
+  → disconnect + dap_stop (終了 / ワークスペース切替 / アプリ終了)
+```
+
+- リクエストは `seq` と `request_seq` で対応付け、20 秒（launch は 60 秒）でタイムアウトする。
+- アダプターからの未知のリクエストは `success: false` で返し、未処理のままにしない。
+- `terminated` / `exited` を受けたら UI を停止状態に戻し、セッションを破棄する。
+
 ## ディレクトリ
 
 実際の Rust クレートは Tauri の慣例に合わせて `src-tauri/` に置いている
@@ -263,15 +308,16 @@ TerminalDock (⌘J)
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, GitPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, OpenShipSettings, SettingsDialog, ...)
-├── lib/{api,demo,llm,plan,policy,monaco}.ts
+├── components/ (AgentPanel, PlanPanel, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
+├── lib/{api,demo,llm,plan,policy,monaco,lsp,lspMapping,dap}.ts
 ├── shared/types.ts
-└── stores/{workspace,editor,agent,git}Store.ts
+└── stores/{workspace,editor,agent,git,lsp,dap}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,settings,app}.rs
+├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,lsp,dap,settings,app}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs
+├── rpc.rs
 └── state.rs
 ```
 
@@ -280,4 +326,5 @@ src-tauri/src/
 - 大きなツリーの列挙は `spawn_blocking` + ページングに移行する。
 - Monaco と Agent パネルは動的 import でチャンク分割する (現在は単一バンドル)。
 - ターミナルは複数セッションのタブ化と、スクロールバックの永続化を検討する。
+- LSP は rename / references / code action を追加し、DAP は attach と条件付きブレークポイントを検討する。
 - Git は merge / rebase / push などの履歴操作を追加する。

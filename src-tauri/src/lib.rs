@@ -3,6 +3,7 @@ mod db;
 mod error;
 mod fsutil;
 mod paths;
+mod rpc;
 mod skills;
 mod state;
 
@@ -134,6 +135,14 @@ pub fn run() {
             commands::git::git_unstage_all,
             commands::git::git_commit,
             commands::git::git_log,
+            commands::lsp::lsp_servers,
+            commands::lsp::lsp_start,
+            commands::lsp::lsp_send,
+            commands::lsp::lsp_stop,
+            commands::dap::dap_adapters,
+            commands::dap::dap_start,
+            commands::dap::dap_send,
+            commands::dap::dap_stop,
             commands::terminal::terminal_start,
             commands::terminal::terminal_write,
             commands::terminal::terminal_resize,

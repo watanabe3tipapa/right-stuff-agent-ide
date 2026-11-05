@@ -438,6 +438,63 @@ interface TerminalExit { id: string; }
 - イベント名は `terminal://output` と `terminal://exit`。読み取りスレッドは PTY が閉じると終了イベントを送る。
 - `terminal_kill` とアプリ終了時 (`app_quit`) は子プロセスを kill し、セッションを破棄する。
 
+## LSP
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `lsp_servers` | — | `LspServerInfo[]` |
+| `lsp_start` | `{ language }` | `{ id, language, command, root }` |
+| `lsp_send` | `{ id, message }` | — |
+| `lsp_stop` | `{ id }` | — |
+
+```ts
+interface LspServerInfo {
+  language: string;
+  label: string;
+  available: boolean;
+  command: string[];
+  install: string;
+}
+
+interface LspMessage { id: string; message: unknown; }
+interface LspLog { id: string; line: string; }
+```
+
+- 起動できるサーバーは固定レジストリのみ: `rust-analyzer`、`typescript-language-server --stdio`、`pyright-langserver --stdio`、`gopls`、`clangd`、`sourcekit-lsp`、`lua-language-server`。任意のコマンドは受け付けない。
+- `message` は LSP の JSON-RPC オブジェクトをそのまま渡す。Rust 側は Content-Length フレーミングだけを担当する。
+- イベント名は `lsp://message`（`{ id, message }`）、`lsp://exit`（`{ id }`）、`lsp://log`（`{ id, line }`）。stderr はログとして 8KB で打ち切る。
+- 検出は `PATH` に加えて `/opt/homebrew/bin`、`/usr/local/bin`、`/usr/bin`、`/bin`、`~/.cargo/bin` を確認する。
+- ワークスペース切替時とアプリ終了時に全セッションを停止する。
+
+## DAP
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `dap_adapters` | — | `DapAdapterInfo[]` |
+| `dap_start` | `{ adapter, program? }` | `{ id, adapter, command, program, root }` |
+| `dap_send` | `{ id, message }` | — |
+| `dap_stop` | `{ id }` | — |
+
+```ts
+interface DapAdapterInfo {
+  id: string;
+  label: string;
+  available: boolean;
+  command: string[];
+  install: string;
+  languages: string[];
+}
+
+interface DapMessage { id: string; message: unknown; }
+interface DapLog { id: string; line: string; }
+```
+
+- 起動できるアダプターは `lldb-dap` と `debugpy` のみ。`lldb-dap` は `PATH` にない場合 `xcrun -f lldb-dap` で解決し、`debugpy` は `python3 -m debugpy.adapter` を使う。
+- `program` は絶対パス、またはワークスペース内の相対パス。`paths::validate_relative` と `canonicalize` を通し、ワークスペース外や存在しないファイルは拒否する。
+- イベント名は `dap://message`（`{ id, message }`）、`dap://exit`（`{ id }`）、`dap://log`（`{ id, line }`）。
+- LSP と同じ `rpc.rs` のトランスポートを共用する。1 メッセージの上限は 16MB。
+- ワークスペース切替時とアプリ終了時に全セッションを停止する。
+
 ## 設定
 
 | コマンド | 引数 | 戻り値 |

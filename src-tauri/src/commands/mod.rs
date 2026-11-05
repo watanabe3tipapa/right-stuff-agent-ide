@@ -1,8 +1,10 @@
 pub mod agent;
 pub mod app;
+pub mod dap;
 pub mod editor;
 pub mod git;
 pub mod llm;
+pub mod lsp;
 pub mod openship;
 pub mod policy;
 pub mod settings;

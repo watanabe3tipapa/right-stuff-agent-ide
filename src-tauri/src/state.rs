@@ -10,6 +10,7 @@ use tokio::sync::Notify;
 
 use crate::commands::terminal::TerminalHandle;
 use crate::db;
+use crate::rpc::RpcSession;
 
 /// Cooperative cancellation flag shared between the UI command and an
 /// in-flight streaming request.
@@ -47,6 +48,8 @@ pub struct AppState {
     pub http: reqwest::Client,
     pub llm_cancel: Mutex<Option<Arc<CancelFlag>>>,
     pub terminals: Mutex<HashMap<String, TerminalHandle>>,
+    pub lsp_sessions: Mutex<HashMap<String, RpcSession>>,
+    pub dap_sessions: Mutex<HashMap<String, RpcSession>>,
 }
 
 impl AppState {
@@ -70,6 +73,8 @@ impl AppState {
             http,
             llm_cancel: Mutex::new(None),
             terminals: Mutex::new(HashMap::new()),
+            lsp_sessions: Mutex::new(HashMap::new()),
+            dap_sessions: Mutex::new(HashMap::new()),
         })
     }
 

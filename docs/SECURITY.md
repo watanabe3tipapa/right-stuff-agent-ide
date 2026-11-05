@@ -116,6 +116,16 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - セッションは `AppState.terminals` で管理し、ターミナルを閉じたとき、再起動したとき、アプリ終了時に子プロセスを kill する。
 - PTY はユーザーが起動したシェルであり、シェル内で実行されるコマンドはアプリの承認フローや監査ログの対象外である。
 
+## LSP / DAP
+
+- 起動できるプログラムは固定レジストリに限定する。LSP は rust-analyzer / typescript-language-server / pyright / gopls / clangd / sourcekit-lsp / lua-language-server、DAP は lldb-dap / debugpy のみで、WebView から任意のコマンドや引数を指定することはできない。
+- サーバー / アダプターはシェルを介さず、配列の引数で `std::process::Command` から起動する。
+- デバッグ対象の `program` は絶対パスまたはワークスペース内の相対パスに限り、`paths::validate_relative` と `canonicalize` でワークスペース外を拒否する。
+- LSP / DAP の通信はローカルの子プロセスとの間だけで完結し、外部ネットワークへ送信しない。
+- Content-Length は 16MB、stderr ログは 1 行 8KB で打ち切り、壊れたフレームや巨大なメッセージでメモリを消費しないようにする。
+- セッションは `AppState.lsp_sessions` / `AppState.dap_sessions` で管理し、ワークスペース切替時とアプリ終了時にすべて kill する。
+- LSP サーバー / デバッグアダプター自体の脆弱性や、デバッグ対象プログラムの挙動はアプリの保証範囲外である。信頼できるワークスペースでのみ利用する。
+
 ## CSP と HTTP ヘッダー
 
 - Tauri は本番用 `csp` と開発用 `devCsp` を分けて設定する。本番は `default-src 'self'` を基底とし、Monaco の worker 用に `worker-src 'self' blob:`、Google Fonts 用に `font-src`、Tauri IPC 用に `connect-src ipc: http://ipc.localhost` を許可する。
@@ -141,6 +151,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 | エージェントモード | WebView の `localStorage` |
 | API キー・Openship PAT | OS キーチェーン |
 | ターミナルの PTY | メモリ上のみ（再起動で消滅） |
+| LSP / DAP のセッション、ブレークポイント、出力 | メモリ上のみ（再起動で消滅） |
 
 `right-stuff.db` は WAL モードで開く。履歴にはファイル内容が、監査ログには
 コマンド引数と失敗時のエラー抜粋が含まれるため、バックアップや共有の際は
@@ -156,6 +167,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - API キーのローテーションや複数キーの管理は未実装。
 - Git の merge / rebase / push と認証情報の管理は未実装。Git 操作の監査ログ記録は未対応。
 - 統合ターミナル内のコマンドはアプリのポリシー・承認・監査ログの対象外。信頼できる作業ディレクトリでのみ利用する。
+- LSP は補完・定義・ホバー・診断のみ、DAP は起動・停止・ステップ実行・ブレークポイント・変数表示のみ対応する。rename / references / code action、attach、条件付きブレークポイントは未対応。
 
 ## 依存関係の監査
 

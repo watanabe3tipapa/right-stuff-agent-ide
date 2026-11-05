@@ -73,6 +73,7 @@ export type AgentPanelTab =
   | "plan"
   | "skills"
   | "git"
+  | "debug"
   | "deploy"
   | "audit"
   | "runtime";
@@ -463,3 +464,63 @@ export interface TerminalOutput {
 export interface TerminalExit {
   id: string;
 }
+
+export interface LspServerInfo {
+  language: string;
+  label: string;
+  available: boolean;
+  command: string[];
+  install: string;
+}
+
+export interface LspStart {
+  id: string;
+  language: string;
+  command: string[];
+  root: string;
+}
+
+export interface LspMessage {
+  id: string;
+  message: unknown;
+}
+
+export interface LspLog {
+  id: string;
+  line: string;
+}
+
+export interface DapAdapterInfo {
+  id: string;
+  label: string;
+  available: boolean;
+  command: string[];
+  install: string;
+  languages: string[];
+}
+
+export interface DapStart {
+  id: string;
+  adapter: string;
+  command: string[];
+  program: string | null;
+  root: string;
+}
+
+export interface DapMessage {
+  id: string;
+  message: unknown;
+}
+
+export interface DapLog {
+  id: string;
+  line: string;
+}
+
+export type DapStatus =
+  | "idle"
+  | "starting"
+  | "running"
+  | "paused"
+  | "stopped"
+  | "error";

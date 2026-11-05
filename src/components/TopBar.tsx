@@ -12,8 +12,6 @@ const modeLabels: Record<AgentMode, string> = {
 
 const modeOrder: AgentMode[] = ["passive", "assistive", "autonomous"];
 
-const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
-
 export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
   const openWorkspace = useWorkspaceStore((state) => state.openWorkspace);
   const mode = useAgentStore((state) => state.mode);
@@ -39,7 +37,7 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
       <button type="button" className="command-trigger" onClick={onOpenPalette}>
         <Icon name="search" size={13} />
         <span>コマンドを検索</span>
-        <kbd>{isMac ? "⌘" : "Ctrl"} K</kbd>
+        <kbd>⌘ K</kbd>
       </button>
 
       <div className="topbar-spacer" data-tauri-drag-region />

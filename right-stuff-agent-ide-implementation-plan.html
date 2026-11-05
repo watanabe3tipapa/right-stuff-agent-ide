@@ -443,7 +443,7 @@ footer {
     <div class="card-title"><span class="icon">&#9670;</span> 本書の位置付け</div>
     <p style="margin-bottom:0">
       本書は Right-Stuff Agent IDE の構想をまとめた実装設計書です。Phase 0 の実装は、Lexical ベースの既存コードを移行したものではなく、
-      <strong>Tauri 2.0 + React 18 + Monaco</strong> で新規に構築しています。LSP、DAP、Apple Notes 連携は今後の候補です。
+      <strong>Tauri 2.0 + React 18 + Monaco</strong> で新規に構築しています。LSP と DAP は v0.3.1 で実装済み、Apple Notes 連携は今後の候補です。
       OpenAI 互換 LLM 接続、計画立案と承認、監査ログ、Openship 連携は実装済みで、現時点の実装範囲は README の「既知の制約とロードマップ」を参照してください。
     </p>
   </div>
@@ -875,15 +875,24 @@ interface EditorStateUpdate {
       <p>
         設計書の Phase 2 のうち、クイックオープン (⌘P)、Git パネル、統合ターミナル (⌘J、portable-pty + xterm.js)、
         ファイル検索を先行実装。ステータスバーの Git ブランチ表示と、ターミナル終了時の PTY クリーンアップも追加。
-        LSP / DAP は次の増分で実装する。
       </p>
     </div>
-    <div class="phase-item">
+    <div class="phase-item done">
+      <div class="phase-title">追加: LSP / DAP (v0.3.1)</div>
+      <div class="phase-meta">補完 / 定義 / 診断 / デバッグ / 優先度: 高</div>
+      <p>
+        LSP クライアントを追加し、固定レジストリの言語サーバーを Monaco の補完・定義ジャンプ・ホバー・診断に接続。
+        DAP クライアントを追加し、lldb-dap と debugpy による起動・停止・ステップ実行・ブレークポイント・
+        コールスタック・変数表示を Debug タブに実装。両者は Content-Length フレーミングの共通トランスポートを共用する。
+        あわせてツール検出 UI と、ワークスペース切替・終了時のセッション停止を追加。
+      </p>
+    </div>
+    <div class="phase-item done">
       <div class="phase-title">Phase 2: IDE コア機能（LSP / DAP）</div>
       <div class="phase-meta">期間: 4週間 / 優先度: 高</div>
       <p>
         LSP クライアントとデバッガ連携を実装し、補完・定義ジャンプ・診断・ブレークポイントを追加。
-        Markdown プレビューとコード編集の切り替えを拡張し、コマンドパレット、ステータスバーも拡張する。
+        コマンドパレット、ステータスバーも拡張する。v0.3.1 で完了。
       </p>
     </div>
     <div class="phase-item">

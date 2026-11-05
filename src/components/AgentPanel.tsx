@@ -4,6 +4,7 @@ import type { AgentMode, ChatMessage } from "../shared/types";
 import { useAgentStore } from "../stores/agentStore";
 import { useGitStore } from "../stores/gitStore";
 import { AuditPanel } from "./AuditPanel";
+import { DebugPanel } from "./DebugPanel";
 import { DeployPanel } from "./DeployPanel";
 import { GitPanel } from "./GitPanel";
 import { Icon } from "./Icon";
@@ -379,6 +380,13 @@ export function AgentPanel() {
               </button>
               <button
                 type="button"
+                className={tab === "debug" ? "active" : ""}
+                onClick={() => setTab("debug")}
+              >
+                Debug
+              </button>
+              <button
+                type="button"
                 className={tab === "deploy" ? "active" : ""}
                 onClick={() => setTab("deploy")}
               >
@@ -429,6 +437,8 @@ export function AgentPanel() {
         <DeployPanel />
       ) : tab === "git" ? (
         <GitPanel />
+      ) : tab === "debug" ? (
+        <DebugPanel />
       ) : (
         <RuntimeView />
       )}

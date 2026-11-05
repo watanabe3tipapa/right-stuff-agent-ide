@@ -17,6 +17,23 @@ updates:
       - dependency-name: monaco-editor
         update-types:
           - version-update:semver-major
+      # React 19 and TypeScript 7 are deliberate migrations. Keep the current
+      # major lines until the app is tested against them.
+      - dependency-name: react
+        update-types:
+          - version-update:semver-major
+      - dependency-name: react-dom
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@types/react"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: "@types/react-dom"
+        update-types:
+          - version-update:semver-major
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: cargo
     directory: /src-tauri

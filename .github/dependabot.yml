@@ -17,6 +17,7 @@ updates:
       - dependency-name: monaco-editor
         update-types:
           - version-update:semver-major
+          - version-update:semver-minor
       # React 19 and TypeScript 7 are deliberate migrations. Keep the current
       # major lines until the app is tested against them.
       - dependency-name: react

@@ -274,12 +274,16 @@ TerminalDock (⌘J)
   → 保存時に textDocument/didSave、タブを閉じると didClose
   → lsp://message (JSON-RPC) を LspClient が処理
       → completion / definition / hover は Monaco プロバイダーへ
+      → references / rename / codeAction も Monaco プロバイダーへ接続
+      → rename と code action の WorkspaceEdit はエディタのタブへ適用
+      → workspace/symbol は ⌘T のシンボル検索から利用
       → publishDiagnostics は setModelMarkers と lspStore へ
 ```
 
 - サーバーは言語ごとに 1 つだけ起動し、最後のタブが閉じたときに停止する。
 - ワークスペースを切り替えると全セッションを停止し、`rootUri` を新しいルートで作り直す。
 - サーバーからの `workspace/configuration` や未知のリクエストにも応答し、サーバーが待ち続けないようにする。
+- `workspace/applyEdit` はテキスト編集のみ適用し、ファイルの作成・名前変更・削除を伴う操作は拒否する。
 
 ## DAP フロー
 

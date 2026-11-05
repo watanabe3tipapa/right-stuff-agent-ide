@@ -217,6 +217,249 @@ export function definitionTargets(result: unknown): LocationTarget[] {
   return [];
 }
 
+export interface LspTextEdit {
+  range: LspRange;
+  newText: string;
+}
+
+export interface WorkspaceFileEdit {
+  path: string;
+  edits: LspTextEdit[];
+}
+
+export interface ParsedWorkspaceEdit {
+  files: WorkspaceFileEdit[];
+  /** Resource operations (create / rename / delete) that this client cannot apply. */
+  unsupported: string[];
+}
+
+function isTextEdit(value: unknown): value is LspTextEdit {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "range" in value &&
+      "newText" in value &&
+      typeof (value as { newText?: unknown }).newText === "string",
+  );
+}
+
+/**
+ * Flatten an LSP `WorkspaceEdit` into per-file text edits. Both the `changes`
+ * map and `documentChanges` arrays are supported; resource operations are
+ * reported separately instead of being silently ignored.
+ */
+export function workspaceEditFiles(result: unknown, root: string): ParsedWorkspaceEdit {
+  const files: WorkspaceFileEdit[] = [];
+  const unsupported: string[] = [];
+  if (!result || typeof result !== "object") return { files, unsupported };
+
+  const payload = result as {
+    changes?: Record<string, unknown> | null;
+    documentChanges?: unknown[] | null;
+  };
+
+  if (payload.changes && typeof payload.changes === "object") {
+    for (const [uri, edits] of Object.entries(payload.changes)) {
+      const path = relativeFromUri(root, uri);
+      if (path === null) continue;
+      const list = Array.isArray(edits) ? edits.filter(isTextEdit) : [];
+      if (list.length > 0) files.push({ path, edits: list });
+    }
+  }
+
+  if (Array.isArray(payload.documentChanges)) {
+    for (const change of payload.documentChanges) {
+      if (!change || typeof change !== "object") continue;
+      const entry = change as {
+        kind?: string;
+        textDocument?: { uri?: string };
+        edits?: unknown[];
+      };
+      if (entry.kind) {
+        unsupported.push(entry.kind);
+        continue;
+      }
+      const uri = entry.textDocument?.uri;
+      if (!uri) continue;
+      const path = relativeFromUri(root, uri);
+      if (path === null) continue;
+      const list = Array.isArray(entry.edits) ? entry.edits.filter(isTextEdit) : [];
+      if (list.length > 0) files.push({ path, edits: list });
+    }
+  }
+
+  return { files, unsupported };
+}
+
+function offsetAt(text: string, position: LspPosition): number {
+  let line = 0;
+  let offset = 0;
+  while (line < position.line && offset < text.length) {
+    const next = text.indexOf("\n", offset);
+    if (next === -1) return text.length;
+    offset = next + 1;
+    line += 1;
+  }
+  return Math.min(offset + Math.max(0, position.character), text.length);
+}
+
+/** Apply LSP text edits to a string. Edits are applied bottom-up so offsets stay valid. */
+export function applyTextEdits(text: string, edits: LspTextEdit[]): string {
+  const ordered = [...edits].sort((a, b) => {
+    if (a.range.start.line !== b.range.start.line) {
+      return b.range.start.line - a.range.start.line;
+    }
+    return b.range.start.character - a.range.start.character;
+  });
+
+  let next = text;
+  for (const edit of ordered) {
+    const start = offsetAt(next, edit.range.start);
+    const end = Math.max(start, offsetAt(next, edit.range.end));
+    next = `${next.slice(0, start)}${edit.newText}${next.slice(end)}`;
+  }
+  return next;
+}
+
+/** Extract the range Monaco highlights while a rename prompt is open. */
+export function prepareRenameRange(result: unknown): MonacoRangeLike | null {
+  if (!result || typeof result !== "object") return null;
+  const value = result as { range?: LspRange } & Partial<LspRange>;
+  if (value.range) return toMonacoRange(value.range);
+  if (value.start && value.end) {
+    return toMonacoRange({ start: value.start, end: value.end });
+  }
+  return null;
+}
+
+export interface CodeActionLike {
+  title: string;
+  kind?: string;
+  isPreferred?: boolean;
+  edits: WorkspaceFileEdit[];
+  command?: { command: string; arguments?: unknown[] };
+  disabled?: string;
+}
+
+/** Convert LSP code actions into an intermediate shape the editor can execute. */
+export function codeActionsToMonaco(result: unknown, root: string): CodeActionLike[] {
+  if (!Array.isArray(result)) return [];
+  return result.flatMap((raw) => {
+    if (!raw || typeof raw !== "object") return [];
+    const action = raw as {
+      title?: unknown;
+      kind?: unknown;
+      isPreferred?: unknown;
+      edit?: unknown;
+      command?: unknown;
+      disabled?: unknown;
+    };
+    if (typeof action.title !== "string") return [];
+
+    const { files } = workspaceEditFiles(action.edit, root);
+    const commandValue = action.command as
+      | { command?: unknown; arguments?: unknown[] }
+      | undefined;
+    const command =
+      commandValue && typeof commandValue.command === "string"
+        ? {
+            command: commandValue.command,
+            ...(Array.isArray(commandValue.arguments)
+              ? { arguments: commandValue.arguments }
+              : {}),
+          }
+        : undefined;
+
+    const disabledValue = action.disabled as { reason?: unknown } | undefined;
+    const disabled =
+      disabledValue && typeof disabledValue.reason === "string"
+        ? disabledValue.reason
+        : undefined;
+
+    if (files.length === 0 && !command) return [];
+
+    return [
+      {
+        title: action.title,
+        ...(typeof action.kind === "string" ? { kind: action.kind } : {}),
+        ...(action.isPreferred === true ? { isPreferred: true } : {}),
+        edits: files,
+        ...(command ? { command } : {}),
+        ...(disabled ? { disabled } : {}),
+      },
+    ];
+  });
+}
+
+export interface SymbolTarget {
+  name: string;
+  kind: number;
+  containerName?: string;
+  uri: string;
+  range: LspRange;
+}
+
+/** Normalize `workspace/symbol` results, dropping malformed entries. */
+export function symbolTargets(result: unknown): SymbolTarget[] {
+  if (!Array.isArray(result)) return [];
+  return result.flatMap((raw) => {
+    if (!raw || typeof raw !== "object") return [];
+    const symbol = raw as {
+      name?: unknown;
+      kind?: unknown;
+      containerName?: unknown;
+      location?: { uri?: unknown; range?: unknown };
+    };
+    const uri = symbol.location?.uri;
+    const range = symbol.location?.range as LspRange | undefined;
+    if (typeof symbol.name !== "string" || typeof uri !== "string" || !range) return [];
+    return [
+      {
+        name: symbol.name,
+        kind: typeof symbol.kind === "number" ? symbol.kind : 1,
+        ...(typeof symbol.containerName === "string" && symbol.containerName
+          ? { containerName: symbol.containerName }
+          : {}),
+        uri,
+        range,
+      },
+    ];
+  });
+}
+
+const SYMBOL_KIND_LABELS: Record<number, string> = {
+  1: "File",
+  2: "Module",
+  3: "Namespace",
+  4: "Package",
+  5: "Class",
+  6: "Method",
+  7: "Property",
+  8: "Field",
+  9: "Constructor",
+  10: "Enum",
+  11: "Interface",
+  12: "Function",
+  13: "Variable",
+  14: "Constant",
+  15: "String",
+  16: "Number",
+  17: "Boolean",
+  18: "Array",
+  19: "Object",
+  20: "Key",
+  21: "Null",
+  22: "EnumMember",
+  23: "Struct",
+  24: "Event",
+  25: "Operator",
+  26: "TypeParameter",
+};
+
+export function symbolKindLabel(kind: number): string {
+  return SYMBOL_KIND_LABELS[kind] ?? "Symbol";
+}
+
 /** Convert an LSP completion item into the shape Monaco expects. */
 export function completionToMonaco(
   raw: unknown,

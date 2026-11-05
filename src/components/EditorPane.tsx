@@ -112,6 +112,41 @@ export function EditorPane() {
     };
   }, [editorReady]);
 
+  useEffect(() => {
+    const onReveal = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          path: string;
+          range: {
+            startLineNumber: number;
+            startColumn: number;
+            endLineNumber: number;
+            endColumn: number;
+          };
+        }>
+      ).detail;
+      const editor = editorRef.current;
+      const model = editor?.getModel();
+      if (!detail || !editor || !model) return;
+      if (model.uri.path.replace(/^\/+/, "") !== detail.path) return;
+      const range = new monaco.Range(
+        detail.range.startLineNumber,
+        detail.range.startColumn,
+        detail.range.endLineNumber,
+        detail.range.endColumn,
+      );
+      editor.setPosition({
+        lineNumber: detail.range.startLineNumber,
+        column: detail.range.startColumn,
+      });
+      editor.revealRangeInCenter(range, monaco.editor.ScrollType.Smooth);
+      editor.focus();
+    };
+
+    window.addEventListener("rsai:reveal", onReveal);
+    return () => window.removeEventListener("rsai:reveal", onReveal);
+  }, []);
+
   const toggleBreakpointAtCursor = () => {
     const editor = editorRef.current;
     const model = editor?.getModel();

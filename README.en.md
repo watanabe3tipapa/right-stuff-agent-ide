@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.1-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.3-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 ## Download
 
-v0.3.1 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.3 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.1_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.1_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.3_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.3_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
@@ -38,7 +38,7 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy).
+Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), and v0.3.3 adds LSP rename, references, code actions, and workspace symbol search.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -68,7 +68,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Version history** — every save is recorded in SQLite (WAL). The latest 100 versions per file are kept; preview any version and restore it into the editor
 - **File operations** — create, rename, and delete. Deletes move files to `.right-stuff/trash/<timestamp>/`
 - **Agent panel** — Chat, Plan, Skills, Git, Debug, Deploy, Audit, and Runtime tabs; Passive / Assistive / Autonomous modes; `/status`, `/snapshot`, `/plan`, `/ship`, `/deploy`, `/logs`, and `/rollback` commands
-- **Language Server (LSP)** — detects rust-analyzer / typescript-language-server / pyright / gopls / clangd / sourcekit-lsp / lua-language-server from a fixed registry and wires Monaco completion, go-to-definition, hover, and diagnostics. Open tabs are synchronized with didOpen / didChange / didSave / didClose, and diagnostic counts appear in the status bar
+- **Language Server (LSP)** — detects rust-analyzer / typescript-language-server / pyright / gopls / clangd / sourcekit-lsp / lua-language-server from a fixed registry and wires Monaco completion, go-to-definition, hover, diagnostics, rename (F2), find references (⇧F12), and code actions. `⌘T` opens workspace symbol search. Open tabs are synchronized with didOpen / didChange / didSave / didClose, and diagnostic counts appear in the status bar
 - **Debugger (DAP)** — detects lldb-dap (C / C++ / Rust / Swift / Objective-C) and debugpy (Python) from a fixed registry. The Debug tab starts and stops sessions, manages breakpoints, and shows the call stack, variables, and output. Toggle breakpoints from the glyph margin or with F9
 - **Quick Open** — press `⌘P` to filter workspace files by name and open one without leaving the keyboard
 - **Git panel** — shows the current branch, ahead / behind counts, changes, staged files, and untracked files. Stage / unstage individual files or everything, preview diffs, commit, and browse recent history. Folders that are not repositories can run `git init`
@@ -255,7 +255,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 7. Press `⌘K` to search and run commands from the palette, or `⌘P` to open a file by name
 8. Use the Git tab in the agent panel to review changes and stage, commit, inspect diffs, and browse history
 9. Press `⌘J` to open the integrated terminal at the workspace root
-10. When an LSP server is detected, completion, go-to-definition, and hover are available; diagnostics appear in the editor and status bar
+10. When an LSP server is detected, completion, go-to-definition, hover, rename (F2), find references (⇧F12), and code actions are available. Press `⌘T` to search workspace symbols; diagnostics appear in the editor and status bar
 11. In the Debug tab of the agent panel, choose an adapter and executable to start debugging. Toggle breakpoints from the glyph margin or with F9, and inspect the call stack, variables, and output
 12. Run `/status` in the agent panel to check whether Agent Desktop was detected
 13. Run `/snapshot` to capture a desktop snapshot
@@ -263,7 +263,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.1 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.3 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
@@ -292,6 +292,15 @@ vercel --prod          # Deploy to production
 `vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
 
 ## Known limitations and roadmap
+
+### v0.3.3
+
+- [x] LSP rename — F2 runs `textDocument/prepareRename` and `textDocument/rename`, applying multi-file edits to tabs
+- [x] Find references — ⇧F12 runs `textDocument/references` and shows results in Monaco's reference view
+- [x] Code actions — run quick fixes, refactors, and source actions from the lightbulb menu, including `workspace/executeCommand`
+- [x] Workspace symbol search — `⌘T` queries `workspace/symbol` and jumps to the selected definition
+- [x] Accept `workspace/applyEdit` for text edits inside the workspace (resource operations are rejected)
+- [x] Unit tests for the conversions (edit ordering, URI validation, symbol kinds)
 
 ### v0.3.1
 
@@ -373,6 +382,7 @@ vercel --prod          # Deploy to production
 - The Git panel uses the local `git` CLI. If `git` is missing, the panel reports an error. Merge, rebase, push, and other history operations are not implemented
 - The integrated terminal is Tauri-only. Git and the terminal are disabled in the browser demo. PTYs stop when the app exits
 - The terminal shell can be changed with `RIGHT_STUFF_SHELL` or `SHELL`. Only an existing executable at an absolute path is launched
+- LSP supports completion, go-to-definition, hover, diagnostics, rename, references, code actions, and workspace symbol search. Signature help, semantic tokens, formatting, and refactors that create or delete files are not implemented. DAP supports start, stop, stepping, breakpoints, and variable views only; attach and conditional breakpoints are not implemented. Language servers and debug adapters must be installed separately
 - Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved (the policy cannot set them to allow)
 - The audit log is stored in local SQLite with a default retention of 30 days and a 5,000-row cap. Disabling it leaves existing records in place
 - Snapshots live in memory only and are lost on restart

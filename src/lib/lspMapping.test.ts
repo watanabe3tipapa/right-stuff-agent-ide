@@ -1,16 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyTextEdits,
+  codeActionsToMonaco,
   completionKind,
   completionToMonaco,
   definitionTargets,
   diagnosticsToMarkers,
   fileUri,
   hoverToMarkdown,
+  prepareRenameRange,
   relativeFromUri,
+  symbolKindLabel,
+  symbolTargets,
   toLspPosition,
   toMonacoRange,
   toMonacoSeverity,
+  workspaceEditFiles,
 } from "./lspMapping";
 
 describe("positions", () => {
@@ -148,5 +154,151 @@ describe("hover and definitions", () => {
       ]),
     ).toEqual([{ uri: "file:///b.ts", range }]);
     expect(definitionTargets(null)).toEqual([]);
+  });
+});
+
+describe("rename and workspace edits", () => {
+  const range = { start: { line: 0, character: 6 }, end: { line: 0, character: 7 } };
+
+  it("applies edits bottom-up without shifting offsets", () => {
+    const text = "const a = 1;\nconst b = 2;\n";
+    const next = applyTextEdits(text, [
+      { range, newText: "alpha" },
+      {
+        range: { start: { line: 1, character: 6 }, end: { line: 1, character: 7 } },
+        newText: "beta",
+      },
+      {
+        range: { start: { line: 1, character: 10 }, end: { line: 1, character: 11 } },
+        newText: "3",
+      },
+    ]);
+    expect(next).toBe("const alpha = 1;\nconst beta = 3;\n");
+  });
+
+  it("handles ranges at the end of the document", () => {
+    expect(
+      applyTextEdits("abc", [
+        { range: { start: { line: 0, character: 3 }, end: { line: 0, character: 9 } }, newText: "!" },
+      ]),
+    ).toBe("abc!");
+  });
+
+  it("parses changes and documentChanges", () => {
+    const parsed = workspaceEditFiles(
+      {
+        changes: {
+          "file:///root/a.ts": [{ range, newText: "alpha" }],
+        },
+        documentChanges: [
+          {
+            textDocument: { uri: "file:///root/src/b.ts" },
+            edits: [{ range, newText: "beta" }],
+          },
+          { kind: "rename", oldUri: "file:///root/a.ts", newUri: "file:///root/c.ts" },
+        ],
+      },
+      "/root",
+    );
+
+    expect(parsed.files).toEqual([
+      { path: "a.ts", edits: [{ range, newText: "alpha" }] },
+      { path: "src/b.ts", edits: [{ range, newText: "beta" }] },
+    ]);
+    expect(parsed.unsupported).toEqual(["rename"]);
+  });
+
+  it("ignores edits outside the workspace", () => {
+    expect(
+      workspaceEditFiles(
+        { changes: { "file:///tmp/a.ts": [{ range, newText: "x" }] } },
+        "/root",
+      ).files,
+    ).toEqual([]);
+  });
+
+  it("extracts prepareRename ranges", () => {
+    expect(prepareRenameRange({ range, placeholder: "a" })).toEqual({
+      startLineNumber: 1,
+      startColumn: 7,
+      endLineNumber: 1,
+      endColumn: 8,
+    });
+    expect(prepareRenameRange({ start: range.start, end: range.end })).toEqual({
+      startLineNumber: 1,
+      startColumn: 7,
+      endLineNumber: 1,
+      endColumn: 8,
+    });
+    expect(prepareRenameRange(null)).toBeNull();
+  });
+});
+
+describe("code actions", () => {
+  const range = { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } };
+
+  it("keeps edits and commands", () => {
+    const actions = codeActionsToMonaco(
+      [
+        {
+          title: "Fix import",
+          kind: "quickfix",
+          isPreferred: true,
+          edit: { changes: { "file:///root/a.ts": [{ range, newText: "x" }] } },
+        },
+        {
+          title: "Organize imports",
+          kind: "source.organizeImports",
+          command: { command: "rust-analyzer.organizeImports", arguments: [1] },
+        },
+        { title: "Disabled", disabled: { reason: "not ready" } },
+        { title: "Empty" },
+      ],
+      "/root",
+    );
+
+    expect(actions).toHaveLength(2);
+    expect(actions[0]).toMatchObject({
+      title: "Fix import",
+      kind: "quickfix",
+      isPreferred: true,
+      edits: [{ path: "a.ts", edits: [{ range, newText: "x" }] }],
+    });
+    expect(actions[1].command).toEqual({
+      command: "rust-analyzer.organizeImports",
+      arguments: [1],
+    });
+  });
+});
+
+describe("workspace symbols", () => {
+  const range = { start: { line: 2, character: 4 }, end: { line: 2, character: 9 } };
+
+  it("normalizes symbol locations", () => {
+    expect(
+      symbolTargets([
+        {
+          name: "main",
+          kind: 12,
+          containerName: "crate",
+          location: { uri: "file:///root/src/main.rs", range },
+        },
+        { name: "broken" },
+      ]),
+    ).toEqual([
+      {
+        name: "main",
+        kind: 12,
+        containerName: "crate",
+        uri: "file:///root/src/main.rs",
+        range,
+      },
+    ]);
+  });
+
+  it("labels symbol kinds", () => {
+    expect(symbolKindLabel(12)).toBe("Function");
+    expect(symbolKindLabel(23)).toBe("Struct");
+    expect(symbolKindLabel(99)).toBe("Symbol");
   });
 });

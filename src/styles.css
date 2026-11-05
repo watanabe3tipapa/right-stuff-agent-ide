@@ -4833,3 +4833,15 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   color: var(--ink-dim);
   overflow-wrap: anywhere;
 }
+
+/* --- Workspace symbols (LSP) --- */
+.symbol-search .palette-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.symbol-container {
+  font-size: 10px;
+  color: var(--ink-dim);
+}

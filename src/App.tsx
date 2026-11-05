@@ -31,6 +31,11 @@ const CommandPalette = lazy(() =>
 const QuickOpen = lazy(() =>
   import("./components/QuickOpen").then((module) => ({ default: module.QuickOpen })),
 );
+const SymbolSearch = lazy(() =>
+  import("./components/SymbolSearch").then((module) => ({
+    default: module.SymbolSearch,
+  })),
+);
 const HistoryDialog = lazy(() =>
   import("./components/HistoryDialog").then((module) => ({ default: module.HistoryDialog })),
 );
@@ -79,6 +84,7 @@ export function App() {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [symbolOpen, setSymbolOpen] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
   const booted = useRef(false);
   const openedWorkspace = useRef<string | null>(null);
@@ -208,11 +214,14 @@ export function App() {
 
   useEffect(() => {
     const openQuick = () => setQuickOpen(true);
+    const openSymbols = () => setSymbolOpen(true);
     const toggleTerminal = () => setTerminalOpen((value) => !value);
     window.addEventListener("rsai:quick-open", openQuick);
+    window.addEventListener("rsai:symbol-search", openSymbols);
     window.addEventListener("rsai:toggle-terminal", toggleTerminal);
     return () => {
       window.removeEventListener("rsai:quick-open", openQuick);
+      window.removeEventListener("rsai:symbol-search", openSymbols);
       window.removeEventListener("rsai:toggle-terminal", toggleTerminal);
     };
   }, []);
@@ -246,6 +255,12 @@ export function App() {
         return;
       }
 
+      if (mod && key === "t") {
+        event.preventDefault();
+        setSymbolOpen((value) => !value);
+        return;
+      }
+
       if (mod && key === "j") {
         event.preventDefault();
         setTerminalOpen((value) => !value);
@@ -265,6 +280,7 @@ export function App() {
       if (event.key === "Escape") {
         setPaletteOpen(false);
         setQuickOpen(false);
+        setSymbolOpen(false);
       }
     };
 
@@ -324,6 +340,11 @@ export function App() {
       {quickOpen && (
         <Suspense fallback={null}>
           <QuickOpen onClose={() => setQuickOpen(false)} />
+        </Suspense>
+      )}
+      {symbolOpen && (
+        <Suspense fallback={null}>
+          <SymbolSearch onClose={() => setSymbolOpen(false)} />
         </Suspense>
       )}
       {historyPath && (

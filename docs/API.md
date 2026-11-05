@@ -463,6 +463,7 @@ interface LspLog { id: string; line: string; }
 - 起動できるサーバーは固定レジストリのみ: `rust-analyzer`、`typescript-language-server --stdio`、`pyright-langserver --stdio`、`gopls`、`clangd`、`sourcekit-lsp`、`lua-language-server`。任意のコマンドは受け付けない。
 - `message` は LSP の JSON-RPC オブジェクトをそのまま渡す。Rust 側は Content-Length フレーミングだけを担当する。
 - イベント名は `lsp://message`（`{ id, message }`）、`lsp://exit`（`{ id }`）、`lsp://log`（`{ id, line }`）。stderr はログとして 8KB で打ち切る。
+- クライアントは completion / definition / hover / references / rename / codeAction / workspace/symbol を実装する。`workspace/applyEdit` はワークスペース内のテキスト編集のみ適用し、リソース操作は `applied: false` で返す。
 - 検出は `PATH` に加えて `/opt/homebrew/bin`、`/usr/local/bin`、`/usr/bin`、`/bin`、`~/.cargo/bin` を確認する。
 - ワークスペース切替時とアプリ終了時に全セッションを停止する。
 

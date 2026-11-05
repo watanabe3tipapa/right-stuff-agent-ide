@@ -868,7 +868,7 @@ footer .footer-links a:hover { color: var(--accent); }
 <div class="sample-banner">
   <strong>Sample</strong>
   <span>Tauri 版（macOS 専用）は DMG で配布中です。この LP とブラウザデモは、インストールせずに UI を試すための参考実装です。</span>
-  <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.1">DMG をダウンロード</a>
+  <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.3">DMG をダウンロード</a>
   <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide">GitHub</a>
 </div>
 
@@ -903,7 +903,7 @@ footer .footer-links a:hover { color: var(--accent); }
   <h1>エージェントが IDE を<span class="highlight block-line">直接操作する</span></h1>
   <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。Tauri 2.0 のネイティブ IDE を、ブラウザで試せるサンプルとともに紹介します。</p>
   <div class="cta-group">
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.1" class="cta-btn cta-primary">DMG をダウンロード</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.3" class="cta-btn cta-primary">DMG をダウンロード</a>
     <a href="/app/" class="cta-btn cta-secondary">ブラウザデモを試す</a>
   </div>
 
@@ -971,7 +971,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#9881;</div>
       <div class="feature-title">本格的 IDE 機能</div>
-      <div class="feature-desc">Monaco Editor を中心に、クイックオープン、Git 統合、統合ターミナル (PTY)、LSP（補完・定義ジャンプ・ホバー・診断）、DAP デバッグ（lldb-dap / debugpy）を実装済みです。</div>
+      <div class="feature-desc">Monaco Editor を中心に、クイックオープン、Git 統合、統合ターミナル (PTY)、LSP（補完・定義ジャンプ・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索）、DAP デバッグ（lldb-dap / debugpy）を実装済みです。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">&#128274;</div>
@@ -1075,7 +1075,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="roadmap-phase">Phase 2</div>
       <div class="roadmap-title">IDE コア機能 <span class="roadmap-status">完了</span></div>
       <div class="roadmap-meta">4週間 / 優先度: 高</div>
-      <p>クイックオープン、Git 統合、統合ターミナル (PTY)、ファイル検索、LSP（補完・定義・ホバー・診断）、DAP デバッグを実装済み。</p>
+      <p>クイックオープン、Git 統合、統合ターミナル (PTY)、ファイル検索、LSP（補完・定義・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索）、DAP デバッグを実装済み。</p>
     </div>
     <div class="roadmap-item">
       <div class="roadmap-phase">Phase 3</div>
@@ -1121,7 +1121,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="step-num">02</div>
       <div class="step-content">
         <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
+        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.3" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
         <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
 cd right-stuff-agent-ide
 npm ci</pre>
@@ -1300,7 +1300,7 @@ Base URL: http://localhost:11434/v1
   </div>
   <div class="install-box">
     <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Apple Silicon / Intel）のみ。Windows / Linux 版は提供していません。</p>
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.1" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。</p>
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.3" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。</p>
     <p style="color:var(--ink-muted);margin-bottom:0.5em;">ソースからビルドする場合</p>
     <pre>npm ci
 npm run tauri build
@@ -1327,7 +1327,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>このサイトは製品版ですか？</summary>
     <div class="faq-answer">
-      このページは Web 上で UI を試すためのサンプルです。製品版は macOS 専用の Tauri アプリで、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.1" style="color:var(--accent);">GitHub Releases</a> の DMG からインストールできます。
+      このページは Web 上で UI を試すためのサンプルです。製品版は macOS 専用の Tauri アプリで、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.3" style="color:var(--accent);">GitHub Releases</a> の DMG からインストールできます。
     </div>
   </details>
   <details class="faq-item">
@@ -1339,7 +1339,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>どの機能が実装済みですか？</summary>
     <div class="faq-answer">
-      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存、計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。v0.2.0 ではローカルファーストの Openship 連携（Deploy タブ、CLI / REST、履歴・ログ・ロールバック）を追加。v0.3.0 ではクイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。v0.3.1 では LSP（補完・定義ジャンプ・ホバー・診断）と DAP（lldb-dap / debugpy によるデバッグ）を追加しました。検証ループとスキル実行は今後追加します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
+      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存、計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。v0.2.0 ではローカルファーストの Openship 連携（Deploy タブ、CLI / REST、履歴・ログ・ロールバック）を追加。v0.3.0 ではクイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。v0.3.1 では LSP（補完・定義ジャンプ・ホバー・診断）と DAP（lldb-dap / debugpy によるデバッグ）を、v0.3.3 では LSP の名前変更・参照検索・コードアクション・ワークスペースシンボル検索を追加しました。検証ループとスキル実行は今後追加します。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
     </div>
   </details>
   <details class="faq-item">

@@ -105,6 +105,15 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       run: () => window.dispatchEvent(new Event("rsai:quick-open")),
     },
     {
+      id: "file:symbol-search",
+      label: "シンボルを検索",
+      hint: "ワークスペース全体から定義を探す",
+      icon: "command",
+      shortcut: "⌘T",
+      keywords: "symbol workspace lsp definition go to symbol シンボル 定義",
+      run: () => window.dispatchEvent(new Event("rsai:symbol-search")),
+    },
+    {
       id: "git:panel",
       label: "Git パネルを開く",
       hint: "変更・ステージ・コミット・履歴",

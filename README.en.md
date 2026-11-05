@@ -80,7 +80,7 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, agent, Git, and terminal commands. `⌘P` opens Quick Open and `⌘J` toggles the terminal
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
 - **Browser demo (sample)** — run the in-memory demo workspace with `npm run dev` without Tauri. On Vercel it is published as a sample for trying the UI without installing the app
-- **Skill definitions** — agent action definitions live in `.agents/skills/*.json` (skill execution is not implemented yet)
+- **Skill execution** — v1 manifests in `.agents/skills/*.json` are loaded and validated, and `editor.readFile` / `replaceText` / `createFile` run with policy and approval (UI not implemented yet)
 - **Theme** — dark theme, overlay title bar, native macOS window
 
 ### Architecture

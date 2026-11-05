@@ -1,12 +1,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::UNIX_EPOCH;
 
 use serde::Serialize;
 use tauri::State;
 
 use crate::db;
 use crate::error::{AppError, AppResult};
+use crate::fsutil::{atomic_write, now_millis};
 use crate::paths;
 use crate::state::AppState;
 
@@ -68,13 +69,6 @@ pub struct SaveResult {
     pub version_id: i64,
     pub saved_at: i64,
     pub size: u64,
-}
-
-fn now_millis() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
 }
 
 fn modified_millis(path: &Path) -> Option<i64> {
@@ -299,29 +293,6 @@ pub async fn workspace_read_file(
         size: metadata.len(),
         modified: modified_millis(&absolute).unwrap_or_else(now_millis),
     })
-}
-
-fn atomic_write(absolute: &Path, content: &[u8]) -> AppResult<()> {
-    let parent = absolute
-        .parent()
-        .ok_or_else(|| AppError::Other("保存先ディレクトリが不正です".into()))?;
-    fs::create_dir_all(parent)?;
-
-    let file_name = absolute
-        .file_name()
-        .map(|n| n.to_string_lossy().to_string())
-        .unwrap_or_else(|| "file".into());
-    let temp_path = parent.join(format!(".{file_name}.rsai-tmp-{}", now_millis()));
-
-    fs::write(&temp_path, content)?;
-
-    match fs::rename(&temp_path, absolute) {
-        Ok(()) => Ok(()),
-        Err(error) => {
-            let _ = fs::remove_file(&temp_path);
-            Err(AppError::Io(error))
-        }
-    }
 }
 
 #[tauri::command]

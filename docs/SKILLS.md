@@ -1,6 +1,6 @@
 # スキル実行と検証ループの設計
 
-v0.4.0 の実装前に、スキーマ・実行ポリシー・承認・検証・監査の設計を確定する。実装状況は「未実装」であり、本書は実装の契約として使う。
+v0.4.0 の実装前に、スキーマ・実行ポリシー・承認・検証・監査の設計を確定する。本書は実装の契約として使う。マニフェストの型・ローダー・バリデータ・ポリシー・`editor.*` の実行と承認は実装済みで、検証ループは v0.5 で追加する。
 
 - 機械可読スキーマ: [`skills.schema.json`](./skills.schema.json)
 - 関連: [ARCHITECTURE.md](./ARCHITECTURE.md) / [SECURITY.md](./SECURITY.md) / [API.md](./API.md)
@@ -28,7 +28,7 @@ v0.4.0 の最小垂直スライスは `code-edit` とする。LLM の計画に�
 
 | 領域 | 現状 | v0.4.0 で追加するもの |
 |---|---|---|
-| スキル定義 | `.agents/skills/*.json` は v0 形式の宣言のみ。実行時には読まれない | v1 マニフェスト、ローダー、バリデータ |
+| スキル定義 | `code-edit` は v1 マニフェスト。Git / ターミナル / デバッグは v0 のまま | Git / ターミナル / デバッグの v1 化 |
 | 計画 | `src/lib/plan.ts` が Agent Desktop の許可アクションだけを検証 | `kind: "skill"` の手順とパラメータ検証 |
 | 実行 | `agent_run` が許可リスト・引数検証・ネイティブ承認を行う | `skill_run`、プレビュー、承認、キャンセル |
 | ポリシー | `AgentPolicy` が Agent Desktop のアクション単位で保持 | `SkillPolicy`（スキル / アクション / 検証） |
@@ -249,8 +249,9 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 1. ポリシーのアクション上書き（`actions["editor.replaceText"]`）
 2. ポリシーのスキル決定（`skills["code-edit"]`）
-3. マニフェストの `approval.default`
-4. グローバル既定（`read` は `allow`、`write` / `destructive` は `ask`、`terminal` は `block`）
+3. マニフェストのアクション上書き（`approval.overrides`）
+4. マニフェストの既定（`approval.default`）
+5. グローバル既定（`read` は `allow`、`write` / `destructive` は `ask`、`terminal` は `block`）
 
 `block` は常に最優先する。`write` と `destructive` は `allow` に正規化しない（保存時に `ask` へ丸める）。`destructive` はポリシーで `allow` を選べない。
 
@@ -326,15 +327,20 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 `skill_preview` は書き込みを行わず、次を返す。
 
-- スキル名、アクション名、リスク
+- スキル ID、アクション ID、リスク、ポリシー判定
 - 対象パス（相対）
-- 変更前後の差分（追加・削除行数と先頭 200 行）
-- 実行するコマンド（`program` と `args`）、作業ディレクトリ、タイムアウト
-- 警告（dirty buffer、拒否リスト該当、大きいファイルなど）
+- 変更前後の差分（追加・削除行数と unified diff）
+- 警告（ブロック、受動モードでの書き込み拒否）
+
+実行するコマンド、作業ディレクトリ、タイムアウト、dirty buffer の警告は、
+コマンド系ハンドラとフロントエンドの事前チェックを追加する v0.4.x 以降で扱う。
 
 承認は既存の `agent_run` と同じネイティブダイアログで行う。ダイアログの文言は Rust が生成し、WebView の表示だけに依存しない。`write` / `destructive` は「この手順のみ許可」とし、永続的な `allow` にはしない。
 
 ### 7.2 キャンセルとタイムアウト
+
+> v0.4.0 の `editor.*` ハンドラは同期処理で、子プロセスを起動しない。
+> `runId` は監査用に発行するが、`skill_cancel` とタイムアウトは v0.4.x 以降で追加する。
 
 - 実行ごとに `runId` を発行する
 - `skill_cancel(runId)` で子プロセスを終了する
@@ -366,6 +372,9 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 ## 9. 検証ループ
 
 ### 9.1 実行方法
+
+> v0.4.0 では検証ループを実装しない。`verification` はマニフェストで検証済みだが、
+> `skill_run` は実行も結果返却も行わない。以下は v0.5 の契約とする。
 
 `verification.mode: "auto"` のとき、ワークスペースの構成から検証コマンドを決める。マニフェストから任意のコマンド文字列は受け取らない。
 
@@ -486,18 +495,25 @@ export type AgentPlanStep =
 - 変更: 変更ファイルの相対パス、追加・削除行数、`paramsHash`
 - 検証: check 名、コマンド、結果、出力の先頭 4,000 文字
 
-ファイル内容そのものは保存しない。パラメータに秘密情報が含まれる可能性があるため、`detail` は保存前にマスクする（`sk-`、`ghp_`、`Bearer`、`token=` など）。生のパラメータは `paramsHash`（SHA-256）だけを残す。
+v0.4.0 では `kind`、`skill_id`、`action_id`、`mode`、`plan_id`、`step_id`、`title`、
+`outcome`、`detail` を記録する。終了コード、所要時間、`paramsHash`、検証結果は
+該当機能の追加時に列を増やす。
+
+ファイル内容そのものは保存しない。v0.4.0 の `detail` は結果メッセージだけで、
+生のパラメータは記録しない。`paramsHash`（SHA-256）とマスク処理は、パラメータを
+監査に含めるようになった時点で追加する。
 
 ## 12. API
 
-| コマンド | 用途 |
-|---|---|
-| `skills_list` | マニフェスト一覧とポリシーを返す |
-| `skill_policy_get` / `skill_policy_set` | スキルポリシーの取得・保存 |
-| `skill_preview` | 実行前の差分・コマンド・警告を返す |
-| `skill_run` | 検証・承認・実行を行い、結果を返す |
-| `skill_cancel` | 実行中のスキルを停止する |
-| `skill_verify` | 検証チェックを実行する |
+| コマンド | 状態 | 用途 |
+|---|---|---|
+| `skills_list` | 実装済み | マニフェスト一覧を返す |
+| `skill_policy_get` / `skill_policy_set` | 実装済み | スキルポリシーの取得・保存・正規化 |
+| `skill_decision` | 実装済み | 有効な `allow` / `ask` / `block` を解決する |
+| `skill_preview` | 実装済み | 実行前の差分・警告を返す |
+| `skill_run` | 実装済み | 承認・実行・監査を行う |
+| `skill_cancel` | 未実装（v0.4.x） | 実行中のスキルを停止する |
+| `skill_verify` | 未実装（v0.5） | 検証チェックを実行する |
 
 ```ts
 interface SkillRequest {
@@ -509,7 +525,8 @@ interface SkillRequest {
   mode?: "passive" | "assistive" | "autonomous";
 }
 
-type SkillRunStatus = "ok" | "blocked" | "cancelled" | "failed" | "timeout";
+// v0.4.0 のハンドラは同期実行のみなので `timeout` は返さない。
+type SkillRunStatus = "ok" | "blocked" | "cancelled" | "failed";
 
 interface SkillRunResult {
   runId: string;
@@ -522,7 +539,7 @@ interface SkillRunResult {
   durationMs: number;
   auditId: number;
   errorCode?: string;
-  verification?: VerificationResult;
+  verification?: VerificationResult; // v0.5
 }
 
 interface VerificationResult {
@@ -610,3 +627,29 @@ interface VerificationResult {
 2. 検証の `autoRun` を既定で有効にするか（推奨: 無効。初回は承認）
 3. スキルポリシー UI を「設定 > スキル」に置くか（推奨: そこに置く）
 4. `terminal.run` を v0.5 のどこで解禁するか（推奨: Git 書き込みの後）
+
+## 17. 実装状況
+
+| 項目 | 状態 | 場所 |
+|---|---|---|
+| マニフェストの型・ローダー・バリデータ | 実装済み | `src-tauri/src/skills/mod.rs` |
+| fixtures（有効 2 件 / 無効 8 件） | 実装済み | `src-tauri/tests/fixtures/skills/` |
+| `skills_list` | 実装済み | `src-tauri/src/commands/skills.rs` |
+| スキルポリシー | 実装済み | `src-tauri/src/skills/policy.rs` |
+| `skill_policy_get` / `set` / `skill_decision` | 実装済み | `src-tauri/src/commands/skills.rs` |
+| `skill_preview`（書き込みなし） | 実装済み | `src-tauri/src/commands/skills.rs` |
+| `skill_run`（承認・実行・監査） | 実装済み | `src-tauri/src/commands/skills.rs` |
+| `editor.readFile` / `replaceText` / `createFile` | 実装済み | `src-tauri/src/skills/editor.rs` |
+| パラメータ検証 | 実装済み | `src-tauri/src/skills/params.rs` |
+| スキル監査（`skill_id` / `action_id`） | 実装済み | `src-tauri/src/commands/policy.rs` |
+| 検証ループ | 未実装（v0.5） | — |
+| `skill_cancel` / タイムアウト | 未実装（v0.4.x） | — |
+| フロントエンドのスキルカタログ UI | 未実装 | — |
+
+v0.4.0 の `skill_run` は `editor.*` の同期ハンドラだけを実行する。`allow` は読み取り専用に限り、
+`ask` はネイティブダイアログで都度承認し、`block` と受動モードは実行せず `status: "blocked"` を返す。
+書き込みは適用前の内容を `file_versions` に記録する。
+
+ローダーは `.agents/skills/*.json` だけを読み、シンボリックリンク、256 KB を超えるファイル、
+未知のフィールド、未知のハンドラ、書き込みアクションの `allow` を拒否する。
+壊れたマニフェストは `warnings` として返し、他のスキルの読み込みを止めない。

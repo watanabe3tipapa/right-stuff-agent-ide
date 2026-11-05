@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "unknown-handler",
+  "name": "Unknown Handler",
+  "description": "未実装のハンドラを指定する例",
+  "version": "0.1.0",
+  "category": "editor",
+  "actions": [
+    {
+      "id": "editor.readFile",
+      "handler": "editor.deleteEverything",
+      "description": "ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "paths": {
+      "read": ["**/*"]
+    }
+  }
+}

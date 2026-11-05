@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "id": "duplicate-action",
+  "name": "Duplicate Action",
+  "description": "アクション ID が重複する例",
+  "version": "0.1.0",
+  "category": "editor",
+  "actions": [
+    {
+      "id": "editor.readFile",
+      "handler": "editor.readFile",
+      "description": "ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      }
+    },
+    {
+      "id": "editor.readFile",
+      "handler": "editor.readFile",
+      "description": "もう一度ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "paths": {
+      "read": ["**/*"]
+    }
+  }
+}

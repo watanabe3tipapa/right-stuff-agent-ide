@@ -23,6 +23,11 @@ const AUDIT_KINDS: &[&str] = &[
     "action_blocked",
     "action_cancelled",
     "policy_updated",
+    "skill_run",
+    "skill_blocked",
+    "skill_cancelled",
+    "verification_run",
+    "skill_policy_updated",
 ];
 
 const AUDIT_OUTCOMES: &[&str] = &["ok", "error", "blocked", "cancelled"];
@@ -66,6 +71,8 @@ pub struct AuditInput {
     pub mode: Option<String>,
     pub plan_id: Option<String>,
     pub step_id: Option<String>,
+    pub skill_id: Option<String>,
+    pub action_id: Option<String>,
     pub title: Option<String>,
     pub command: Option<Vec<String>>,
     pub outcome: Option<String>,
@@ -81,6 +88,8 @@ pub struct AuditEntry {
     pub mode: Option<String>,
     pub plan_id: Option<String>,
     pub step_id: Option<String>,
+    pub skill_id: Option<String>,
+    pub action_id: Option<String>,
     pub title: Option<String>,
     pub command: Option<Vec<String>>,
     pub outcome: Option<String>,
@@ -233,7 +242,7 @@ fn purge_audit(conn: &Connection, retention_days: i64) -> AppResult<()> {
     Ok(())
 }
 
-pub fn insert_audit(conn: &Connection, input: &AuditInput, retention_days: i64) -> AppResult<()> {
+pub fn insert_audit(conn: &Connection, input: &AuditInput, retention_days: i64) -> AppResult<i64> {
     validate_audit_input(input)?;
     purge_audit(conn, retention_days)?;
 
@@ -245,8 +254,9 @@ pub fn insert_audit(conn: &Connection, input: &AuditInput, retention_days: i64) 
 
     conn.execute(
         "INSERT INTO audit_log (
-             created_at, kind, mode, plan_id, step_id, title, command, outcome, detail
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+             created_at, kind, mode, plan_id, step_id, title, command, outcome, detail,
+             skill_id, action_id
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
         params![
             created_at,
             input.kind,
@@ -257,14 +267,16 @@ pub fn insert_audit(conn: &Connection, input: &AuditInput, retention_days: i64) 
             command,
             input.outcome,
             input.detail,
+            input.skill_id,
+            input.action_id,
         ],
     )?;
-    Ok(())
+    Ok(conn.last_insert_rowid())
 }
 
-pub fn record_audit(conn: &Connection, policy: &AgentPolicy, input: &AuditInput) -> AppResult<()> {
+pub fn record_audit(conn: &Connection, policy: &AgentPolicy, input: &AuditInput) -> AppResult<i64> {
     if !policy.audit_enabled {
-        return Ok(());
+        return Ok(0);
     }
     insert_audit(conn, input, policy.audit_retention_days)
 }
@@ -276,9 +288,9 @@ pub fn record_action(
     args: &[String],
     outcome: &str,
     detail: Option<&str>,
-) -> AppResult<()> {
+) -> AppResult<i64> {
     if !policy.audit_enabled {
-        return Ok(());
+        return Ok(0);
     }
 
     let kind = match outcome {
@@ -292,6 +304,8 @@ pub fn record_action(
         mode: meta.and_then(|meta| meta.mode.clone()),
         plan_id: meta.and_then(|meta| meta.plan_id.clone()),
         step_id: meta.and_then(|meta| meta.step_id.clone()),
+        skill_id: None,
+        action_id: None,
         title: meta
             .and_then(|meta| meta.title.clone())
             .or_else(|| args.first().cloned()),
@@ -312,7 +326,8 @@ pub fn list_audit(
     let offset = offset.unwrap_or(0).max(0);
 
     let mut stmt = conn.prepare(
-        "SELECT id, created_at, kind, mode, plan_id, step_id, title, command, outcome, detail
+        "SELECT id, created_at, kind, mode, plan_id, step_id, title, command, outcome, detail,
+                skill_id, action_id
          FROM audit_log
          ORDER BY id DESC
          LIMIT ?1 OFFSET ?2",
@@ -331,6 +346,8 @@ pub fn list_audit(
             command: command.and_then(|raw| serde_json::from_str(&raw).ok()),
             outcome: row.get(8)?,
             detail: row.get(9)?,
+            skill_id: row.get(10)?,
+            action_id: row.get(11)?,
         })
     })?;
 
@@ -363,6 +380,8 @@ pub async fn agent_policy_set(
         mode: None,
         plan_id: None,
         step_id: None,
+        skill_id: None,
+        action_id: None,
         title: Some("エージェントポリシー".into()),
         command: None,
         outcome: Some("ok".into()),
@@ -388,7 +407,7 @@ pub async fn audit_log_add(input: AuditInput, state: State<'_, AppState>) -> App
         .lock()
         .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
     let policy = load_policy(&conn)?;
-    record_audit(&conn, &policy, &input)
+    record_audit(&conn, &policy, &input).map(|_| ())
 }
 
 #[tauri::command]
@@ -471,6 +490,8 @@ mod tests {
             mode: None,
             plan_id: None,
             step_id: None,
+            skill_id: None,
+            action_id: None,
             title: None,
             command: None,
             outcome: None,
@@ -528,6 +549,34 @@ mod tests {
             entries[0].command.as_deref(),
             Some(&["snapshot".to_string(), "--json".to_string()][..])
         );
+    }
+
+    #[test]
+    fn records_skill_metadata_round_trip() {
+        let conn = Connection::open_in_memory().unwrap();
+        db::init(&conn).unwrap();
+        let policy = AgentPolicy::default();
+        let input = AuditInput {
+            kind: "skill_run".into(),
+            mode: Some("assistive".into()),
+            plan_id: Some("plan-2".into()),
+            step_id: Some("step-2".into()),
+            skill_id: Some("code-edit".into()),
+            action_id: Some("editor.replaceText".into()),
+            title: Some("コード編集".into()),
+            command: None,
+            outcome: Some("ok".into()),
+            detail: Some("app.ts を置換".into()),
+        };
+
+        record_audit(&conn, &policy, &input).unwrap();
+
+        let entries = list_audit(&conn, Some(10), Some(0)).unwrap();
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].kind, "skill_run");
+        assert_eq!(entries[0].skill_id.as_deref(), Some("code-edit"));
+        assert_eq!(entries[0].action_id.as_deref(), Some("editor.replaceText"));
+        assert_eq!(entries[0].detail.as_deref(), Some("app.ts を置換"));
     }
 
     #[test]

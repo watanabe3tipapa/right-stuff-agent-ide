@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "shell-command",
+  "name": "Shell Command",
+  "description": "未許可のプログラムを指定する例",
+  "version": "0.1.0",
+  "category": "editor",
+  "actions": [
+    {
+      "id": "editor.readFile",
+      "handler": "editor.readFile",
+      "description": "ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "paths": {
+      "read": ["**/*"]
+    },
+    "commands": [
+      {
+        "program": "sh",
+        "args": ["-c", "echo hello"]
+      }
+    ]
+  }
+}

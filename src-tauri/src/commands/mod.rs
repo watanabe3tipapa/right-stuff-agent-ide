@@ -6,5 +6,6 @@ pub mod llm;
 pub mod openship;
 pub mod policy;
 pub mod settings;
+pub mod skills;
 pub mod terminal;
 pub mod workspace;

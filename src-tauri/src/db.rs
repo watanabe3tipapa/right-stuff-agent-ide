@@ -54,6 +54,24 @@ pub fn init(conn: &Connection) -> AppResult<()> {
          CREATE INDEX IF NOT EXISTS idx_audit_log_created
              ON audit_log(id DESC);",
     )?;
+    ensure_column(conn, "audit_log", "skill_id", "TEXT")?;
+    ensure_column(conn, "audit_log", "action_id", "TEXT")?;
+    Ok(())
+}
+
+/// Add a column to an existing table. `table`, `column`, and `kind` are
+/// compile-time constants at every call site, so the SQL is not user input.
+fn ensure_column(conn: &Connection, table: &str, column: &str, kind: &str) -> AppResult<()> {
+    let mut statement = conn.prepare(&format!("PRAGMA table_info({table})"))?;
+    let columns = statement
+        .query_map([], |row| row.get::<_, String>(1))?
+        .collect::<Result<Vec<_>, _>>()?;
+    if !columns.iter().any(|name| name == column) {
+        conn.execute(
+            &format!("ALTER TABLE {table} ADD COLUMN {column} {kind}"),
+            [],
+        )?;
+    }
     Ok(())
 }
 

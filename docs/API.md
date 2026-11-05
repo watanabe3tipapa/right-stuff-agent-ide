@@ -106,6 +106,111 @@ session, trace, --version, --help
 
 出力は 200,000 文字で打ち切る。
 
+## スキル
+
+| コマンド | 引数 | 戻り値 |
+| --- | --- | --- |
+| `skills_list` | — | `{ skills: SkillManifest[], warnings: SkillWarning[] }` |
+| `skill_policy_get` | — | `SkillPolicy` |
+| `skill_policy_set` | `{ policy }` | 正規化後の `SkillPolicy` |
+| `skill_decision` | `{ skillId, actionId }` | `{ skillId, actionId, decision, risk }` |
+| `skill_preview` | `{ skillId, actionId, params, mode? }` | `SkillPreviewResult` |
+| `skill_run` | `{ request }` | `SkillRunResult` |
+
+`skills_list` は `<workspace>/.agents/skills/*.json` を読み、検証済みの
+マニフェストだけを返す。壊れたファイルは `warnings` に `file` と `message` を
+返し、他のスキルの読み込みを止めない。スキーマとバリデーション規則は
+[SKILLS.md](./SKILLS.md)、機械可読スキーマは
+[skills.schema.json](./skills.schema.json) を参照。
+
+`skill_policy_set` は保存前に `allow` の書き込みアクションを `ask` へ丸め、
+`test` を自動許可の対象から外す。`skill_decision` はポリシーとマニフェストの
+優先順位を Rust 側で解決して返す。
+
+```ts
+interface SkillWarning {
+  file: string;
+  message: string;
+}
+
+interface SkillPolicy {
+  version: number;
+  skills: Record<string, "allow" | "ask" | "block">;
+  actions: Record<string, "allow" | "ask" | "block">;
+  verification: {
+    autoRun: boolean;
+    allowChecks: ("typecheck" | "lint" | "test")[];
+  };
+  limits: {
+    maxFiles: number;
+    maxBytes: number;
+    timeoutMs: number;
+    maxOutputChars: number;
+  };
+}
+
+interface SkillManifest {
+  schemaVersion: 1;
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  category: "editor" | "git" | "terminal" | "debug";
+  risk: "read" | "write" | "destructive";
+  actions: SkillAction[];
+  permissions: Permissions;
+  approval: Approval;
+  verification: Verification;
+  limits: Limits;
+}
+```
+
+`skill_preview` は書き込みを行わず、差分（unified diff）と警告を返す。
+`skill_run` はポリシー解決、必要ならネイティブ承認、ハンドラ実行、監査記録を行う。
+想定内の拒否・キャンセルは例外ではなく `status` で返す。
+
+```ts
+interface SkillPreviewResult {
+  skillId: string;
+  actionId: string;
+  decision: "allow" | "ask" | "block";
+  risk: "read" | "write" | "destructive";
+  path: string | null;
+  addedLines: number;
+  removedLines: number;
+  diff: string;
+  warnings: string[];
+}
+
+interface SkillRequest {
+  skillId: string;
+  actionId: string;
+  params: Record<string, unknown>;
+  planId?: string;
+  stepId?: string;
+  title?: string;
+  mode?: "passive" | "assistive" | "autonomous";
+}
+
+interface SkillRunResult {
+  runId: string;
+  // v0.4.0 のハンドラは同期実行のみのため `timeout` はない。
+  status: "ok" | "blocked" | "cancelled" | "failed";
+  decision: "allow" | "ask" | "block";
+  changedFiles: string[];
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  durationMs: number;
+  auditId: number;
+  errorCode?: string;
+}
+```
+
+`skill_run` に渡す引数は `{ request: SkillRequest }` の形にする。検証ループ
+（`verification` / `skill_verify`）は v0.5 で追加する。設計は
+[SKILLS.md](./SKILLS.md) を参照。
+
 ## 計画立案
 
 計画立案は専用の Tauri コマンドを持たない。フロントエンドが既存の `llm_chat`

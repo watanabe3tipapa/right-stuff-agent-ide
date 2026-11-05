@@ -1,7 +1,9 @@
 mod commands;
 mod db;
 mod error;
+mod fsutil;
 mod paths;
+mod skills;
 mod state;
 
 use state::AppState;
@@ -95,6 +97,12 @@ pub fn run() {
             commands::agent::agent_status,
             commands::agent::agent_run,
             commands::agent::agent_snapshot,
+            commands::skills::skills_list,
+            commands::skills::skill_policy_get,
+            commands::skills::skill_policy_set,
+            commands::skills::skill_decision,
+            commands::skills::skill_preview,
+            commands::skills::skill_run,
             commands::policy::agent_policy_get,
             commands::policy::agent_policy_set,
             commands::policy::audit_log_add,

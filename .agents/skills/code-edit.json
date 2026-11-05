@@ -1,13 +1,90 @@
 {
-  "name": "code-edit",
-  "description": "エディタ内でのコード編集操作",
+  "schemaVersion": 1,
+  "id": "code-edit",
+  "name": "Code Edit",
+  "description": "ワークスペース内のファイルを読み取り、文字列を置換して保存する",
+  "version": "0.1.0",
+  "category": "editor",
+  "risk": "write",
   "actions": [
-    "editor.openFile",
-    "editor.editRange",
-    "editor.insertText",
-    "editor.deleteRange",
-    "editor.saveFile",
-    "editor.runCommand"
+    {
+      "id": "editor.readFile",
+      "handler": "editor.readFile",
+      "description": "ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      },
+      "timeoutMs": 5000
+    },
+    {
+      "id": "editor.replaceText",
+      "handler": "editor.replaceText",
+      "description": "一意に一致する文字列を置換する",
+      "risk": "write",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        },
+        "oldText": {
+          "type": "string",
+          "description": "置換前の文字列。ファイル内で 1 回だけ一致すること",
+          "required": true,
+          "maxLength": 100000
+        },
+        "newText": {
+          "type": "string",
+          "description": "置換後の文字列",
+          "required": true,
+          "maxLength": 100000
+        }
+      },
+      "timeoutMs": 30000
+    },
+    {
+      "id": "editor.createFile",
+      "handler": "editor.createFile",
+      "description": "存在しないファイルを作成する",
+      "risk": "write",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        },
+        "content": {
+          "type": "string",
+          "description": "初期内容",
+          "required": false,
+          "maxLength": 100000
+        }
+      },
+      "timeoutMs": 30000
+    }
   ],
-  "verification": "snapshot_after_action"
+  "permissions": {
+    "paths": {
+      "read": ["**/*"],
+      "write": ["**/*"]
+    }
+  },
+  "verification": {
+    "mode": "auto",
+    "checks": ["typecheck", "lint", "test"],
+    "timeoutMs": 300000,
+    "stopOnFailure": true
+  },
+  "limits": {
+    "maxFiles": 20,
+    "maxBytes": 1048576
+  }
 }

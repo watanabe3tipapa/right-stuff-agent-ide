@@ -609,6 +609,8 @@ fn audit(state: &State<'_, AppState>, outcome: &str, command: Vec<String>, detai
             mode: None,
             plan_id: None,
             step_id: None,
+            skill_id: None,
+            action_id: None,
             title: Some("Openship".into()),
             command: Some(command),
             outcome: Some(outcome.to_string()),

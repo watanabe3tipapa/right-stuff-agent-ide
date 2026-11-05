@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "write-allow",
+  "name": "Write Allow",
+  "description": "書き込みアクションに allow を指定する例",
+  "version": "0.1.0",
+  "category": "editor",
+  "risk": "write",
+  "actions": [
+    {
+      "id": "editor.readFile",
+      "handler": "editor.readFile",
+      "description": "ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      }
+    },
+    {
+      "id": "editor.replaceText",
+      "handler": "editor.replaceText",
+      "description": "文字列を置換する",
+      "risk": "write",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        },
+        "oldText": {
+          "type": "string",
+          "description": "置換前の文字列",
+          "required": true,
+          "maxLength": 100000
+        },
+        "newText": {
+          "type": "string",
+          "description": "置換後の文字列",
+          "required": true,
+          "maxLength": 100000
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "paths": {
+      "read": ["**/*"],
+      "write": ["**/*"]
+    }
+  },
+  "approval": {
+    "default": "ask",
+    "overrides": {
+      "editor.replaceText": "allow"
+    }
+  }
+}

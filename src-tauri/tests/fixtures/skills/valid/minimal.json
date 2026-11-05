@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "minimal",
+  "name": "Minimal",
+  "description": "読み取りだけの最小マニフェスト",
+  "version": "1.0.0",
+  "category": "editor",
+  "actions": [
+    {
+      "id": "editor.readFile",
+      "handler": "editor.readFile",
+      "description": "ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "paths": {
+      "read": ["**/*"]
+    }
+  }
+}

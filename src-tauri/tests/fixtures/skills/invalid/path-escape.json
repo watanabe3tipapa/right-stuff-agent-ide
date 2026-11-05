@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "path-escape",
+  "name": "Path Escape",
+  "description": "ワークスペース外を指す glob の例",
+  "version": "0.1.0",
+  "category": "editor",
+  "actions": [
+    {
+      "id": "editor.readFile",
+      "handler": "editor.readFile",
+      "description": "ファイルを読み取る",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス",
+          "required": true,
+          "maxLength": 1024
+        }
+      }
+    }
+  ],
+  "permissions": {
+    "paths": {
+      "read": ["../**"]
+    }
+  }
+}

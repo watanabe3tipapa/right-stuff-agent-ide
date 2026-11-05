@@ -156,3 +156,9 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - API キーのローテーションや複数キーの管理は未実装。
 - Git の merge / rebase / push と認証情報の管理は未実装。Git 操作の監査ログ記録は未対応。
 - 統合ターミナル内のコマンドはアプリのポリシー・承認・監査ログの対象外。信頼できる作業ディレクトリでのみ利用する。
+
+## 依存関係の監査
+
+デスクトップアプリは macOS 専用だが、`Cargo.lock` には Tauri の Linux 向け依存（GTK / WebKit など）も解決結果として含まれる。これらは macOS ビルドではコンパイルされないが、Dependabot と `cargo audit` は lockfile 全体を対象にするため、警告が表示されることがある。
+
+macOS の依存ツリーに含まれない crate の警告は `not_used` として扱い、必要に応じてこの節に記録する。現在の該当例は `glib`（RUSTSEC-2024-0429、Linux 専用の Tauri 依存）で、macOS ビルドには含まれない。

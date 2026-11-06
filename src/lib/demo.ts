@@ -175,6 +175,7 @@ const dirs = new Set<string>([
   ".agents/skills",
 ]);
 const versions: VersionContent[] = [];
+let nextVersionId = 1;
 const deleted = new Map<string, string>();
 
 function demoRoot(): WorkspaceInfo {
@@ -239,7 +240,9 @@ function ensureParent(path: string) {
 }
 
 function record(path: string, content: string): number {
-  const id = versions.length + 1;
+  // 履歴は新しい順に保持する。ID は配列の長さではなく単調増加カウンタで
+  // 採番し、将来履歴を間引いても既存 ID と衝突しないようにする。
+  const id = nextVersionId++;
   versions.unshift({
     id,
     path,
@@ -545,6 +548,12 @@ export const demoApi = {
   async agentSnapshot(): Promise<AgentRunResult> {
     throw new Error(
       "ブラウザデモではスナップショットを取得できません。`npm run tauri dev` で起動してください。",
+    );
+  },
+
+  async agentRun(): Promise<AgentRunResult> {
+    throw new Error(
+      "ブラウザデモではエージェントを実行できません。`npm run tauri dev` で起動してください。",
     );
   },
 

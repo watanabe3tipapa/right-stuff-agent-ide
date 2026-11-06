@@ -101,7 +101,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 ## Git 連携
 
 - `git` CLI をワークスペースルートから `std::process::Command` で直接実行する。シェルを介さず、ユーザー入力をコマンド文字列へ連結しない。
-- ステージ / アンステージ / 差分の対象パスは `paths::validate_relative` で検証し、絶対パスと `..` を拒否する。ワークスペース外のファイルは操作できない。
+- ステージ / ステージ解除 / 差分の対象パスは `paths::validate_relative` で検証し、絶対パスと `..` を拒否する。ワークスペース外のファイルは操作できない。
 - コミットメッセージは空文字と 5,000 文字超を拒否する。改行はそのまま 1 つの引数として渡す。
 - `git_status` は `--porcelain=v2 --branch --untracked-files=all`、差分は `--no-color --unified=3` を使い、出力は 200,000 文字で打ち切る。
 - `GIT_TERMINAL_PROMPT=0` を設定し、認証待ちでアプリが停止しないようにする。Git の通信・認証情報は OS / Git の設定に従う。

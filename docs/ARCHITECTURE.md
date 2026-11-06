@@ -253,7 +253,7 @@ GitPanel (マウント / 更新)
   → gitStore.refresh
   → git_status (porcelain=v2 --branch --untracked-files=all)
   → ブランチ・ahead/behind・ステージ済み/変更/未追跡に分解
-  → ステージ / アンステージ / 差分 / コミット / 履歴をコマンドで実行
+  → ステージ / ステージ解除 / 差分 / コミット / 履歴をコマンドで実行
   → 成功時に status と log を再取得
 ```
 

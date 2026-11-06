@@ -52,6 +52,12 @@ describe("demo workspace", () => {
   it("reports that LLM access is unavailable in the browser demo", async () => {
     await expect(demoApi.llmChat()).rejects.toThrow("ブラウザデモでは LLM を利用できません");
   });
+
+  it("reports that agent execution is unavailable in the browser demo", async () => {
+    await expect(demoApi.agentRun()).rejects.toThrow(
+      "ブラウザデモではエージェントを実行できません",
+    );
+  });
 });
 
 describe("demo skills", () => {

@@ -170,7 +170,7 @@ export const api = {
   agentRun(args: string[], audit?: AgentAuditMeta): Promise<AgentRunResult> {
     return isTauri
       ? call<AgentRunResult>("agent_run", { args, audit: audit ?? null })
-      : demoApi.agentSnapshot();
+      : demoApi.agentRun();
   },
 
   agentPolicy(): Promise<AgentPolicy> {

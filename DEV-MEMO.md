@@ -182,6 +182,7 @@ x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 - `skills/exec.rs` が独立プロセスグループ、タイムアウト、出力上限を共通化する。
 - DAP は `rpc.rs` の request/response 相関とイベント購読を使い、Debug タブと同じセッションを共有する。
 - マニフェストから任意のコマンド文字列は受け取らない。実行は Rust の固定ハンドラと許可リストだけが行う。
+- `package.json` の `overrides.minimatch` は、ESLint / typescript-eslint が参照する推移的依存を 11.0.3 以上に固定するためのもの。上流が同等以上を解決するようになったら削除を検討する。
 
 ## 関連ドキュメント
 

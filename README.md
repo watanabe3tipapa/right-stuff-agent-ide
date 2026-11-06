@@ -71,7 +71,7 @@ v0.3.7 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 - **Language Server (LSP)** — rust-analyzer / typescript-language-server / pyright / gopls / clangd / sourcekit-lsp / lua-language-server を固定レジストリから検出し、Monaco の補完・定義ジャンプ・ホバー・診断・名前変更 (F2)・参照検索 (⇧F12)・コードアクションに接続。`⌘T` のワークスペースシンボル検索も利用できます。開いているタブを didOpen / didChange / didSave / didClose で同期し、診断件数をステータスバーに表示
 - **デバッガ (DAP)** — lldb-dap（C / C++ / Rust / Swift / Objective-C）と debugpy（Python）を固定レジストリから検出。Debug タブで起動・停止、ブレークポイント、コールスタック、変数、出力を操作。ブレークポイントは行番号左のクリックまたは F9 で切り替え
 - **クイックオープン** — `⌘P` でワークスペース内のファイルを名前から絞り込み、キーボードだけで開けます
-- **Git パネル** — 現在のブランチ、ahead / behind、変更・ステージ済み・未追跡を表示。ステージ / アンステージ、一括操作、差分プレビュー、コミット、直近の履歴に対応。Git リポジトリでないフォルダでは `git init` を実行できます
+- **Git パネル** — 現在のブランチ、ahead / behind、変更・ステージ済み・未追跡を表示。ステージ / ステージ解除、一括操作、差分プレビュー、コミット、直近の履歴に対応。Git リポジトリでないフォルダでは `git init` を実行できます
 - **統合ターミナル** — `⌘J` でワークスペース直下に PTY を開き、xterm.js で対話的に操作。リサイズ、再起動、クリアに対応し、シェルは `RIGHT_STUFF_SHELL` → `SHELL` → `/bin/zsh` の順で解決します
 - **LLM チャット** — OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続。ストリーミング表示、生成停止、接続テストに対応。API キーは OS キーチェーンに保存
 - **計画立案と承認** — 意図を入力すると LLM が Agent Desktop の許可アクションだけを使った実行計画を生成。手順ごとの引数検証、計画単位の承認、Assistive での個別実行、Autonomous での連続実行に対応。モデルが生成した不正なアクションや引数は実行前に拒否

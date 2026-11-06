@@ -5,6 +5,10 @@
 
 ## リリース履歴
 
+### 未リリース
+
+- [x] ウィンドウ位置の補正 — 起動時はプライマリモニタの作業領域中央に配置し、macOS が切断済みディスプレイのフレームを復元した場合はタイトルバーが見えるモニタ中央へ移動（`src-tauri/tauri.conf.json` の `center`、`src-tauri/src/window_state.rs`、単体テスト 8 件）
+
 ### v0.3.7
 
 - [x] HTML レンダラー — スキル実行結果を自己完結 HTML に変換し、アプリ内プレビューと `.agents/reports/` への保存に対応
@@ -175,6 +179,18 @@ README / README.en / LP / 実装設計書 / docs のバージョン表記と DMG
 x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 ツールチェーンは `PATH="$HOME/.cargo/bin:$PATH"` で実行する。
 
+### 実機検証（v0.3.7 / Intel）
+
+2026-11-06 に Intel Core i7-1068NG7 / macOS 15.8.3（x86_64）で確認した。
+
+- DMG: `Right-Stuff.Agent.IDE_0.3.7_x64.dmg`
+- SHA-256: `43890b975320f8704aa63f11e2ccc6e5226f50377961a63b67f2866f37018570`（リリースノートと一致）
+- 実行ファイル: `Mach-O 64-bit executable x86_64`、`CFBundleShortVersionString` は `0.3.7`、最低 OS は `11.0`
+- 署名: 未署名（`codesign` は "code object is not signed at all"、`spctl` は "rejected: no usable signature"）
+- 起動: `/Applications` へコピー後に起動し、ファイルツリー、Monaco エディタ、Agent パネルの各タブ、ステータスバーの `v0.3.7` を確認
+- 注意: 検証では `curl` で DMG を取得したため quarantine 属性が付かず、Gatekeeper の「開く」操作は不要だった。ブラウザから取得した DMG では警告が出る
+- 初回起動時にウィンドウがプライマリモニタ以外の位置（`position: 45, -1086`）に開いたため、起動位置をプライマリモニタ中央に固定し、画面外なら補正する仕組みを追加した（未リリース）
+
 ## 設計メモ
 
 - レポートは WebView の `src/lib/report.ts` で生成し、Rust の `report_export` は保存だけを担当する。保存先は `.agents/reports/*.html` に限定し、ファイル名は英数字と `.` `_` `-` のみ。
@@ -183,6 +199,7 @@ x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 - DAP は `rpc.rs` の request/response 相関とイベント購読を使い、Debug タブと同じセッションを共有する。
 - マニフェストから任意のコマンド文字列は受け取らない。実行は Rust の固定ハンドラと許可リストだけが行う。
 - `package.json` の `overrides.minimatch` は、ESLint / typescript-eslint が参照する推移的依存を 11.0.3 以上に固定するためのもの。上流が同等以上を解決するようになったら削除を検討する。
+- メインウィンドウは `tauri.conf.json` の `center: true` でプライマリモニタの作業領域中央に開く。起動時に `window_state::ensure_on_screen` で接続中モニタの `work_area` と比較し、タイトルバーが画面外ならプライマリモニタ中央へ移動する。これにより、切断済みディスプレイの座標が復元されても操作不能にならない。
 
 ## 関連ドキュメント
 

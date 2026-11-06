@@ -6,6 +6,7 @@ mod paths;
 mod rpc;
 mod skills;
 mod state;
+mod window_state;
 
 use state::AppState;
 use tauri::{Emitter, Manager};
@@ -75,6 +76,15 @@ pub fn run() {
         })
         .setup(|app| {
             install_quit_menu_guard(app)?;
+
+            // macOS can restore a window to a display that is no longer
+            // connected. Move it onto a visible monitor before the user sees
+            // an unreachable window.
+            if let Some(window) = app.get_webview_window("main")
+                && let Err(error) = window_state::ensure_on_screen(&window)
+            {
+                eprintln!("failed to restore the main window position: {error}");
+            }
 
             let state = AppState::new(app.handle())?;
             app.manage(state);

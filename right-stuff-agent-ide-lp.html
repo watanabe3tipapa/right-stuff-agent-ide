@@ -1001,7 +1001,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon">&#128421;</div>
       <div class="feature-title">macOS ネイティブ</div>
-      <div class="feature-desc">macOS 専用のデスクトップアプリとして、Apple Silicon / Intel の DMG を配布しています。Overlay タイトルバー、Keychain、アクセシビリティ権限など macOS の機能に統合しています。</div>
+      <div class="feature-desc">macOS 専用のデスクトップアプリとして、Apple Silicon / Intel の DMG を配布しています。Intel x64 版（v0.3.7）は Intel Core i7 / macOS 15.8.3 の実機で起動を確認済みです。Overlay タイトルバー、Keychain、アクセシビリティ権限など macOS の機能に統合しています。</div>
     </div>
   </div>
 </section>
@@ -1056,7 +1056,7 @@ footer .footer-links a:hover { color: var(--accent); }
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か環境変数 <code>AGENT_DESKTOP_BIN</code> で指定する</li>
         <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みです。実行できるのは Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます</li>
         <li><strong>スキルの制約</strong> — ターミナルは許可リストのプログラムのみ、デバッグは <code>lldb-dap</code> / <code>debugpy</code> のみ。スキルからの PTY 直接入力や任意アダプターの追加はできません</li>
-        <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしで、Intel 実機での起動確認は未実施です</li>
+        <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしですが、Intel x64 版（v0.3.7）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合してインストール・起動を確認済みです。v0.3.7 の Intel x64 版では初回起動時にウィンドウが画面外や別ディスプレイに開く場合があり、次回リリースで補正します</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
         <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は先送り</li>
       </ul>
@@ -1344,7 +1344,7 @@ debug.start  adapter=lldb-dap  program=target/debug/app
   </div>
   <div class="install-box">
     <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Apple Silicon / Intel）のみ。Windows / Linux 版は提供していません。</p>
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。</p>
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。Intel x64 版は Intel Core i7 / macOS 15.8.3 で起動確認済みです。</p>
     <p style="color:var(--ink-muted);margin-bottom:0.5em;">ソースからビルドする場合</p>
     <pre>npm ci
 npm run tauri build
@@ -1372,6 +1372,12 @@ agent-desktop permissions --guide</pre>
     <summary>このサイトは製品版ですか？</summary>
     <div class="faq-answer">
       このページは Web 上で UI を試すためのサンプルです。製品版は macOS 専用の Tauri アプリで、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" style="color:var(--accent);">GitHub Releases</a> の DMG からインストールできます。
+    </div>
+  </details>
+  <details class="faq-item">
+    <summary>Intel Mac でも利用できますか？</summary>
+    <div class="faq-answer">
+      利用できます。対応 OS は macOS 11 以降で、Apple Silicon 版と Intel (x86_64) 版の DMG を配布しています。Intel x64 版（v0.3.7）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。x64 版は未署名のため、初回起動時に Gatekeeper の警告が出る場合は右クリック →「開く」を選択してください。
     </div>
   </details>
   <details class="faq-item">

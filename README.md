@@ -31,6 +31,8 @@ v0.3.7 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 対応 OS は **macOS 11 以降（Apple Silicon / Intel）のみ**です。Windows / Linux 版は提供しません。
 
 > DMG は Apple Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。
+>
+> Intel x64 版（v0.3.7）は、Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。
 
 ## コンセプト
 
@@ -300,7 +302,7 @@ vercel --prod          # 本番環境へデプロイ
 
 ## 既知の制約
 
-- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。動作確認は macOS（Apple Silicon）のみで、Intel 実機での起動確認は未実施です。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
+- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。Apple Silicon に加え、v0.3.7 の x64 版を Intel Core i7 / macOS 15.8.3 の実機で起動確認済みです。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。v0.3.7 の Intel x64 版では、初回起動時にウィンドウが画面外や別ディスプレイに開く場合があります（次回リリースで補正）
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
 - 計画の実行対象は Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます。スキルから実行できる操作は、エディタ・Git・許可プログラム・DAP の固定ハンドラのみです

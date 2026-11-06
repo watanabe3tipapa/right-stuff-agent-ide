@@ -31,6 +31,8 @@ v0.3.7 is available as a DMG on [GitHub Releases](https://github.com/watanabe3ti
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
 > The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
+>
+> The Intel x64 build (v0.3.7) has been installed and launched on an Intel Core i7 Mac running macOS 15.8.3, with its SHA-256 checksum verified.
 
 ## Concept
 
@@ -297,7 +299,7 @@ vercel --prod          # Deploy to production
 
 ## Known limitations
 
-- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
+- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. In addition to Apple Silicon, the v0.3.7 x64 build has been launch-tested on an Intel Core i7 Mac running macOS 15.8.3. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned). In v0.3.7 on Intel x64, the main window may open off-screen or on another display on first launch; a fix is planned for the next release
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
 - Plans can run allowlisted Agent Desktop actions and manifest-declared skills. Skill execution is limited to the fixed editor, Git, allowlisted program, and DAP handlers

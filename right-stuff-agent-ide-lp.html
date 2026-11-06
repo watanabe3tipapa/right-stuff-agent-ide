@@ -899,9 +899,9 @@ footer .footer-links a:hover { color: var(--accent); }
 </nav>
 
 <header class="hero">
-  <div class="badge"><span class="dot"></span> Sample Preview</div>
+  <div class="badge"><span class="dot"></span> v0.3.7 / Sample Preview</div>
   <h1>エージェントが IDE を<span class="highlight block-line">直接操作する</span></h1>
-  <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。Tauri 2.0 のネイティブ IDE を、ブラウザで試せるサンプルとともに紹介します。</p>
+  <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。スキル実行、検証ループ、自己完結 HTML レポートまで備えた Tauri 2.0 のネイティブ IDE を、ブラウザで試せるサンプルとともに紹介します。</p>
   <div class="cta-group">
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" class="cta-btn cta-primary">DMG をダウンロード</a>
     <a href="/app/" class="cta-btn cta-secondary">ブラウザデモを試す</a>
@@ -980,8 +980,23 @@ footer .footer-links a:hover { color: var(--accent); }
     </div>
     <div class="feature-card">
       <div class="feature-icon" style="background:var(--accent2-weak)">&#128260;</div>
-      <div class="feature-title">検証ループ</div>
-      <div class="feature-desc">エージェントのアクション後にスナップショットを再取得し、状態変化を検証する設計です。検証ループは今後実装します。</div>
+      <div class="feature-title">スキル実行</div>
+      <div class="feature-desc">エディタ、Git、ターミナル、デバッグを v1 マニフェストで宣言し、Rust の固定ハンドラだけが実行します。読み取りは承認なし、書き込みはネイティブ承認を挟み、結果は監査ログに残します。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#9881;</div>
+      <div class="feature-title">Git / ターミナル / デバッグ</div>
+      <div class="feature-desc">Git は状態・差分・ステージ・コミット、ターミナルは許可プログラムを <code>program + args</code> で直接実行、デバッグは DAP で Debug タブと同じセッションを操作します。シェル文字列は組み立てません。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:var(--accent2-weak)">&#128196;</div>
+      <div class="feature-title">検証ループと HTML レポート</div>
+      <div class="feature-desc">書き込み後に typecheck / lint / test を実行し、結果を Skills タブへ表示。実行内容は承認 → 実行 → 検証 → 結果のフロー図、明暗テーマ、パラメータ、出力を含む自己完結 HTML としてプレビュー・保存できます。</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128274;</div>
+      <div class="feature-title">ローカルファースト</div>
+      <div class="feature-desc">設定・トークン・監査ログ・ターミナル / Git / LSP / DAP の活動は端末内に留まります。レポートはワークスペースの <code>.agents/reports/</code> に保存し、外部 CDN やテレメトリは使いません。</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">&#128421;</div>
@@ -1028,7 +1043,9 @@ footer .footer-links a:hover { color: var(--accent); }
         <li><strong>ファイルが主役</strong> — ワークスペースの Markdown を直接編集。Finder や Git とそのまま併用できる</li>
         <li><strong>書き味を重視</strong> — Monaco、タブ、未保存管理、GFM の分割プレビュー</li>
         <li><strong>履歴と安全性</strong> — 保存ごとの SQLite 履歴、atomic write、ゴミ箱へのソフトデリート、パス検証</li>
-        <li><strong>操作が見える</strong> — エージェントのコマンド、stdout / stderr、終了コードを UI に表示</li>
+        <li><strong>操作が見える</strong> — エージェントのコマンド、stdout / stderr、終了コード、検証結果を UI に表示。実行内容は HTML レポートとして保存できる</li>
+        <li><strong>スキルを安全に実行</strong> — マニフェストは宣言のみ。Git / ターミナル / デバッグは Rust の固定ハンドラと許可リストで実行し、書き込みは承認を挟む</li>
+        <li><strong>ローカルファースト</strong> — 設定・トークン・監査ログ・レポートは端末内に留まり、テレメトリやクラウド同期はない</li>
         <li><strong>MIT の参考実装</strong> — 自分の IDE を作るための出発点として利用できる</li>
       </ul>
     </div>
@@ -1037,7 +1054,8 @@ footer .footer-links a:hover { color: var(--accent); }
       <ul>
         <li><strong>LLM は OpenAI 互換 API に対応</strong> — Tauri 版では OpenAI / Ollama / LM Studio / OpenRouter などに接続できます。ブラウザデモでは利用できません。Anthropic 固有 API は今後対応</li>
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か環境変数 <code>AGENT_DESKTOP_BIN</code> で指定する</li>
-        <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みですが、実行できるのは Agent Desktop の許可アクションだけです。エディタ・Git・ターミナルのスキル実行と検証ループは今後対応</li>
+        <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みです。実行できるのは Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます</li>
+        <li><strong>スキルの制約</strong> — ターミナルは許可リストのプログラムのみ、デバッグは <code>lldb-dap</code> / <code>debugpy</code> のみ。スキルからの PTY 直接入力や任意アダプターの追加はできません</li>
         <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしで、Intel 実機での起動確認は未実施です</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
         <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は先送り</li>
@@ -1050,7 +1068,7 @@ footer .footer-links a:hover { color: var(--accent); }
   <div class="section-header">
     <div class="section-label">Roadmap</div>
     <h2>実装ロードマップ</h2>
-    <p class="section-desc">Phase 0 と Phase 1 は完了済みです。以降の期間・優先度・内容は実装設計書に基づく目安で、進捗に応じて更新します。</p>
+    <p class="section-desc">Phase 0 から Phase 3 まで完了済みです。以降の期間・優先度・内容は実装設計書に基づく目安で、進捗に応じて更新します。</p>
   </div>
   <div class="roadmap-grid">
     <div class="roadmap-item done">
@@ -1077,11 +1095,11 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="roadmap-meta">4週間 / 優先度: 高</div>
       <p>クイックオープン、Git 統合、統合ターミナル (PTY)、ファイル検索、LSP（補完・定義・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索）、DAP デバッグを実装済み。</p>
     </div>
-    <div class="roadmap-item">
+    <div class="roadmap-item done">
       <div class="roadmap-phase">Phase 3</div>
-      <div class="roadmap-title">エージェントスキルシステム</div>
+      <div class="roadmap-title">エージェントスキルシステム <span class="roadmap-status">完了</span></div>
       <div class="roadmap-meta">3週間 / 優先度: 高</div>
-      <p>スキル定義フォーマット、スキルローダー、複数ステップの自律実行と検証。v0.3.5 で typecheck / lint / test の検証ループを、v0.3.6 で Git・ターミナル・デバッグのスキルハンドラを、v0.3.7 でスキル実行レポートの HTML レンダラーを追加。</p>
+      <p>v1 マニフェスト、スキルローダー、承認ポリシー、監査ログ、検証ループを実装。v0.3.6 で Git・ターミナル・デバッグのハンドラを、v0.3.7 で実行内容をまとめる自己完結 HTML レポートを追加しました。</p>
     </div>
     <div class="roadmap-item">
       <div class="roadmap-phase">Phase 4</div>
@@ -1184,6 +1202,32 @@ Base URL: https://api.openai.com/v1
 プロバイダー: Ollama
 Base URL: http://localhost:11434/v1
 モデル: llama3.2</pre>
+      </div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-num">08</div>
+      <div class="step-content">
+        <div class="step-title">スキルを実行</div>
+        <div class="step-desc">エージェントパネルの Skills タブでアクションを選び、パラメータを入力して実行します。読み取り系はそのまま、書き込み系はネイティブ承認ダイアログを経由します。Git は状態・差分・ステージ・コミット、ターミナルは許可プログラム、デバッグは DAP の操作に対応しています。</div>
+        <pre># 実行例
+git.status
+git.diff  path=src/App.tsx
+terminal.run  program=npm  args=["test"]
+debug.start  adapter=lldb-dap  program=target/debug/app
+
+# 書き込み後に typecheck / lint / test が走ります
+# 結果は Skills タブと監査ログに記録されます</pre>
+      </div>
+    </div>
+    <div class="tutorial-step">
+      <div class="step-num">09</div>
+      <div class="step-content">
+        <div class="step-title">HTML レポートを出力</div>
+        <div class="step-desc">実行結果の「HTML レポート」を押すと、承認 → 実行 → 検証 → 結果のフロー図、パラメータ、変更ファイル、stdout / stderr、検証結果をまとめた自己完結 HTML をプレビューします。「保存」でワークスペースの <code>.agents/reports/</code> に <code>&lt;run-id&gt;.html</code> として保存されます。外部 CDN やテレメトリは使いません。</div>
+        <pre># 保存先
+.agents/reports/&lt;run-id&gt;.html
+
+# ブラウザデモではダウンロードになります</pre>
       </div>
     </div>
   </div>
@@ -1339,7 +1383,7 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>どの機能が実装済みですか？</summary>
     <div class="faq-answer">
-      Phase 0 として、ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレットが動作します。Phase 1 では、OpenAI 互換 LLM への接続、ストリーミングチャット、生成停止、接続テスト、API キーの OS キーチェーン保存、計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。v0.2.0 ではローカルファーストの Openship 連携（Deploy タブ、CLI / REST、履歴・ログ・ロールバック）を追加。v0.3.0 ではクイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。v0.3.1 では LSP（補完・定義ジャンプ・ホバー・診断）と DAP（lldb-dap / debugpy によるデバッグ）を、v0.3.3 では LSP の名前変更・参照検索・コードアクション・ワークスペースシンボル検索を、v0.3.4 では人間向けのスキルライブラリとショーケース別窓を、v0.3.5 ではスキル実行後の検証ループ（typecheck / lint / test）を、v0.3.6 では Git・ターミナル・デバッグのスキルハンドラを、v0.3.7 ではスキル実行レポートの HTML レンダラーを追加しました。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「次の候補」と「制約」を参照してください。
+      ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレット、OpenAI 互換 LLM への接続、ストリーミングチャット、計画立案と計画単位の承認、エージェントポリシー、監査ログが動作します。クイックオープン、Git パネル、統合ターミナル (PTY)、LSP（補完・定義・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索）、DAP デバッグ、スキルライブラリ、検証ループ、Git・ターミナル・デバッグのスキル実行、HTML レポートにも対応しています。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「既知の制約」と、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/DEV-MEMO.md" style="color:var(--accent);">DEV-MEMO.md</a> のリリース履歴を参照してください。
     </div>
   </details>
   <details class="faq-item">
@@ -1358,6 +1402,18 @@ agent-desktop permissions --guide</pre>
     <summary>LLM を使った操作はできますか？</summary>
     <div class="faq-answer">
       はい。Tauri 版では、エージェントパネル右上の歯車アイコンから OpenAI 互換 API（OpenAI / Ollama / LM Studio / OpenRouter / カスタム）に接続できます。API キーは OS キーチェーンに保存され、チャットはストリーミング表示・生成停止・接続テストに対応しています。Plan タブまたは <code>/plan</code> に意図を入力すると、LLM が許可アクションだけを使った実行計画を作成し、承認後に実行できます。ブラウザデモでは LLM を利用できません。
+    </div>
+  </details>
+  <details class="faq-item">
+    <summary>スキルは何を実行できますか？</summary>
+    <div class="faq-answer">
+      エージェントパネルの Skills タブと設定のスキルタブから、v1 マニフェストで宣言した操作を実行できます。対応するのはエディタ（読み取り・一意一致の置換・作成）、Git（状態・差分・ブランチ一覧・ステージ・コミット）、ターミナル（npm / pnpm / yarn / cargo / node / python3 / pytest / make を <code>program + args</code> で直接実行）、デバッグ（lldb-dap / debugpy の開始・停止・ステップ・ブレークポイント・式評価）です。マニフェストから任意のシェルコマンドは実行できず、実行は Rust の固定ハンドラだけが行います。
+    </div>
+  </details>
+  <details class="faq-item">
+    <summary>HTML レポートはどこに保存されますか？</summary>
+    <div class="faq-answer">
+      スキル実行結果の「HTML レポート」からプレビューし、ワークスペース内の <code>.agents/reports/&lt;run-id&gt;.html</code> に保存できます。レポートは承認 → 実行 → 検証 → 結果のフロー図、パラメータ、変更ファイル、stdout / stderr、検証結果を含む自己完結 HTML で、外部 CDN やテレメトリは使いません。ファイル名は Rust 側で検証され、<code>.html</code> とワークスペース内のパスだけが許可されます。ブラウザデモではワークスペースが無いためダウンロードになります。
     </div>
   </details>
   <details class="faq-item">

@@ -38,16 +38,16 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Phase 0 implements the foundation: workspace management, the editor, version history, and the Agent Desktop bridge. Phase 1 adds OpenAI-compatible LLM connections, API key storage in the OS keychain, streaming chat, LLM plan generation and plan-level approval, the agent policy, and the audit log. Local-first Openship integration is also available from the Deploy tab. Phase 2 adds Quick Open, a Git panel, and an integrated terminal (PTY) so editing, review, and execution stay in one workspace. v0.3.1 adds LSP (completion, definitions, hover, diagnostics) and DAP (lldb-dap / debugpy), v0.3.3 adds LSP rename, references, code actions, and workspace symbol search, v0.3.4 adds a human-readable skill library and showcase window, v0.3.5 adds a verification loop (typecheck / lint / test) after skill runs, v0.3.6 adds Git, terminal, and debug skill handlers, and v0.3.7 adds a self-contained HTML report renderer for skill runs.
+Workspace management, the Monaco editor, SQLite version history, the Agent Desktop bridge, LLM chat and planning, the Git panel, the integrated terminal, LSP, and DAP are implemented. Skill execution now covers the editor, Git, the terminal, and debugging, with a verification loop after writes and a self-contained HTML report that summarizes each run.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
 | Write | Monaco-based Markdown and code editing, tabs, dirty tracking |
-| Verify | Split GFM preview, command palette, status bar |
+| Verify | Split GFM preview, command palette, verification loop (typecheck / lint / test), HTML reports |
 | Keep | Direct saves into the workspace, version history in SQLite |
 | Protect | Atomic writes, path validation, trash-based soft delete |
 | Connect | Agent Desktop CLI detection, snapshots, allowlisted actions |
-| Delegate | LLM chat over OpenAI-compatible APIs, plan generation, and plan-level approval |
+| Delegate | LLM chat, plan generation, and skill execution (Git / terminal / debug) |
 | Extend | Quick Open, Git panel, integrated terminal (PTY), LSP, DAP debugging |
 
 ### Design principles
@@ -83,10 +83,10 @@ Phase 0 implements the foundation: workspace management, the editor, version his
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
 - **Browser demo (sample)** — run the in-memory demo workspace with `npm run dev` without Tauri. On Vercel it is published as a sample for trying the UI without installing the app
 - **Skill execution** — v1 manifests in `.agents/skills/*.json` are loaded and validated, and `editor.readFile` / `replaceText` / `createFile` run with policy and approval (from the Skills tab in the agent panel and the Skills tab in settings)
-- **Git skills (v0.3.6)** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` run through fixed handlers. Reads need no approval; writes pass through the native approval dialog and are recorded in the local audit log
-- **Terminal skill (v0.3.6)** — `terminal.run` executes npm / pnpm / yarn / cargo / node / python3 / pytest / make as `program + args`, never as a shell string, with an isolated process group, timeout, and output cap
-- **Debug skills (v0.3.6)** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` drive DAP request/response and share the Debug tab session. `debug.start` performs the initialize → launch → initialized → configurationDone handshake
-- **HTML reports (v0.3.7)** — turn a skill run into a self-contained HTML report with an inline SVG approval → run → verify → result flow, light/dark themes, parameters, changed files, and verification output. Preview it in the app or save it under `.agents/reports/`; no CDN or telemetry
+- **Git skills ** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` run through fixed handlers. Reads need no approval; writes pass through the native approval dialog and are recorded in the local audit log
+- **Terminal skill ** — `terminal.run` executes npm / pnpm / yarn / cargo / node / python3 / pytest / make as `program + args`, never as a shell string, with an isolated process group, timeout, and output cap
+- **Debug skills ** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` drive DAP request/response and share the Debug tab session. `debug.start` performs the initialize → launch → initialized → configurationDone handshake
+- **HTML reports ** — turn a skill run into a self-contained HTML report with an inline SVG approval → run → verify → result flow, light/dark themes, parameters, changed files, and verification output. Preview it in the app or save it under `.agents/reports/`; no CDN or telemetry
 - **Theme** — dark theme, overlay title bar, native macOS window
 
 ### Architecture
@@ -295,132 +295,18 @@ vercel --prod          # Deploy to production
 
 `vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
 
-## Known limitations and roadmap
-
-### v0.3.7
-
-- [x] HTML renderer — convert skill runs into self-contained HTML with in-app preview and `.agents/reports/` export
-- [x] Archify elements — inline SVG flow for approval, run, verification, and result; light/dark themes; print styling; no external CDN
-- [x] Safe output — escape parameters, stdout/stderr, and verification output; preview inside a sandboxed iframe
-- [x] Constrained storage — validate the file name in Rust and write only under `.agents/reports/*.html`
-- [x] Tests — HTML escaping, diagram output, absence of external references, and file-name sanitization
-
-### v0.3.6
-
-- [x] Git handlers — existing Git commands were split into `*_at` helpers so skills can run `status` / `diff` / `branches` / `stage` / `stageAll` / `commit`
-- [x] Terminal handler — allowlisted programs run as `program + args` with no shell string, pipes, or redirection
-- [x] Debug handlers — DAP request/response correlation and event subscriptions drive the same sessions as the Debug tab
-- [x] Shared execution runtime — isolated process groups, timeouts, and output caps live in `skills/exec.rs`
-- [x] Failure propagation — non-zero exits and timeouts return `SkillRunStatus::Failed` and are recorded in the audit log
-- [x] Manifests and library — Git, terminal, and debug are v1 manifests, and the library marks them `ready`
-
-### v0.3.5
-
-- [x] Verification loop — run typecheck / lint / test after `verification.mode: "auto"` skill runs and show the results
-- [x] Command resolution — derive checks from `package.json` scripts and `Cargo.toml`; manifests never provide command strings
-- [x] Approval — skip prompts according to `autoRun` and `allowChecks`; `test` always asks through the native dialog
-- [x] Safe execution — each check runs in its own process group with a timeout, and `stopOnFailure` skips the rest after a failure
-- [x] Audit and UI — record verification in the audit log and show each check's output in the Skills tab
-
-### v0.3.4
-
-- [x] Skill library — a catalog that explains each skill by purpose, risk, parameters, and manifest
-- [x] Showcase window — open the `skill-library` window from the Skills tab or the command palette (a new tab in the browser)
-- [x] Add to workspace — write the manifest to `.agents/skills/<id>.json`, confirming before overwriting an existing file
-- [x] Planned skills — show Git / terminal / debug design cards and state clearly that they are not implemented
-- [x] Standalone route — render `index.html?window=skills` separately from the normal app
-
-### v0.3.3
-
-- [x] LSP rename — F2 runs `textDocument/prepareRename` and `textDocument/rename`, applying multi-file edits to tabs
-- [x] Find references — ⇧F12 runs `textDocument/references` and shows results in Monaco's reference view
-- [x] Code actions — run quick fixes, refactors, and source actions from the lightbulb menu, including `workspace/executeCommand`
-- [x] Workspace symbol search — `⌘T` queries `workspace/symbol` and jumps to the selected definition
-- [x] Accept `workspace/applyEdit` for text edits inside the workspace (resource operations are rejected)
-- [x] Unit tests for the conversions (edit ordering, URI validation, symbol kinds)
-
-### v0.3.1
-
-- [x] LSP client — detect fixed-registry language servers and connect completion, go-to-definition, hover, and diagnostics to Monaco
-- [x] File synchronization — send open, edit (300 ms debounce), save, and close as didOpen / didChange / didSave / didClose
-- [x] DAP client — detect `lldb-dap` / `debugpy` and start, stop, resume, and step from the Debug tab
-- [x] Breakpoints — toggle from the glyph margin or F9; changes are applied immediately while a session is running
-- [x] Call stack, variables, and output views
-- [x] A Tools tab in settings shows LSP / DAP detection status
-- [x] Stop LSP / DAP sessions when the workspace changes or the app exits
-- [x] macOS-only cleanup (global shortcuts use Command only)
-
-### v0.3.0
-
-- [x] Quick Open (`⌘P`) — search workspace files by name and open them
-- [x] Git panel — branch / ahead / behind, changes, staged and untracked files, stage / unstage, diffs, commits, history, and `git init`
-- [x] Integrated terminal (`⌘J`) — interactive shell via `portable-pty` and xterm.js with resize, restart, and clear
-- [x] Real Git branch in the status bar; clicking it opens the Git tab
-- [x] PTY cleanup on terminal close and shutdown of all sessions on app exit
-
-### v0.2.1
-
-- [x] Support `clippy::collapsible_match` on Rust 1.99
-- [x] Restore green Frontend and Rust CI
-- [x] Maintenance release carrying the post-v0.2.0 CI fix
-
-### v0.2.0
-
-- [x] LLM plan generation (Plan tab, `/plan <intent>`)
-- [x] Client-side action and argument validation with risk labels
-- [x] Plan-level approve / reject and per-step execution in Assistive mode
-- [x] Sequential execution of an approved plan in Autonomous mode (stops on failure)
-- [x] Per-step result output (stdout / stderr / exit code)
-- [x] Approval, execution, and policy-change audit log (SQLite, with retention period and row cap)
-- [x] Agent policy settings UI (read-only: allow / ask / block; mutating: ask / block)
-- [x] Openship CLI detection and `openship --json deploy`
-- [x] Self-hosted REST fallback (deploy, history, logs, rollback)
-- [x] Openship settings UI, PAT storage in the OS keychain, and the Deploy tab
-- [x] `/ship`, `/deploy`, `/logs`, and `/rollback` commands with audit logging
-
-### v0.1.1
-
-- [x] OpenAI-compatible LLM connections (OpenAI / Ollama / LM Studio / OpenRouter / custom)
-- [x] Streaming chat, cancellation, and connection test
-- [x] API key storage and deletion in the OS keychain
-- [x] LLM settings dialog with model list
-- [x] API key redaction, HTTP response body limits, and disabled redirects
-- [x] README / API / SECURITY / ARCHITECTURE / landing page updates
-
-### v0.1.0
-
-- [x] Tauri 2.0 + React 18 + Vite foundation and native window
-- [x] Workspace selection and restore, file tree, create / rename / delete
-- [x] Monaco editor, tabs, dirty tracking, save all
-- [x] In-app confirmation and input dialogs
-- [x] GFM Markdown preview
-- [x] SQLite (WAL) version history (latest 100 per file) and restore
-- [x] Path validation, atomic writes, trash-based soft delete
-- [x] Agent Desktop detection, snapshots, allowlisted action execution
-- [x] Agent Desktop argument validation and native approval dialog
-- [x] CSP (Tauri / Vercel) and security headers
-- [x] ESLint / Vitest / GitHub Actions CI
-- [x] Agent panel (Chat / Runtime, three modes, `/status` and `/snapshot`)
-- [x] Command palette
-- [x] Browser demo workspace
-- [x] Architecture / API / security docs and skill definitions
-
-### Next candidates
-
-- [ ] Anthropic-specific API adapter
-- [ ] Git / terminal / debug skill handlers
-
-### Constraints
+## Known limitations
 
 - This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. Verified on macOS (Apple Silicon) only; launch on Intel hardware has not been verified. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned)
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
-- Plans can only run allowlisted Agent Desktop actions. Editor, Git, and terminal skill execution is not implemented yet
+- Plans can run allowlisted Agent Desktop actions and manifest-declared skills. Skill execution is limited to the fixed editor, Git, allowlisted program, and DAP handlers
+- The terminal skill runs only allowlisted programs and does not accept PTY input or arbitrary shell strings. Debugging supports `lldb-dap` and `debugpy` only
 - The Git panel uses the local `git` CLI. If `git` is missing, the panel reports an error. Merge, rebase, push, and other history operations are not implemented
 - The integrated terminal is Tauri-only. Git and the terminal are disabled in the browser demo. PTYs stop when the app exits
-- The terminal shell can be changed with `RIGHT_STUFF_SHELL` or `SHELL`. Only an existing executable at an absolute path is launched
 - The verification loop only targets workspaces with `package.json` (npm / pnpm / yarn) or `Cargo.toml`. It runs a fixed set of commands such as `npm run typecheck` and never arbitrary commands
 - LSP supports completion, go-to-definition, hover, diagnostics, rename, references, code actions, and workspace symbol search. Signature help, semantic tokens, formatting, and refactors that create or delete files are not implemented. DAP supports start, stop, stepping, breakpoints, and variable views only; attach and conditional breakpoints are not implemented. Language servers and debug adapters must be installed separately
+- The terminal shell can be changed with `RIGHT_STUFF_SHELL` or `SHELL`. Only an existing executable at an absolute path is launched
 - Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved (the policy cannot set them to allow)
 - The audit log is stored in local SQLite with a default retention of 30 days and a 5,000-row cap. Disabling it leaves existing records in place
 - Snapshots live in memory only and are lost on restart
@@ -429,6 +315,10 @@ vercel --prod          # Deploy to production
 - Quitting from the macOS Dock menu, logging out, or restarting bypasses the unsaved-changes prompt because the OS terminates the app directly (`⌘Q` and the app menu Quit item are guarded)
 - No auto-update
 
+## Changelog
+
+Release history, development commands, release steps, and design notes live in [DEV-MEMO.md](./DEV-MEMO.md) (Japanese).
+
 ## Directory layout
 
 ```text
@@ -436,15 +326,19 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / tabs / Markdown split preview
 │   ├── FileTree.tsx                # Workspace tree and file operations
-│   ├── AgentPanel.tsx              # Chat / Plan / Git / Deploy / Audit / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Skills / Git / Debug / Deploy / Audit / Runtime
 │   ├── PlanPanel.tsx               # Plan generation, approval, and execution
+│   ├── SkillsPanel.tsx             # Skill runs, verification, and HTML reports
+│   ├── SkillLibrary.tsx            # Skill library window
 │   ├── GitPanel.tsx                # Git status, diffs, and commits
+│   ├── DebugPanel.tsx              # DAP debugging
 │   ├── QuickOpen.tsx               # ⌘P Quick Open
 │   ├── TerminalDock.tsx            # ⌘J integrated terminal (xterm.js)
 │   ├── DeployPanel.tsx             # Openship history, logs, and deploys
 │   ├── AuditPanel.tsx              # Audit log list
 │   ├── AgentPolicySettings.tsx     # Agent policy settings
 │   ├── OpenShipSettings.tsx        # Openship connection and PAT settings
+│   ├── SettingsDialog.tsx          # Settings dialog
 │   ├── CommandPalette.tsx          # ⌘K command palette
 │   ├── HistoryDialog.tsx           # Version history
 │   ├── UnsavedChangesDialog.tsx    # Save / discard / cancel unsaved changes
@@ -455,28 +349,37 @@ src/
 │   ├── llm.ts                      # LLM prompts and request conversion
 │   ├── plan.ts                     # Plan prompt, JSON parsing, argument validation
 │   ├── policy.ts                   # Policy defaults and display labels
+│   ├── skillLibrary.ts             # Skill library definitions
+│   ├── skillWindow.ts              # Skill library window
+│   ├── report.ts                   # HTML report generation for skill runs
+│   ├── lsp.ts / lspMapping.ts      # LSP client and Monaco conversion
+│   ├── dap.ts                      # DAP client
 │   └── monaco.ts                   # Monaco themes and worker setup
 ├── shared/types.ts                 # Shared frontend / backend types
-└── stores/                         # Zustand (workspace / editor / agent / git)
+└── stores/                         # Zustand (workspace / editor / agent / git / lsp / dap)
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / policy / llm / openship / git / terminal / settings / app
+│   ├── commands/                   # workspace / editor / agent / policy / llm / openship / git / terminal / lsp / dap / skills / report / settings / app
+│   ├── skills/                     # mod / editor / git / terminal / debug / exec / params / policy / verify
 │   ├── db.rs                       # SQLite (WAL) history, settings, and audit log
 │   ├── paths.rs                    # Path validation
+│   ├── rpc.rs                      # JSON-RPC transport for LSP / DAP
 │   ├── state.rs                    # AppState
 │   └── lib.rs                      # Command registration
 ├── icons/
 └── tauri.conf.json                 # Window and bundle configuration
 
 .agents/skills/                     # Skill definitions (JSON)
-docs/                               # Architecture / API / security
+.agents/reports/                    # HTML reports for skill runs
+docs/                               # Architecture / API / skills / security
 docs/diagrams/                      # archify diagrams (JSON / HTML / PNG)
 public/openship-local-first.png     # Diagram preview for the LP
 public/diagrams/                    # Interactive diagram published with the site
 public/rs-mark.svg                  # App icon source
 right-stuff-agent-ide-implementation-plan.html
 right-stuff-agent-ide-lp.html
+DEV-MEMO.md                         # Release history and development steps
 ```
 
 ## Documentation
@@ -491,6 +394,7 @@ right-stuff-agent-ide-lp.html
 8. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
 9. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
 10. [README (Japanese)](./README.md) — 日本語の概要
+11. [DEV-MEMO.md (JA)](./DEV-MEMO.md) — release history, development commands, release steps, design notes
 
 ## License
 

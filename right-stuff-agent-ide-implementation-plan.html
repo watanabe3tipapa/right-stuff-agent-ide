@@ -746,22 +746,48 @@ footer {
   </table>
 
   <h3>4.4 エージェントスキルシステム</h3>
-  <p>Agent Desktop の skills システムを拡張し、IDE 専用スキルを定義します。</p>
-  <pre><code>// スキル定義例: .agents/skills/code-edit.json
+  <p>Agent Desktop の skills システムを拡張し、IDE 専用スキルを v1 マニフェストで定義します。マニフェストは操作を宣言するだけで、実行は Rust の固定ハンドラと許可リストだけが行います。</p>
+  <pre><code>// スキル定義例: .agents/skills/terminal-command.json
 {
-  "name": "code-edit",
-  "description": "エディタ内でのコード編集操作",
+  "schemaVersion": 1,
+  "id": "terminal-command",
+  "name": "Terminal Command",
+  "version": "0.1.0",
+  "category": "terminal",
+  "risk": "write",
   "actions": [
-    "editor.openFile",
-    "editor.editRange",
-    "editor.insertText",
-    "editor.deleteRange",
-    "editor.saveFile",
-    "editor.runCommand"
+    {
+      "id": "terminal.run",
+      "handler": "terminal.run",
+      "description": "許可リストのプログラムを引数付きで実行する",
+      "risk": "write",
+      "params": {
+        "program": {
+          "type": "string",
+          "required": true,
+          "enum": ["npm", "pnpm", "yarn", "cargo", "node", "python3", "pytest", "make"]
+        },
+        "args": { "type": "string[]", "required": false, "maxItems": 32 }
+      },
+      "timeoutMs": 300000
+    }
   ],
-  "verification": "snapshot_after_action"
+  "permissions": { "paths": { "read": [], "write": [] }, "commands": [], "env": [] },
+  "approval": { "default": "ask", "overrides": {} },
+  "verification": {
+    "mode": "auto",
+    "checks": ["typecheck", "lint", "test"],
+    "timeoutMs": 300000,
+    "stopOnFailure": true
+  },
+  "limits": {
+    "maxFiles": 20,
+    "maxBytes": 1048576,
+    "timeoutMs": 300000,
+    "maxOutputChars": 50000
+  }
 }</code></pre>
-  <p>スキルは <code>.agents/skills/</code> ディレクトリに JSON で定義し、エージェントが動的に読み込みます。</p>
+  <p>スキルは <code>.agents/skills/</code> ディレクトリに JSON で定義し、エージェントが動的に読み込みます。実行結果は監査ログに残り、v0.3.7 では自己完結 HTML レポートとして <code>.agents/reports/</code> へ保存できます。</p>
 </section>
 
 <!-- 05 データフロー -->
@@ -788,9 +814,10 @@ footer {
     <div class="flow-node green">結果返却</div>
   </div>
   <p style="color:var(--ink-muted);font-size:0.9em;">
-    ※ 現時点では <code>agent_status</code> / <code>agent_snapshot</code> / <code>agent_run</code> のブリッジ、
-    LLM による計画立案と計画単位の承認、エージェントポリシー、監査ログ、Openship 連携を実装しています。
-    スキル選択と検証ループは今後追加します。
+    ※ <code>agent_status</code> / <code>agent_snapshot</code> / <code>agent_run</code> のブリッジ、
+    LLM による計画立案と計画単位の承認、エージェントポリシー、監査ログ、Openship 連携を実装済みです。
+    スキル選択・実行（エディタ / Git / ターミナル / デバッグ）と検証ループも動作し、
+    実行結果は HTML レポートとして保存できます。
   </p>
 
   <h3>ファイル保存フロー</h3>
@@ -893,8 +920,8 @@ interface EditorStateUpdate {
       <p>
         キュレーション済みのスキルを目的・リスク・パラメータ・マニフェストで読める形に整理し、
         独立した <code>skill-library</code> ウィンドウで表示。利用可能なスキルは
-        <code>.agents/skills/&lt;id&gt;.json</code> へ書き出せる。Git / ターミナル / デバッグは
-        設計カードとして扱い、未実装の操作を実行可能に見せない。
+        <code>.agents/skills/&lt;id&gt;.json</code> へ書き出せる。v0.3.6 で Git / ターミナル /
+        デバッグも実行可能な v1 マニフェスト付きで表示するようになった。
       </p>
     </div>
     <div class="phase-item done">
@@ -923,13 +950,13 @@ interface EditorStateUpdate {
         コマンドパレット、ステータスバーも拡張する。v0.3.1 で完了。
       </p>
     </div>
-    <div class="phase-item">
+    <div class="phase-item done">
       <div class="phase-title">Phase 3: エージェントスキルシステム</div>
       <div class="phase-meta">期間: 3週間 / 優先度: 高</div>
       <p>
-        スキル定義フォーマット、スキルローダー、検証ループを実装。
-        IDE 専用スキル（code-edit、git-operation、terminal-command、debug-control）を定義。
-        エージェントが自律的に複数ステップの作業を実行できるように。
+        v1 マニフェスト、スキルローダー、承認ポリシー、監査ログ、検証ループを実装。
+        IDE 専用スキル（code-edit、git-operation、terminal-command、debug-control）が動作し、
+        エージェントが複数ステップの作業を実行できる。v0.3.7 で HTML レポート出力も追加。
       </p>
     </div>
     <div class="phase-item">
@@ -973,6 +1000,16 @@ interface EditorStateUpdate {
     </ul>
   </div>
 
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">スキル実行の制限</div>
+    <ul style="margin-bottom:0">
+      <li>マニフェストは操作を宣言するだけで、実行は Rust の固定ハンドラと許可リストだけが行う。任意のシェル文字列やコマンドは受け付けない</li>
+      <li>ターミナルスキルは <code>program + args</code> を直接実行し、独立プロセスグループ・タイムアウト・出力上限を適用する</li>
+      <li>Git / ターミナル / デバッグの書き込み操作はネイティブ承認を挟み、結果を監査ログへ記録する</li>
+      <li>HTML レポートはワークスペース内の <code>.agents/reports/*.html</code> だけに保存し、可変値はすべてエスケープする。プレビューは <code>sandbox</code> 付き iframe で行う</li>
+    </ul>
+  </div>
+
   <h3>データ保護</h3>
   <table>
     <thead>
@@ -982,6 +1019,8 @@ interface EditorStateUpdate {
       <tr><td>原稿データ</td><td>ワークスペースのローカルファイルにのみ保存。クラウド送信なし。</td></tr>
       <tr><td>API キー</td><td>macOS Keychain（Keychain Services）に保存。</td></tr>
       <tr><td>スナップショット</td><td>メモリ上に一時保持。永続化はオプトイン。機密ウィンドウは自動マスク。</td></tr>
+      <tr><td>監査ログ</td><td>ローカル SQLite に保存。コマンド引数と失敗時の出力抜粋を含むため、共有時は注意する。</td></tr>
+      <tr><td>HTML レポート</td><td>ワークスペースの <code>.agents/reports/</code> にローカル保存。外部送信なし。</td></tr>
       <tr><td>テレメトリ</td><td>収集なし。完全にオプトインのクラッシュレポートのみ。</td></tr>
       <tr><td>パス検証</td><td>バックエンドでワークスペース外パスを拒否。<code>.right-stuff</code> 配下への直接アクセスも禁止。</td></tr>
     </tbody>
@@ -1008,35 +1047,39 @@ interface EditorStateUpdate {
   </div>
 
   <h3>Tauri コマンド一覧</h3>
-  <pre><code>// ワークスペース
-async fn workspace_open(path: String) -> Result&lt;Workspace, Error&gt;
-async fn workspace_list_files() -> Result&lt;Vec&lt;FileEntry&gt;, Error&gt;
-async fn workspace_create_file(path: String, content: String) -> Result&lt;(), Error&gt;
+  <pre><code>// アプリ / ワークスペース
+app_info / app_quit
+workspace_open / workspace_last / workspace_list_files / workspace_read_file
+workspace_write_file / workspace_create_entry / workspace_rename_entry / workspace_delete_entry
+editor_history / editor_version
 
-// エディタ
-async fn editor_get_content(fileId: String) -> Result&lt;EditorState, Error&gt;
-async fn editor_save(fileId: String, content: String) -> Result&lt;SaveResult, Error&gt;
-async fn editor_get_history(fileId: String) -> Result&lt;Vec&lt;Version&gt;, Error&gt;
+// エージェント / ポリシー / 監査
+agent_status / agent_snapshot / agent_run
+agent_policy_get / agent_policy_set / audit_log_add / audit_log_list
 
-// エージェント
-async fn agent_snapshot(app: Option&lt;String&gt;) -> Result&lt;Snapshot, Error&gt;
-async fn agent_action(action: AgentAction) -> Result&lt;ActionResult, Error&gt;
-async fn agent_start_session() -> Result&lt;String, Error&gt;  // sessionId
-async fn agent_end_session(sessionId: String) -> Result&lt;(), Error&gt;
+// スキル / レポート
+skills_list / skill_policy_get / skill_policy_set / skill_decision
+skill_preview / skill_run / skill_verify
+report_export(fileName, html) -&gt; workspace-relative path
 
-// ターミナル
-async fn terminal_create(cwd: String) -> Result&lt;String, Error&gt;  // ptyId
-async fn terminal_write(ptyId: String, data: String) -> Result&lt;(), Error&gt;
-async fn terminal_read(ptyId: String) -> Result&lt;String, Error&gt;
+// LLM
+llm_config_get / llm_config_set / llm_key_set / llm_key_status / llm_key_delete
+llm_test / llm_chat / llm_cancel
 
 // Git
-async fn git_status() -> Result&lt;GitStatus, Error&gt;
-async fn git_commit(message: String) -> Result&lt;(), Error&gt;
-async fn git_branches() -> Result&lt;Vec&lt;Branch&gt;, Error&gt;
+git_status / git_init / git_diff / git_stage / git_unstage
+git_stage_all / git_unstage_all / git_commit / git_log
 
-// LSP
-async fn lsp_initialize(language: String, rootPath: String) -> Result&lt;(), Error&gt;
-async fn lsp_request(method: String, params: Value) -> Result&lt;Value, Error&gt;</code></pre>
+// ターミナル / LSP / DAP
+terminal_start / terminal_write / terminal_resize / terminal_kill
+lsp_servers / lsp_start / lsp_send / lsp_stop
+dap_adapters / dap_start / dap_send / dap_stop
+
+// Openship / 設定
+openship_config_get / openship_config_set / openship_token_set / openship_token_delete
+openship_status / openship_projects / openship_deployments
+openship_deploy / openship_logs / openship_rollback
+settings_get / settings_set</code></pre>
 </section>
 
 <!-- 09 ディレクトリ構成 -->
@@ -1051,18 +1094,30 @@ async fn lsp_request(method: String, params: Value) -> Result&lt;Value, Error&gt
 │   ├── components/
 │   │   ├── EditorPane.tsx           # Monaco + Markdown プレビュー
 │   │   ├── FileTree.tsx
-│   │   ├── AgentPanel.tsx
+│   │   ├── AgentPanel.tsx           # Chat / Plan / Skills / Git / Debug / Deploy / Audit / Runtime
+│   │   ├── PlanPanel.tsx
+│   │   ├── SkillsPanel.tsx          # スキル実行・検証・HTML レポート
+│   │   ├── SkillLibrary.tsx         # スキルライブラリの別窓
+│   │   ├── GitPanel.tsx
+│   │   ├── DebugPanel.tsx
 │   │   ├── CommandPalette.tsx
 │   │   ├── HistoryDialog.tsx
 │   │   └── ...
 │   ├── lib/
 │   │   ├── api.ts                   # Tauri invoke ラッパー
 │   │   ├── demo.ts                  # ブラウザ用デモワークスペース
+│   │   ├── skillLibrary.ts          # スキルライブラリ定義
+│   │   ├── report.ts                # HTML レポート生成
+│   │   ├── lsp.ts / lspMapping.ts   # LSP クライアント
+│   │   ├── dap.ts                   # DAP クライアント
 │   │   └── monaco.ts
 │   ├── stores/
 │   │   ├── workspaceStore.ts
 │   │   ├── editorStore.ts
-│   │   └── agentStore.ts
+│   │   ├── agentStore.ts
+│   │   ├── gitStore.ts
+│   │   ├── lspStore.ts
+│   │   └── dapStore.ts
 │   ├── shared/types.ts
 │   ├── App.tsx
 │   └── main.tsx
@@ -1072,9 +1127,21 @@ async fn lsp_request(method: String, params: Value) -> Result&lt;Value, Error&gt
 │   │   │   ├── workspace.rs
 │   │   │   ├── editor.rs
 │   │   │   ├── agent.rs
-│   │   │   └── settings.rs
-│   │   ├── db.rs                    # SQLite WAL / バージョン履歴
-│   │   ├── paths.rs                 # ワークスペース外パス拒否
+│   │   │   ├── policy.rs
+│   │   │   ├── llm.rs
+│   │   │   ├── openship.rs
+│   │   │   ├── git.rs
+│   │   │   ├── terminal.rs
+│   │   │   ├── lsp.rs
+│   │   │   ├── dap.rs
+│   │   │   ├── skills.rs
+│   │   │   ├── report.rs           # .agents/reports/*.html の保存
+│   │   │   ├── settings.rs
+│   │   │   └── app.rs
+│   │   ├── skills/                 # mod / editor / git / terminal / debug / exec / params / policy / verify
+│   │   ├── db.rs                   # SQLite WAL / バージョン履歴 / 監査ログ
+│   │   ├── paths.rs                # ワークスペース外パス拒否
+│   │   ├── rpc.rs                  # LSP / DAP の JSON-RPC
 │   │   ├── state.rs
 │   │   ├── error.rs
 │   │   ├── lib.rs
@@ -1083,19 +1150,19 @@ async fn lsp_request(method: String, params: Value) -> Result&lt;Value, Error&gt
 │   ├── icons/
 │   ├── tauri.conf.json
 │   └── Cargo.toml
-├── .agents/skills/
-│   ├── code-edit.json
-│   ├── git-operation.json
-│   ├── terminal-command.json
-│   └── debug-control.json
+├── .agents/
+│   ├── skills/                      # v1 マニフェスト
+│   └── reports/                     # スキル実行の HTML レポート
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── API.md
+│   ├── SKILLS.md
 │   └── SECURITY.md
 ├── public/
 ├── index.html
 ├── vite.config.ts
 ├── package.json
+├── DEV-MEMO.md                      # リリース履歴・開発手順
 └── README.md</code></pre>
 </section>
 
@@ -1164,7 +1231,7 @@ async fn lsp_request(method: String, params: Value) -> Result&lt;Value, Error&gt
 </main>
 
 <footer>
-  <p>Right-Stuff Agent IDE — 実装設計書 v1.0</p>
+  <p>Right-Stuff Agent IDE — 実装設計書 v1.2（v0.3.7 反映）</p>
   <p style="font-size:0.75rem; margin-top:0.5em;">
     Based on Right-Stuff Editor (MIT) and Agent Desktop by Vercel Labs
   </p>

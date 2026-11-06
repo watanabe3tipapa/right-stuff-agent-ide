@@ -117,6 +117,7 @@ session, trace, --version, --help
 | `skill_preview` | `{ skillId, actionId, params, mode? }` | `SkillPreviewResult` |
 | `skill_run` | `{ request }` | `SkillRunResult` |
 | `skill_verify` | `{ skillId, actionId, checks? }` | `VerificationResult` |
+| `report_export` | `{ fileName, html }` | 保存したレポートの相対パス |
 
 `skills_list` は `<workspace>/.agents/skills/*.json` を読み、検証済みの
 マニフェストだけを返す。壊れたファイルは `warnings` に `file` と `message` を
@@ -207,7 +208,7 @@ interface SkillRequest {
 
 interface SkillRunResult {
   runId: string;
-  // v0.4.0 のハンドラは同期実行のみのため `timeout` はない。
+  // ハンドラは実行完了まで待ち、タイムアウトはハンドラ内で処理する。
   status: "ok" | "blocked" | "cancelled" | "failed";
   decision: "allow" | "ask" | "block";
   changedFiles: string[];
@@ -217,6 +218,7 @@ interface SkillRunResult {
   durationMs: number;
   auditId: number;
   errorCode?: string;
+  verification?: VerificationResult;
 }
 ```
 

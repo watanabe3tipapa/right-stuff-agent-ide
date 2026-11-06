@@ -179,7 +179,8 @@ Audit タブ
   → agent_run (許可リスト + 引数検証 + 変更操作の承認)
   → Agent Desktop が OS を操作
   → agent_snapshot で状態を再取得
-  → 結果を検証して UI に返す (検証ループは今後)
+  → 結果を検証して UI に返す (検証ループ実装済み)
+  → 実行内容を HTML レポートとして保存 (report_export)
 ```
 
 `agent_status` / `agent_snapshot` / `agent_run` のブリッジ、引数検証、
@@ -257,6 +258,7 @@ GitPanel (マウント / 更新)
 ```
 
 - `git` はワークスペースルートで実行し、パスは相対パス検証を通す。
+- スキルの `git.*` は `commands/git.rs` の `*_at` ヘルパーを呼び、Git パネルと同じ検証・出力上限を共有する。
 - ステータスが取得できない場合も UI を壊さず、`repo: false` とメッセージを表示する。
 - ブラウザデモでは Git を無効化し、Tauri 版の利用を案内する。
 
@@ -316,9 +318,31 @@ Debug タブ
   → disconnect + dap_stop (終了 / ワークスペース切替 / アプリ終了)
 ```
 
+スキルの `debug.*` は同じ `AppState.dap_sessions` を `sessionId` で参照し、
+`skills/debug.rs` から `rpc.rs` の request/response 相関とイベント購読を使って
+Debug タブと同じセッションを操作する。
+
 - リクエストは `seq` と `request_seq` で対応付け、20 秒（launch は 60 秒）でタイムアウトする。
 - アダプターからの未知のリクエストは `success: false` で返し、未処理のままにしない。
 - `terminated` / `exited` を受けたら UI を停止状態に戻し、セッションを破棄する。
+
+## HTML レポートフロー
+
+```
+Skills タブの実行結果
+  → buildSkillReport (src/lib/report.ts)
+      → 承認 → 実行 → 検証 → 結果のインライン SVG
+      → パラメータ / 変更ファイル / stdout / stderr / 検証結果
+      → すべての可変値を escapeHtml
+  → sandbox="allow-scripts" の iframe でプレビュー
+  → report_export(fileName, html)
+      → Rust でファイル名と 4 MB 上限を検証
+      → .agents/reports/<fileName> へ atomic_write
+```
+
+- レポートは外部 CSS / JavaScript / 画像を参照しない自己完結 HTML。
+- Rust は保存だけを担当し、HTML の生成は WebView 側で行う。
+- ブラウザデモではワークスペースが無いため、Blob のダウンロードにフォールバックする。
 
 ## ディレクトリ
 
@@ -327,13 +351,13 @@ Debug タブ
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, GitPanel, DebugPanel, SkillLibrary, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
-├── lib/{api,demo,llm,plan,policy,monaco,lsp,lspMapping,dap,skillLibrary,skillWindow}.ts
+├── components/ (AgentPanel, PlanPanel, SkillsPanel, SkillLibrary, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
+├── lib/{api,demo,llm,plan,policy,monaco,lsp,lspMapping,dap,skillLibrary,skillWindow,report}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent,git,lsp,dap}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,lsp,dap,skills,settings,app}.rs
-├── skills/{mod,editor,params,policy,verify}.rs
+├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,lsp,dap,skills,report,settings,app}.rs
+├── skills/{mod,editor,git,terminal,debug,exec,params,policy,verify}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs

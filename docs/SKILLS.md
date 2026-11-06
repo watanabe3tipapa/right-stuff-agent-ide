@@ -1,19 +1,19 @@
 # スキル実行と検証ループの設計
 
-v0.4.0 の実装前に、スキーマ・実行ポリシー・承認・検証・監査の設計を確定する。本書は実装の契約として使う。マニフェストの型・ローダー・バリデータ・ポリシー・`editor.*` の実行と承認は実装済みで、検証ループは v0.3.5、Git / ターミナル / デバッグのハンドラは v0.3.6 で追加した。
+スキーマ・実行ポリシー・承認・検証・監査の設計をまとめる。本書は実装の契約として使う。マニフェストの型・ローダー・バリデータ・ポリシー・`editor.*` の実行と承認は実装済みで、検証ループは v0.3.5、Git / ターミナル / デバッグのハンドラは v0.3.6、HTML レポートは v0.3.7 で追加した。
 
 - 機械可読スキーマ: [`skills.schema.json`](./skills.schema.json)
 - 関連: [ARCHITECTURE.md](./ARCHITECTURE.md) / [SECURITY.md](./SECURITY.md) / [API.md](./API.md)
 
 ## 1. 目的
 
-現状の計画実行は、Agent Desktop の許可アクション（`snapshot`、`click`、`launch` など）に限定されている。v0.4.0 では、次の 3 つを追加する。
+計画実行は、Agent Desktop の許可アクション（`snapshot`、`click`、`launch` など）と、v1 マニフェストで宣言したスキルで構成する。次の 3 つを実装済み。
 
 1. **スキルマニフェスト**: エディタ・Git・ターミナル・デバッガの操作を宣言する。
 2. **実行ポリシー**: スキル単位・アクション単位で `allow` / `ask` / `block` を決める。
 3. **検証ループ**: 変更後に型検査・Lint・テストを実行し、結果を UI と監査ログに残す。
 
-v0.4.0 の最小垂直スライスは `code-edit` とする。LLM の計画に「ファイルを読む → 文字列を置換する → 検証する」を通し、承認・監査・失敗時の停止までを完成させる。
+最初の垂直スライスは `code-edit`。LLM の計画に「ファイルを読む → 文字列を置換する → 検証する」を通し、承認・監査・失敗時の停止までを実装している。v0.3.6 で Git / ターミナル / デバッグへ、v0.3.7 で HTML レポートへ広げた。
 
 ## 2. 非目標
 
@@ -26,13 +26,13 @@ v0.4.0 の最小垂直スライスは `code-edit` とする。LLM の計画に�
 
 ## 3. 現状の整理
 
-| 領域 | 現状 | v0.4.0 で追加するもの |
+| 領域 | 現状 | 補足 |
 |---|---|---|
 | スキル定義 | `code-edit` / `git-operation` / `terminal-command` / `debug-control` が v1 マニフェスト | 追加スキルの v1 化 |
-| 計画 | `src/lib/plan.ts` が Agent Desktop の許可アクションだけを検証 | `kind: "skill"` の手順とパラメータ検証 |
-| 実行 | `agent_run` が許可リスト・引数検証・ネイティブ承認を行う | `skill_run`、プレビュー、承認、キャンセル |
-| ポリシー | `AgentPolicy` が Agent Desktop のアクション単位で保持 | `SkillPolicy`（スキル / アクション / 検証） |
-| 監査 | `audit_log` に `action_run` などを記録 | `skill_run` 系の種別と `skill_id` / `action_id` |
+| 計画 | `src/lib/plan.ts` が Agent Desktop の許可アクションを検証 | スキル手順のパラメータ検証は `skills/params.rs` |
+| 実行 | `agent_run` が許可リスト・引数検証・ネイティブ承認を行う | `skill_run` は `editor.*` / `git.*` / `terminal.run` / `debug.*` を実行 |
+| ポリシー | `AgentPolicy` が Agent Desktop のアクション単位で保持 | `SkillPolicy` がスキル / アクション / 検証を保持 |
+| 監査 | `audit_log` に `action_run` などを記録 | `skill_run` 系の種別と `skill_id` / `action_id` も記録 |
 | 検証 | 実装済み（v0.3.5） | 変更後の typecheck / lint / test 実行 |
 
 ## 4. 設計原則
@@ -225,7 +225,7 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 ### 5.5 v0 からの移行
 
-現在の `.agents/skills/*.json` は v0 の参考定義として残し、実行時には読み込まない。v0.4.0 の実装時に次の対応で v1 へ移行する。
+`.agents/skills/*.json` は v1 へ移行済みで、実行時に読み込まれる。移行前の v0 定義は残していない。参考として、主な対応は次のとおり。
 
 | v0 | v1 |
 |---|---|
@@ -402,7 +402,7 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 - 各 check は `passed` / `failed` / `skipped` / `timeout` を返す
 - 失敗した check がある場合、その手順を `failed` にし、既定では計画を停止する
-- v0.4.0 では自動修正しない。UI に「失敗した検証」と出力を表示し、ユーザーが次の計画を立てる
+- 現状は自動修正しない。UI に「失敗した検証」と出力を表示し、ユーザーが次の計画を立てる
 - 検証出力は既定では LLM に送らない。送る場合はユーザーが明示的に選ぶ
 
 ### 9.4 実装メモ（v0.3.5）
@@ -529,13 +529,13 @@ export type AgentPlanStep =
 - 変更: 変更ファイルの相対パス、追加・削除行数、`paramsHash`
 - 検証: check 名、コマンド、結果、出力の先頭 4,000 文字
 
-v0.4.0 では `kind`、`skill_id`、`action_id`、`mode`、`plan_id`、`step_id`、`title`、
-`outcome`、`detail` を記録する。終了コード、所要時間、`paramsHash`、検証結果は
-該当機能の追加時に列を増やす。
+`kind`、`skill_id`、`action_id`、`mode`、`plan_id`、`step_id`、`title`、
+`outcome`、`detail` を記録する。終了コード、所要時間、`paramsHash`、検証結果も
+記録できる。
 
-ファイル内容そのものは保存しない。v0.4.0 の `detail` は結果メッセージだけで、
-生のパラメータは記録しない。`paramsHash`（SHA-256）とマスク処理は、パラメータを
-監査に含めるようになった時点で追加する。
+ファイル内容そのものは保存しない。`detail` は結果メッセージだけで、生のパラメータは
+記録しない。`paramsHash`（SHA-256）とマスク処理は、パラメータを監査に含める
+ようになった時点で追加する。
 
 ## 12. API
 
@@ -559,7 +559,7 @@ interface SkillRequest {
   mode?: "passive" | "assistive" | "autonomous";
 }
 
-// v0.4.0 のハンドラは同期実行のみなので `timeout` は返さない。
+// ハンドラは実行完了まで同期で待ち、タイムアウトはハンドラ内で処理する。
 type SkillRunStatus = "ok" | "blocked" | "cancelled" | "failed";
 
 interface SkillRunResult {
@@ -626,7 +626,7 @@ interface VerificationResult {
 - UI: プレビュー、承認、dirty buffer の拒否、キャンセル
 - E2E: 計画 → スキル → 検証の流れ（ブラウザデモはモック、Tauri は手動）
 
-### 14.3 v0.4.0 の受け入れ条件
+### 14.3 受け入れ条件
 
 - `code-edit` の読み取りと置換が計画から実行できる
 - 置換前に差分が表示され、ネイティブ承認を経る
@@ -649,7 +649,7 @@ interface VerificationResult {
 ### 決定済み
 
 - マニフェストはリポジトリ内のみ。実行は Rust の閉じたハンドラ
-- v0.4.0 は `code-edit` の最小垂直スライス
+- 最初の垂直スライスは `code-edit`
 - 置換は一意一致の文字列置換。unified diff は v0.3.6 以降で Git 差分として実装済み
 - 書き込みは承認必須。`allow` は読み取り専用のみ
 - 検証は「実行して報告して停止」。自動修正は v0.4.x 以降
@@ -657,10 +657,10 @@ interface VerificationResult {
 
 ### 実装前に決めること
 
-1. `git.status` / `git.diff` の読み取りを v0.4.0 に含めるか（推奨: 含める）
+1. `git.status` / `git.diff` の読み取りを `allow` にするか（実装済み: `allow`）
 2. 検証の `autoRun` を既定で有効にするか（推奨: 無効。初回は承認）
 3. スキルポリシー UI を「設定 > スキル」に置くか（推奨: そこに置く）
-4. `terminal.run` を v0.3.6 のどこで解禁するか（推奨: Git 書き込みの後）
+4. `terminal.run` の許可プログラムを広げるか（現状は 8 種類に固定）
 
 ## 17. 実装状況
 

@@ -116,6 +116,26 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - セッションは `AppState.terminals` で管理し、ターミナルを閉じたとき、再起動したとき、アプリ終了時に子プロセスを kill する。
 - PTY はユーザーが起動したシェルであり、シェル内で実行されるコマンドはアプリの承認フローや監査ログの対象外である。
 
+## スキル実行（Git / ターミナル / デバッグ）
+
+- 実行できる操作は v1 マニフェストの `handler` 名から Rust の固定関数へディスパッチする。マニフェストから任意のコマンド文字列やシェルを受け取らない。
+- 承認はマニフェストの `approval` と `skill_policy` で決める。`allow` は読み取り専用アクションに限り、`ask` はネイティブ承認ダイアログを表示し、`block` と受動モードは実行しない。
+- Git ハンドラは `status` / `diff` / `branches` / `stage` / `stageAll` / `commit` のみ。`push` / `reset --hard` / `checkout` は含めない。パスはワークスペース内の相対パスに限定し、`*_at` ヘルパー経由で `git` CLI を配列引数で実行する。
+- ターミナルハンドラ `terminal.run` は `npm` / `pnpm` / `yarn` / `cargo` / `node` / `python3` / `pytest` / `make` だけを、`program + args` で直接実行する。シェル文字列、パイプ、リダイレクトは組み立てない。引数は 32 件・各 512 文字まで。
+- ターミナルと検証の子プロセスは `process_group(0)` で独立したプロセスグループに入れ、タイムアウト時はグループごと SIGKILL する。出力は `limits.maxOutputChars` で打ち切る。
+- 非ゼロ終了とタイムアウトは `HandlerOutcome.failed` として返し、`SkillRunStatus::Failed` と `errorCode: "handler_failed"` になる。監査ログの outcome は `error` とする。
+- デバッグハンドラは固定レジストリの `lldb-dap` / `debugpy` だけを起動し、Debug タブと同じセッションを `sessionId` で共有する。`debug.start` は initialize → launch → initialized → configurationDone の順で進み、失敗時はセッションを kill して state から削除する。
+- 検証ループは `package.json` / `Cargo.toml` から解決した固定のコマンドだけを実行し、マニフェストから任意のコマンドは受け取らない。
+
+### HTML レポート
+
+- レポートは WebView の `src/lib/report.ts` で生成し、Rust の `report_export` は保存だけを担当する。レポート内容を外部へ送信しない。
+- 保存先はワークスペース内の `.agents/reports/*.html` に限定する。ファイル名は先頭 `.`、パス区切り、`..`、`/` を拒否し、英数字と `.` `_` `-` のみを許可する。拡張子は `.html` 必須で、HTML は 4 MB まで。書き込みは `atomic_write` を使う。
+- スキル名・説明・パラメータ・stdout / stderr・変更ファイル・検証コマンド / 出力・監査 ID など、すべての可変値を `escapeHtml` でエスケープする。
+- レポート内の JavaScript はテーマ切替の固定コードだけで、可変値を script に埋め込まない。外部 CSS / JavaScript / 画像は参照しない。
+- プレビューは `sandbox="allow-scripts"` の iframe で行い、同一オリジン権限を渡さない。
+- レポートには実行時のパラメータと出力が含まれるため、共有する場合は機密情報が含まれていないか確認する。
+
 ## LSP / DAP
 
 - 起動できるプログラムは固定レジストリに限定する。LSP は rust-analyzer / typescript-language-server / pyright / gopls / clangd / sourcekit-lsp / lua-language-server、DAP は lldb-dap / debugpy のみで、WebView から任意のコマンドや引数を指定することはできない。
@@ -153,6 +173,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 | API キー・Openship PAT | OS キーチェーン |
 | ターミナルの PTY | メモリ上のみ（再起動で消滅） |
 | LSP / DAP のセッション、ブレークポイント、出力 | メモリ上のみ（再起動で消滅） |
+| スキル実行の HTML レポート | ワークスペース内 `.agents/reports/*.html` |
 
 `right-stuff.db` は WAL モードで開く。履歴にはファイル内容が、監査ログには
 コマンド引数と失敗時のエラー抜粋が含まれるため、バックアップや共有の際は
@@ -161,12 +182,12 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 ## 既知の制約
 
 - LLM は OpenAI 互換 API のみ対応する。Anthropic 固有の API は未対応。
-- 計画の実行対象は Agent Desktop の許可アクションに限る。エディタ・Git・
-  ターミナルのスキル実行は未実装。
+- 計画の実行対象は Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限る。スキルから実行できるのはエディタ・Git・許可プログラム・DAP の固定ハンドラのみ。
 - 計画本体と stdout 全体はメモリ上にのみ保持され、再起動すると失われる。監査ログに残るのは状態遷移と実行メタデータのみ。
 - 監査ログのエクスポート・改ざん検知・外部 SIEM 連携は未実装。
 - API キーのローテーションや複数キーの管理は未実装。
-- Git の merge / rebase / push と認証情報の管理は未実装。Git 操作の監査ログ記録は未対応。
+- Git の merge / rebase / push と認証情報の管理は未実装。Git パネルと Git スキルの操作は監査ログに記録する。
+- `skill_cancel` と実行中検証のキャンセルは未実装。
 - 統合ターミナル内のコマンドはアプリのポリシー・承認・監査ログの対象外。信頼できる作業ディレクトリでのみ利用する。
 - LSP は補完・定義・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索に対応する。DAP は起動・停止・ステップ実行・ブレークポイント・変数表示のみで、attach と条件付きブレークポイントは未対応。
 

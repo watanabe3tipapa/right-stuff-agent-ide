@@ -38,16 +38,16 @@ v0.3.7 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-Phase 0 では、その土台となるワークスペース、エディタ、履歴、Agent Desktop ブリッジを実装しています。Phase 1 では、OpenAI 互換 API への接続、OS キーチェーンへの API キー保存、ストリーミングチャットに加え、LLM による計画立案と計画単位の承認フロー、エージェントポリシー、監査ログを追加しました。ローカルファーストの Openship 連携も Deploy タブへ統合しています。Phase 2 では、クイックオープン、Git パネル、統合ターミナル (PTY) を追加し、編集・確認・実行を同じワークスペースで完結できるようにしました。v0.3.1 では LSP（補完・定義・ホバー・診断）と DAP（lldb-dap / debugpy）を追加し、v0.3.3 で LSP の名前変更・参照検索・コードアクション・ワークスペースシンボル検索を、v0.3.4 で人間向けのスキルライブラリとショーケース窓を、v0.3.5 でスキル実行後の検証ループ（typecheck / lint / test）を、v0.3.6 で Git・ターミナル・デバッグのスキルハンドラを、v0.3.7 でスキル実行レポートの HTML レンダラーを追加しました。
+ワークスペース、Monaco エディタ、SQLite のバージョン履歴、Agent Desktop ブリッジ、LLM チャットと計画立案、Git パネル、統合ターミナル、LSP、DAP を実装しています。スキル実行はエディタ・Git・ターミナル・デバッグに広がり、書き込み後の検証ループと、実行内容をまとめる自己完結 HTML レポートまで対応しています。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
 | 書く | Monaco による Markdown / コード編集、タブ、未保存管理 |
-| 確かめる | GFM プレビューの分割表示、コマンドパレット、ステータスバー |
+| 確かめる | GFM プレビュー、コマンドパレット、検証ループ（typecheck / lint / test）、HTML レポート |
 | 残す | ワークスペースへ直接保存、SQLite にバージョン履歴 |
 | 守る | atomic write、パス検証、ゴミ箱へのソフトデリート |
 | つなぐ | Agent Desktop CLI の検出、スナップショット、許可アクションの実行 |
-| 任せる | LLM チャット（OpenAI 互換）、計画立案と計画単位の承認 |
+| 任せる | LLM チャット、計画立案、スキル実行（Git / ターミナル / デバッグ） |
 | 広げる | クイックオープン、Git パネル、統合ターミナル (PTY)、LSP、DAP デバッグ |
 
 ### 設計方針
@@ -83,12 +83,12 @@ Phase 0 では、その土台となるワークスペース、エディタ、履
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
 - **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリ・ワークスペース（デモ）を操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
 - **スキル実行** — `.agents/skills/*.json` の v1 マニフェストを読み込み・検証し、`editor.readFile` / `replaceText` / `createFile` をポリシーと承認付きで実行（Agent パネルの Skills タブと設定のスキルタブから操作）
-- **検証ループ（v0.3.5）** — スキル実行後に `package.json` / `Cargo.toml` から解決した typecheck・lint・test を実行し、結果と出力を Skills タブに表示。検証コマンドはワークスペース構成から決まり、マニフェストから任意のコマンドは受け取りません
-- **Git スキル（v0.3.6）** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を固定ハンドラで実行。読み取り系は承認なし、書き込み系は承認ダイアログを挟み、結果はローカルの監査ログに残します
-- **ターミナルスキル（v0.3.6）** — `terminal.run` が npm / pnpm / yarn / cargo / node / python3 / pytest / make を `program + args` で直接実行。シェル文字列を組み立てず、独立プロセスグループ・タイムアウト・出力上限を適用します
-- **デバッグスキル（v0.3.6）** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` が DAP の request/response で Debug タブと同じセッションを操作。`debug.start` は initialize → launch → initialized → configurationDone のハンドシェイクを行います
-- **HTML レポート（v0.3.7）** — スキル実行結果を、承認 → 実行 → 検証 → 結果のインライン SVG フロー図、明暗テーマ、パラメータ、変更ファイル、検証出力を含む自己完結 HTML としてプレビュー・保存。外部 CDN やテレメトリは使わず、`.agents/reports/` にローカル保存します
-- **スキルライブラリ（v0.3.4）** — キュレーション済みのスキルを人間が読める形で一覧するショーケース別窓。目的・タグ・リスク・パラメータ・プロンプト例・マニフェストを表示し、その場でワークスペースへ追加できます。Git / ターミナル / デバッグも実行可能なマニフェスト付きで表示
+- **検証ループ** — スキル実行後に `package.json` / `Cargo.toml` から解決した typecheck・lint・test を実行し、結果と出力を Skills タブに表示。検証コマンドはワークスペース構成から決まり、マニフェストから任意のコマンドは受け取りません
+- **Git スキル** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を固定ハンドラで実行。読み取り系は承認なし、書き込み系は承認ダイアログを挟み、結果はローカルの監査ログに残します
+- **ターミナルスキル** — `terminal.run` が npm / pnpm / yarn / cargo / node / python3 / pytest / make を `program + args` で直接実行。シェル文字列を組み立てず、独立プロセスグループ・タイムアウト・出力上限を適用します
+- **デバッグスキル** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` が DAP の request/response で Debug タブと同じセッションを操作。`debug.start` は initialize → launch → initialized → configurationDone のハンドシェイクを行います
+- **HTML レポート** — スキル実行結果を、承認 → 実行 → 検証 → 結果のインライン SVG フロー図、明暗テーマ、パラメータ、変更ファイル、検証出力を含む自己完結 HTML としてプレビュー・保存。外部 CDN やテレメトリは使わず、`.agents/reports/` にローカル保存します
+- **スキルライブラリ** — キュレーション済みのスキルを人間が読める形で一覧するショーケース別窓。目的・タグ・リスク・パラメータ・プロンプト例・マニフェストを表示し、その場でワークスペースへ追加できます。Git / ターミナル / デバッグも実行可能なマニフェスト付きで表示
 - **テーマ** — ダークテーマ、Overlay タイトルバー、macOS ネイティブウィンドウ
 
 ### アーキテクチャ
@@ -298,127 +298,13 @@ vercel --prod          # 本番環境へデプロイ
 
 `vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内のメモリ上で動作し、変更は保存されません。
 
-## 既知の制約とロードマップ
-
-### v0.3.7
-
-- [x] HTML レンダラー — スキル実行結果を自己完結 HTML に変換し、アプリ内プレビューと `.agents/reports/` への保存に対応
-- [x] Archify 要素 — 承認・実行・検証・結果のインライン SVG フロー図、明暗テーマ、印刷向けスタイル、自己完結（外部 CDN なし）
-- [x] 安全な出力 — パラメータ・stdout / stderr・検証出力をすべて HTML エスケープし、`sandbox` 付き iframe でプレビュー
-- [x] 保存先の制限 — Rust 側でファイル名を検証し、ワークスペース内の `.agents/reports/*.html` だけに書き込み
-- [x] テスト — HTML エスケープ、図の生成、外部参照なし、ファイル名のサニタイズを検証
-
-### v0.3.6
-
-- [x] Git ハンドラ — 既存の Git コマンドを `*_at` ヘルパーへ切り出し、スキルから `status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を実行
-- [x] ターミナルハンドラ — 許可プログラムを `program + args` で直接実行し、シェル文字列・パイプ・リダイレクトを使わない
-- [x] デバッグハンドラ — DAP の request/response 相関とイベント購読を追加し、Debug タブと同じセッションを操作
-- [x] 共通実行基盤 — 独立プロセスグループ、タイムアウト、出力上限を `skills/exec.rs` に集約
-- [x] 失敗の伝播 — ターミナルの非ゼロ終了とタイムアウトを `SkillRunStatus::Failed` として返し、監査ログに記録
-- [x] マニフェストとライブラリ — Git / ターミナル / デバッグを v1 マニフェスト化し、ライブラリの `status` を `ready` に更新
-
-### v0.3.5
-
-- [x] 検証ループ — `verification.mode: "auto"` のスキル実行後に typecheck / lint / test を実行し、結果を表示
-- [x] コマンド解決 — `package.json` の scripts と `Cargo.toml` から検証コマンドを決め、マニフェストから任意のコマンド文字列は受け取らない
-- [x] 承認 — `autoRun` と `allowChecks` に沿って承認を省略。`test` は常にネイティブ承認を求める
-- [x] 安全な実行 — チェックごとにプロセスグループとタイムアウトを適用し、失敗時は `stopOnFailure` で後続をスキップ
-- [x] 監査と UI — 検証結果を監査ログへ記録し、Skills タブに各チェックの出力を表示
-
-### v0.3.4
-
-- [x] スキルライブラリ — スキルを目的・リスク・パラメータ・マニフェストで読める形に整理したカタログ
-- [x] ショーケース別窓 — エージェントパネルの Skills タブとコマンドパレットから `skill-library` ウィンドウを起動（ブラウザでは別タブ）
-- [x] ワークスペースへの追加 — マニフェストを `.agents/skills/<id>.json` として書き出し、既存ファイルは確認してから上書き
-- [x] 予定スキルの可視化 — Git / ターミナル / デバッグの設計カードを表示し、未実装であることを明示
-- [x] 空の別窓ルート — `index.html?window=skills` を通常のアプリ起動と分岐して描画
-
-### v0.3.3
-
-- [x] LSP 名前変更 — F2 で `textDocument/prepareRename` と `textDocument/rename` を実行し、複数ファイルの編集をタブへ反映
-- [x] 参照検索 — ⇧F12 で `textDocument/references` を実行し、Monaco の参照ビューで一覧表示
-- [x] コードアクション — 電球メニューから quick fix / refactor / source を実行し、`workspace/executeCommand` にも対応
-- [x] ワークスペースシンボル検索 — `⌘T` で `workspace/symbol` を検索し、選択した定義へジャンプ
-- [x] `workspace/applyEdit` を受けて、ワークスペース内のテキスト編集を適用（リソース操作は拒否）
-- [x] 変換ロジックの単体テストを追加（Undo 可能な編集順序、URI 検証、シンボル種別）
-
-### v0.3.1
-
-- [x] LSP クライアント — 固定レジストリの言語サーバーを検出し、補完・定義ジャンプ・ホバー・診断を Monaco に接続
-- [x] ファイル同期 — タブの開閉・編集（300ms デバウンス）・保存を didOpen / didChange / didSave / didClose で送信
-- [x] DAP クライアント — `lldb-dap` / `debugpy` を検出し、Debug タブから起動・停止・再開・ステップ実行
-- [x] ブレークポイント — グリフマージンのクリックと F9 で切り替え、セッション中は即時反映
-- [x] コールスタック・変数・出力の表示
-- [x] 設定ダイアログの「ツール」タブで LSP / DAP の検出状態を確認
-- [x] ワークスペース切替・アプリ終了時の LSP / DAP セッション停止
-- [x] macOS 専用化（グローバルショートカットを Command に統一）
-
-### v0.3.0
-
-- [x] クイックオープン（`⌘P`）— ワークスペース内のファイルを名前で検索して開く
-- [x] Git パネル — ブランチ / ahead・behind、変更・ステージ・未追跡、ステージ / アンステージ、差分、コミット、履歴、`git init`
-- [x] 統合ターミナル（`⌘J`）— `portable-pty` と xterm.js による対話シェル、リサイズ・再起動・クリア
-- [x] ステータスバーに実際の Git ブランチを表示し、クリックで Git タブを開く
-- [x] ターミナル終了時の PTY クリーンアップと、アプリ終了時の全セッション停止
-
-### v0.2.1
-
-- [x] Rust 1.99 の `clippy::collapsible_match` に対応
-- [x] Frontend / Rust の CI を green に回復
-- [x] v0.2.0 リリース後の CI 修正を反映するメンテナンスリリース
-
-### v0.2.0
-
-- [x] LLM による実行計画の生成（Plan タブ、`/plan <意図>`）
-- [x] 許可アクション・引数のクライアント側検証とリスク表示
-- [x] 計画単位の承認・却下、Assistive での手順別実行
-- [x] Autonomous での承認済み計画の連続実行（失敗時は停止）
-- [x] 実行結果（stdout / stderr / 終了コード）の手順ごとの表示
-- [x] 承認・実行・ポリシー変更の監査ログ（SQLite、保持期間 / 件数上限つき）
-- [x] エージェントポリシー設定 UI（読み取り専用は許可 / 確認 / 禁止、変更は確認 / 禁止）
-- [x] Openship CLI 検出と `openship --json deploy` の実行
-- [x] セルフホスト REST API へのフォールバック（デプロイ・履歴・ログ・ロールバック）
-- [x] Openship 設定 UI、PAT の OS キーチェーン保存、Deploy タブ
-- [x] `/ship`・`/deploy`・`/logs`・`/rollback` コマンドと監査ログ記録
-
-### v0.1.1
-
-- [x] OpenAI 互換 LLM 接続（OpenAI / Ollama / LM Studio / OpenRouter / カスタム）
-- [x] ストリーミングチャット、生成停止、接続テスト
-- [x] API キーの OS キーチェーン保存・削除
-- [x] LLM 設定ダイアログとモデル一覧表示
-- [x] API キーのマスク、HTTP レスポンス本文の上限、リダイレクト無効化
-- [x] README / API / SECURITY / ARCHITECTURE / LP の更新
-
-### v0.1.0
-
-- [x] Tauri 2.0 + React 18 + Vite の基盤、ネイティブウィンドウ
-- [x] ワークスペースの選択・復元、ツリー表示、作成・名前変更・削除
-- [x] Monaco エディタ、タブ、未保存管理、すべて保存
-- [x] アプリ内の確認・入力ダイアログ
-- [x] GFM Markdown プレビュー
-- [x] SQLite (WAL) バージョン履歴（最新 100 版 / ファイル）と復元
-- [x] パス検証、atomic write、ゴミ箱へのソフトデリート
-- [x] Agent Desktop の検出、スナップショット、許可アクション実行
-- [x] Agent Desktop の引数検証とネイティブ承認ダイアログ
-- [x] CSP（Tauri / Vercel）とセキュリティヘッダー
-- [x] ESLint / Vitest / GitHub Actions CI
-- [x] エージェントパネル（Chat / Runtime、3 モード、`/status`・`/snapshot`）
-- [x] コマンドパレット
-- [x] ブラウザ用デモワークスペース
-- [x] アーキテクチャ / API / セキュリティのドキュメント、スキル定義
-
-### 次の候補
-
-- [ ] Anthropic 固有 API のアダプター
-- [ ] Git / ターミナル / デバッグのスキルハンドラ
-
-### 制約
+## 既知の制約
 
 - 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。動作確認は macOS（Apple Silicon）のみで、Intel 実機での起動確認は未実施です。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
-- 計画の実行対象は Agent Desktop の許可アクションに限られます。エディタ・Git・ターミナルのスキル実行は未実装です
+- 計画の実行対象は Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます。スキルから実行できる操作は、エディタ・Git・許可プログラム・DAP の固定ハンドラのみです
+- ターミナルスキルは許可リストのプログラムだけを実行し、PTY への直接入力や任意のシェル文字列は扱いません。デバッグは `lldb-dap` と `debugpy` のみに対応します
 - Git パネルはローカルの `git` CLI を利用します。`git` がインストールされていない場合はエラーを表示します。マージ・リベース・プッシュなどの履歴操作は未対応です
 - 統合ターミナルは Tauri 版でのみ利用できます。ブラウザデモでは Git とターミナルは無効です。PTY はアプリ終了時に停止します
 - 検証ループは `package.json`（npm / pnpm / yarn）と `Cargo.toml` を持つワークスペースだけを対象にします。検証コマンドは `npm run typecheck` などの固定の組み合わせで、任意のコマンドは実行しません
@@ -432,6 +318,10 @@ vercel --prod          # 本番環境へデプロイ
 - macOS の Dock メニュー「終了」、ログアウト、再起動による終了は OS が直接アプリを終了するため、未保存確認の対象外です（`⌘Q` とアプリメニューの「終了」は確認します）
 - 自動更新はありません
 
+## 変更履歴
+
+リリース履歴、開発コマンド、リリース手順、設計メモは [DEV-MEMO.md](./DEV-MEMO.md) にまとめています。
+
 ## ディレクトリ構成
 
 ```text
@@ -439,15 +329,19 @@ src/
 ├── components/                     # React UI
 │   ├── EditorPane.tsx              # Monaco / タブ / Markdown 分割プレビュー
 │   ├── FileTree.tsx                # ワークスペースツリーとファイル操作
-│   ├── AgentPanel.tsx              # Chat / Plan / Git / Deploy / Audit / Runtime
+│   ├── AgentPanel.tsx              # Chat / Plan / Skills / Git / Debug / Deploy / Audit / Runtime
 │   ├── PlanPanel.tsx               # 計画の生成・承認・実行
+│   ├── SkillsPanel.tsx             # スキル実行・検証・HTML レポート
+│   ├── SkillLibrary.tsx            # スキルライブラリの別窓
 │   ├── GitPanel.tsx                # Git の状態・差分・コミット
+│   ├── DebugPanel.tsx              # DAP デバッグ
 │   ├── QuickOpen.tsx               # ⌘P クイックオープン
 │   ├── TerminalDock.tsx            # ⌘J 統合ターミナル (xterm.js)
 │   ├── DeployPanel.tsx             # Openship の履歴・ログ・デプロイ
 │   ├── AuditPanel.tsx              # 監査ログの一覧
 │   ├── AgentPolicySettings.tsx     # エージェントポリシー設定
 │   ├── OpenShipSettings.tsx        # Openship 接続・PAT 設定
+│   ├── SettingsDialog.tsx          # 設定ダイアログ
 │   ├── CommandPalette.tsx          # ⌘K コマンドパレット
 │   ├── HistoryDialog.tsx           # バージョン履歴
 │   ├── UnsavedChangesDialog.tsx    # 未保存変更の保存 / 破棄 / キャンセル
@@ -458,28 +352,37 @@ src/
 │   ├── llm.ts                      # LLM プロンプト・リクエスト変換
 │   ├── plan.ts                     # 計画プロンプト・JSON 解析・引数検証
 │   ├── policy.ts                   # ポリシー既定値・表示ラベル
+│   ├── skillLibrary.ts             # スキルライブラリ定義
+│   ├── skillWindow.ts              # スキルライブラリの別窓
+│   ├── report.ts                   # スキル実行の HTML レポート生成
+│   ├── lsp.ts / lspMapping.ts      # LSP クライアントと Monaco 変換
+│   ├── dap.ts                      # DAP クライアント
 │   └── monaco.ts                   # Monaco テーマ・ワーカー設定
 ├── shared/types.ts                 # フロントエンド / バックエンド共有型
-└── stores/                         # Zustand (workspace / editor / agent / git)
+└── stores/                         # Zustand (workspace / editor / agent / git / lsp / dap)
 
 src-tauri/
 ├── src/
-│   ├── commands/                   # workspace / editor / agent / policy / llm / openship / git / terminal / settings / app
+│   ├── commands/                   # workspace / editor / agent / policy / llm / openship / git / terminal / lsp / dap / skills / report / settings / app
+│   ├── skills/                     # mod / editor / git / terminal / debug / exec / params / policy / verify
 │   ├── db.rs                       # SQLite (WAL) 履歴・設定・監査ログ
 │   ├── paths.rs                    # パス検証
+│   ├── rpc.rs                      # LSP / DAP の JSON-RPC トランスポート
 │   ├── state.rs                    # AppState
 │   └── lib.rs                      # コマンド登録
 ├── icons/
 └── tauri.conf.json                 # ウィンドウ・バンドル設定
 
 .agents/skills/                     # スキル定義 (JSON)
-docs/                               # アーキテクチャ / API / セキュリティ
+.agents/reports/                    # スキル実行の HTML レポート
+docs/                               # アーキテクチャ / API / スキル / セキュリティ
 docs/diagrams/                      # archify 構成図（JSON / HTML / PNG）
 public/openship-local-first.png     # LP 用の構成図プレビュー
 public/diagrams/                    # 公開用のインタラクティブ構成図
 public/rs-mark.svg                  # アプリアイコン原画
 right-stuff-agent-ide-implementation-plan.html
 right-stuff-agent-ide-lp.html
+DEV-MEMO.md                         # リリース履歴・開発手順
 ```
 
 ## ドキュメント
@@ -494,6 +397,7 @@ right-stuff-agent-ide-lp.html
 8. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
 9. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
 10. [README（English）](./README.en.md) — English overview
+11. [DEV-MEMO.md](./DEV-MEMO.md) — リリース履歴、開発コマンド、リリース手順、設計メモ
 
 ## ライセンス
 

@@ -28,7 +28,10 @@ v0.3.7 は、スキル実行の内容を自己完結した HTML レポートと�
 
 ## ダウンロード
 
-DMG はビルド後にこのセクションへ追記します。
+| アーキテクチャ | ファイル | サイズ | SHA-256 |
+|---|---|---|---|
+| Apple Silicon (arm64) | [Right-Stuff.Agent.IDE_0.3.7_aarch64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.7/Right-Stuff.Agent.IDE_0.3.7_aarch64.dmg) | 8.2 MB | `9aa5ac485581ebee85a27f176cbfaaf3396e3d2bd6d09c5e460f3e031af38f03` |
+| Intel (x86_64) | [Right-Stuff.Agent.IDE_0.3.7_x64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.7/Right-Stuff.Agent.IDE_0.3.7_x64.dmg) | 8.6 MB | `43890b975320f8704aa63f11e2ccc6e5226f50377961a63b67f2866f37018570` |
 
 > **注意:** どちらのビルドも Apple の公証（notarization）を受けていません。ダウンロードした Mac では初回起動時に Gatekeeper の警告が表示されます。「システム設定 > プライバシーとセキュリティ」から許可するか、アプリを右クリックして「開く」を選んでください。arm64 版は ad-hoc 署名済み、x64 版は未署名です。Apple Silicon で x64 版を動かす場合は Rosetta 2 が必要です。
 
@@ -45,6 +48,7 @@ DMG はビルド後にこのセクションへ追記します。
 ### 改善
 
 - README / README.en / アーキテクチャ / API / スキル設計 / LP / 実装計画を更新
+- リリース履歴と開発手順を `DEV-MEMO.md` に分離し、README を現行機能中心に整理
 - バージョン表記を 0.3.7 に更新
 
 ### 既知の制約

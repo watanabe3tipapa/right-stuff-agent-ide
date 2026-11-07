@@ -132,7 +132,7 @@ export const PLAN_SYSTEM_PROMPT = [
   ALLOWED_ACTIONS.join(", "),
   "",
   "次の JSON オブジェクトだけを出力してください。説明、前置き、Markdown のコードフェンスは不要です。",
-  '{"goal":"計画の目的","steps":[{"kind":"agent","title":"短い手順名","command":["snapshot","--json"],"rationale":"この手順が必要な理由"}]}',
+  '{"goal":"計画の目的","steps":[{"kind":"agent","title":"短い手順名","command":["snapshot"],"rationale":"この手順が必要な理由"}]}',
   '{"goal":"コードを直す","steps":[{"kind":"skill","title":"型を修正","skillId":"code-edit","actionId":"editor.replaceText","params":{"path":"src/App.tsx","oldText":"const value: string = 1;","newText":"const value: number = 1;"},"rationale":"型エラーを解消する"}]}',
   "steps が空の計画は無効です。",
 ].join("\n");

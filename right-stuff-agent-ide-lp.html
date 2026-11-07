@@ -415,6 +415,40 @@ h2 {
   color: var(--ink-muted);
   line-height: 1.7;
 }
+.usecase-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  margin: 1.4em 0 2.2em;
+  padding: 1em 1.2em;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  font-size: 0.88rem;
+}
+.usecase-flow .flow-node {
+  padding: 0.28em 0.7em;
+  border-radius: 999px;
+  background: var(--accent-weak);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.usecase-flow .flow-arrow { color: var(--ink-dim); }
+.usecase-group { margin-top: 2em; }
+.usecase-group h3 {
+  font-family: "Outfit", "Noto Sans JP", sans-serif;
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-bottom: 0.3em;
+}
+.usecase-group > p {
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 1em;
+}
 .diagram-figure {
   margin: 0;
   border: 1px solid var(--line);
@@ -868,7 +902,7 @@ footer .footer-links a:hover { color: var(--accent); }
 <div class="sample-banner">
   <strong>Sample</strong>
   <span>Tauri 版（macOS 専用）は DMG で配布中です。この LP とブラウザデモは、インストールせずに UI を試すための参考実装です。</span>
-  <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7">DMG をダウンロード</a>
+  <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8">DMG をダウンロード</a>
   <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide">GitHub</a>
 </div>
 
@@ -880,6 +914,7 @@ footer .footer-links a:hover { color: var(--accent); }
     </a>
     <ul class="nav-links">
       <li><a href="#features">構成</a></li>
+      <li><a href="#use-cases">連携例</a></li>
       <li><a href="#evaluation">評価</a></li>
       <li><a href="#roadmap">ロードマップ</a></li>
       <li><a href="#tutorial">動かし方</a></li>
@@ -899,11 +934,11 @@ footer .footer-links a:hover { color: var(--accent); }
 </nav>
 
 <header class="hero">
-  <div class="badge"><span class="dot"></span> v0.3.7 / Sample Preview</div>
+  <div class="badge"><span class="dot"></span> v0.3.8 / Sample Preview</div>
   <h1>エージェントが IDE を<span class="highlight block-line">直接操作する</span></h1>
   <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。スキル実行、検証ループ、自己完結 HTML レポートまで備えた Tauri 2.0 のネイティブ IDE を、ブラウザで試せるサンプルとともに紹介します。</p>
   <div class="cta-group">
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" class="cta-btn cta-primary">DMG をダウンロード</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" class="cta-btn cta-primary">DMG をダウンロード</a>
     <a href="/app/" class="cta-btn cta-secondary">ブラウザデモを試す</a>
   </div>
 
@@ -1001,7 +1036,7 @@ footer .footer-links a:hover { color: var(--accent); }
     <div class="feature-card">
       <div class="feature-icon">&#128421;</div>
       <div class="feature-title">macOS ネイティブ</div>
-      <div class="feature-desc">macOS 専用のデスクトップアプリとして、Apple Silicon / Intel の DMG を配布しています。Intel x64 版（v0.3.7）は Intel Core i7 / macOS 15.8.3 の実機で起動を確認済みです。Overlay タイトルバー、Keychain、アクセシビリティ権限など macOS の機能に統合しています。</div>
+      <div class="feature-desc">macOS 専用のデスクトップアプリとして、Apple Silicon / Intel の DMG を配布しています。Intel x64 版（v0.3.8）は Intel Core i7 / macOS 15.8.3 の実機で起動を確認済みです。Overlay タイトルバー、Keychain、アクセシビリティ権限など macOS の機能に統合しています。</div>
     </div>
   </div>
 </section>
@@ -1027,6 +1062,77 @@ footer .footer-links a:hover { color: var(--accent); }
       <a href="/app/diagrams/openship-local-first.html" target="_blank" rel="noreferrer">インタラクティブ版を開く →</a>
     </figcaption>
   </figure>
+</section>
+
+<section id="use-cases">
+  <div class="section-header">
+    <div class="section-label">Integration Examples</div>
+    <h2>連携でできること</h2>
+    <p class="section-desc">Agent Desktop は「実機の画面を確かめる」、Openship は「作ったものを届ける」役割です。どちらも端末内の承認と監査ログを通ります。ここでは、実装済みの操作だけで構成した例を挙げます。</p>
+  </div>
+
+  <div class="usecase-flow" aria-label="連携の一連の流れ">
+    <span class="flow-node">計画</span><span class="flow-arrow">→</span>
+    <span class="flow-node">ネイティブ承認</span><span class="flow-arrow">→</span>
+    <span class="flow-node">Agent Desktop で実機操作</span><span class="flow-arrow">→</span>
+    <span class="flow-node">検証ループ</span><span class="flow-arrow">→</span>
+    <span class="flow-node">Openship でデプロイ</span><span class="flow-arrow">→</span>
+    <span class="flow-node">監査ログ / HTML レポート</span>
+  </div>
+
+  <div class="usecase-group">
+    <h3>Agent Desktop 連携 — 実機の画面を確認し、操作する</h3>
+    <p>Assistive / Autonomous では、アクセシビリティツリーを読む読み取り操作は承認なし、クリックや入力などの変更操作はネイティブ承認ダイアログを通ります。Passive ではエージェントの実行そのものを止めます。</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">&#128269;</div>
+        <div class="feature-title">修正後の画面を自動で点検</div>
+        <div class="feature-desc">変更を保存したあと <code>snapshot</code> で画面のアクセシビリティツリーを取得し、<code>click</code> / <code>type</code> / <code>set-value</code> で対象を操作、もう一度 <code>snapshot</code> で結果を確認します。スクリーンショットでは分かりにくい、ボタン名・ラベル・有効/無効状態まで確認できます。</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent2-weak)">&#128640;</div>
+        <div class="feature-title">リリース前の実機スモークテスト</div>
+        <div class="feature-desc"><code>launch</code> で対象アプリを起動し、<code>list-windows</code> / <code>focus-window</code> で目的のウィンドウを選び、<code>snapshot</code> でメニュー・ダイアログ・初期状態を確認します。最後に <code>close-app</code> で後片付けします。</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#128276;</div>
+        <div class="feature-title">通知とクリップボードを含む確認</div>
+        <div class="feature-desc"><code>list-notifications</code> で通知の内容を読み取り、<code>dismiss-notification</code> で閉じます。<code>clipboard-get</code> / <code>clipboard-set</code> を使えばコピー内容の検証や受け渡しもできます。クリップボードへの書き込みは変更操作として承認されます。</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128421;</div>
+        <div class="feature-title">既存デスクトップツールの横断調査</div>
+        <div class="feature-desc"><code>list-apps</code> / <code>list-windows</code> で起動中のアプリとウィンドウを列挙し、<code>snapshot</code> で外部アプリの UI 文言や設定項目を読み取ります。ローカライズやアクセシビリティの抜けを、実機の表示から洗い出せます。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="usecase-group">
+    <h3>Openship 連携 — 作ったものを安全に届ける</h3>
+    <p>deploy / rollback は必ずネイティブ承認を通り、実行したコマンドと結果はローカルの監査ログに残ります。</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent2-weak)">&#9889;</div>
+        <div class="feature-title">編集からデプロイまでを 1 画面で</div>
+        <div class="feature-desc">エディタで修正し、Skills タブの検証ループ（typecheck / lint / test）を通してから Deploy タブで承認します。CLI があれば <code>openship --json deploy --project &lt;id&gt; --branch &lt;branch&gt;</code>、未検出のときだけ REST の <code>POST /api/deployments</code> を使います。</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--accent2-weak)">&#128203;</div>
+        <div class="feature-title">履歴とログで障害を切り分け</div>
+        <div class="feature-desc">Deploy タブの履歴から対象のデプロイを選び、<code>/logs</code> でログを表示します。CLI がエラーを stdout に返す場合も、内容を UI と監査ログに残すので原因を見失いません。</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#8634;</div>
+        <div class="feature-title">承認付きのロールバック</div>
+        <div class="feature-desc">問題が見つかったら <code>/rollback</code> で直前のデプロイへ戻します。現在の本番環境が置き換わる操作なので、ネイティブ承認ダイアログで内容を確認してから実行し、結果を監査ログに記録します。</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#128274;</div>
+        <div class="feature-title">セルフホストのまま運用</div>
+        <div class="feature-desc">Base URL と PAT を設定すれば、ローカルの Openship に直接接続できます。末尾の <code>/api</code> は自動で正規化し、PAT は OS キーチェーンに保存します。CLI 優先・未検出時のみ REST なので、CLI 失敗時に二重デプロイしません。</div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section id="evaluation">
@@ -1056,7 +1162,7 @@ footer .footer-links a:hover { color: var(--accent); }
         <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か環境変数 <code>AGENT_DESKTOP_BIN</code> で指定する</li>
         <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みです。実行できるのは Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます</li>
         <li><strong>スキルの制約</strong> — ターミナルは許可リストのプログラムのみ、デバッグは <code>lldb-dap</code> / <code>debugpy</code> のみ。スキルからの PTY 直接入力や任意アダプターの追加はできません</li>
-        <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしですが、Intel x64 版（v0.3.7）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合してインストール・起動を確認済みです。v0.3.7 の Intel x64 版では初回起動時にウィンドウが画面外や別ディスプレイに開く場合があり、次回リリースで補正します</li>
+        <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしですが、Intel x64 版（v0.3.8）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合してインストール・起動を確認済みです。v0.3.8 では起動時にプライマリモニタ中央へ配置し、画面外に復元された場合はタイトルバーが見える位置へ補正します</li>
         <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
         <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は先送り</li>
       </ul>
@@ -1139,7 +1245,7 @@ footer .footer-links a:hover { color: var(--accent); }
       <div class="step-num">02</div>
       <div class="step-content">
         <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
+        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
         <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
 cd right-stuff-agent-ide
 npm ci</pre>
@@ -1344,7 +1450,7 @@ debug.start  adapter=lldb-dap  program=target/debug/app
   </div>
   <div class="install-box">
     <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Apple Silicon / Intel）のみ。Windows / Linux 版は提供していません。</p>
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。Intel x64 版は Intel Core i7 / macOS 15.8.3 で起動確認済みです。</p>
+    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。Intel x64 版は Intel Core i7 / macOS 15.8.3 で起動確認済みです。</p>
     <p style="color:var(--ink-muted);margin-bottom:0.5em;">ソースからビルドする場合</p>
     <pre>npm ci
 npm run tauri build
@@ -1371,13 +1477,13 @@ agent-desktop permissions --guide</pre>
   <details class="faq-item">
     <summary>このサイトは製品版ですか？</summary>
     <div class="faq-answer">
-      このページは Web 上で UI を試すためのサンプルです。製品版は macOS 専用の Tauri アプリで、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.7" style="color:var(--accent);">GitHub Releases</a> の DMG からインストールできます。
+      このページは Web 上で UI を試すためのサンプルです。製品版は macOS 専用の Tauri アプリで、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" style="color:var(--accent);">GitHub Releases</a> の DMG からインストールできます。
     </div>
   </details>
   <details class="faq-item">
     <summary>Intel Mac でも利用できますか？</summary>
     <div class="faq-answer">
-      利用できます。対応 OS は macOS 11 以降で、Apple Silicon 版と Intel (x86_64) 版の DMG を配布しています。Intel x64 版（v0.3.7）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。x64 版は未署名のため、初回起動時に Gatekeeper の警告が出る場合は右クリック →「開く」を選択してください。
+      利用できます。対応 OS は macOS 11 以降で、Apple Silicon 版と Intel (x86_64) 版の DMG を配布しています。Intel x64 版（v0.3.8）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。x64 版は未署名のため、初回起動時に Gatekeeper の警告が出る場合は右クリック →「開く」を選択してください。
     </div>
   </details>
   <details class="faq-item">

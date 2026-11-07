@@ -77,7 +77,7 @@ describe("parsePlan", () => {
       "計画は次のとおりです。",
       "```json",
       plan([
-        { title: "状態確認", command: ["snapshot", "--json"] },
+        { title: "状態確認", command: ["snapshot"] },
         {
           title: "Safari を開く",
           command: ["launch", "Safari"],
@@ -95,7 +95,7 @@ describe("parsePlan", () => {
       title: "状態確認",
       action: "snapshot",
       risk: "read",
-      command: ["snapshot", "--json"],
+      command: ["snapshot"],
     });
     expect(result.steps[1]).toMatchObject({
       action: "launch",
@@ -165,7 +165,7 @@ describe("parsePlan", () => {
       parsePlan(
         plan(
           Array.from({ length: 13 }, () => ({
-            command: ["snapshot", "--json"],
+            command: ["snapshot"],
           })),
         ),
         "多すぎ",

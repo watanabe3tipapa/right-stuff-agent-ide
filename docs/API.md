@@ -391,10 +391,10 @@ interface OpenShipDeployResult {
 ```
 
 - 設定は SQLite の `settings` テーブルに `openship_config` として保存する。PAT は OS キーチェーン (`com.rightstuff.agentide.openship`) にのみ保存し、`tokenConfigured` の真偽値だけを返す。
-- CLI は設定された `cliPath`、`PATH`、環境変数 `OPENSHIP_BIN` の順に検出し、`openship --version` で応答を確認する。
-- `openship_deploy` は CLI があればワークスペースルートで `openship --json deploy` を実行する。CLI がない、または失敗した場合は `POST {baseUrl}/api/deployments` に `{ projectId, branch, environment: "production" }` を送る。
+- CLI は設定された `cliPath`、環境変数 `OPENSHIP_BIN`、`PATH` の順に検出し、`openship --version` で応答を確認する。
+- `openship_deploy` は CLI があればワークスペースルートで `openship --json deploy --project <id> --branch <branch>` を実行する（設定値は明示し、`.openship/project.json` や現在の Git ブランチに依存しない）。CLI が見つからないときのみ `POST {baseUrl}/api/deployments` に `{ projectId, branch, environment: "production" }` を送る。CLI が失敗しても REST へフォールバックしない（二重デプロイ防止）。
 - REST の想定エンドポイント: `GET /api/health`、`GET /api/projects`、`GET /api/deployments`、`GET /api/deployments/{id}/logs`、`POST /api/deployments/{id}/rollback`。
-- `baseUrl` は `https://` を必須とし、`http://` は `localhost` / `127.0.0.1` / `::1` のみ許可する。末尾のスラッシュは正規化する。
+- `baseUrl` は `https://` を必須とし、`http://` は `localhost` / `127.0.0.1` / `::1` のみ許可する。末尾のスラッシュと `/api` は正規化する。
 - `deploy` と `rollback` は変更操作として扱い、Passive モードでは拒否する。Assistive / Autonomous でもネイティブ承認ダイアログを必ず表示し、ポリシーで省略できない。実行結果は監査ログ (`action_run` / `action_blocked`) に記録する。
 - プロジェクト ID・デプロイ ID・ブランチは英数字と `-` / `_` に制限し、シェル引数へ直接展開しない。
 

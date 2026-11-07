@@ -5,9 +5,11 @@
 
 ## リリース履歴
 
-### 未リリース
+### v0.3.8
 
 - [x] ウィンドウ位置の補正 — 起動時はプライマリモニタの作業領域中央に配置し、macOS が切断済みディスプレイのフレームを復元した場合はタイトルバーが見えるモニタ中央へ移動（`src-tauri/tauri.conf.json` の `center`、`src-tauri/src/window_state.rs`、単体テスト 8 件）
+- [x] Agent Desktop 連携の修正 — `snapshot` から CLI 1.0.2 が拒否する `--json` を削除し、エラー JSON が stdout に返る場合も UI・監査ログへ表示（`src-tauri/src/commands/agent.rs`、`src/stores/agentStore.ts`、計画プロンプト・UI ラベル・テスト）
+- [x] Openship 連携の修正 — CLI デプロイに設定済みの `--project` / `--branch` を明示、失敗詳細の stdout フォールバック、Base URL の `/api` 正規化、REST フォールバック条件を「CLI 未検出時のみ」に修正
 
 ### v0.3.7
 
@@ -189,7 +191,37 @@ x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 - 署名: 未署名（`codesign` は "code object is not signed at all"、`spctl` は "rejected: no usable signature"）
 - 起動: `/Applications` へコピー後に起動し、ファイルツリー、Monaco エディタ、Agent パネルの各タブ、ステータスバーの `v0.3.7` を確認
 - 注意: 検証では `curl` で DMG を取得したため quarantine 属性が付かず、Gatekeeper の「開く」操作は不要だった。ブラウザから取得した DMG では警告が出る
-- 初回起動時にウィンドウがプライマリモニタ以外の位置（`position: 45, -1086`）に開いたため、起動位置をプライマリモニタ中央に固定し、画面外なら補正する仕組みを追加した（未リリース）
+- 初回起動時にウィンドウがプライマリモニタ以外の位置（`position: 45, -1086`）に開いたため、起動位置をプライマリモニタ中央に固定し、画面外なら補正する仕組みを追加した（v0.3.8）
+
+### 実機検証（v0.3.8 / Openship CLI 0.9.11）
+
+2026-11-07 に Intel Core i7-1068NG7 / macOS 15.8.3（x86_64）で Openship CLI 0.9.11 を実機確認した。CLI は Volta 管理の `~/.volta/bin/openship` に入る。
+
+- `openship --version` → `0.9.11`
+- `openship status` → Health `ok`、Mode `self-hosted`、Deploy `bare`、Auth `local`、Team `single_user`
+- `openship deploy --help` → `--project` / `--branch` / `--watch` を確認（アプリの CLI 引数と一致）
+- `openship deployments rollback <id>` がロールバックの正しいコマンド。アプリのロールバックは REST のみを使う
+- `openship --json projects list` / `openship --json deployments list` は JSON を返す
+- 接続失敗時の CLI エラーは stderr に `TypeError: fetch failed`、stdout は空
+- ローカル管理者は `POST /api/system/bootstrap-admin`（`X-Internal-Token` 必須）で作成できた。`openship up` だけでは管理者は作られない
+- `openship --local token create <name> --full-access` で PAT を発行
+- PAT で `GET /api/health` → 200、`GET /api/projects` → `{"data":[],"total":0,...}`、`GET /api/deployments` → `{"success":true,"data":[],...}`
+- 存在しないデプロイの `GET /api/deployments/:id/logs` と `POST /api/deployments/:id/rollback` はどちらも 404 `NOT_FOUND` を返し、ルートとベアラ認証が有効なことを確認
+- 未認証の `GET /api/projects` は 401 `Unauthorized`
+
+確認後、ローカルサービスは `openship stop` で停止できる（データは `~/.openship` に残る）。
+
+### 実機検証（v0.3.8 / Intel）
+
+2026-11-07 に Intel Core i7-1068NG7 / macOS 15.8.3（x86_64）で確認した。
+
+- DMG: `Right-Stuff.Agent.IDE_0.3.8_x64.dmg`（9,140,029 bytes、8.7 MB）
+- SHA-256: `e363cbc43b21e4787fa229856c1fdd26173bba6f2ecf6c93da6cae90a648d819`
+- 実行ファイル: `Mach-O 64-bit executable x86_64`、`CFBundleShortVersionString` は `0.3.8`、最低 OS は `11.0`
+- 署名: 未署名（`codesign` は "code object is not signed at all"）
+- 起動: DMG をマウントして `/Applications` へコピー後に起動し、ファイルツリー、Monaco エディタ、Agent パネル、ステータスバーの `v0.3.8` を確認
+- ウィンドウ: `position 105, 53` / `size 1281, 821`。プライマリモニタ（1440x900）の作業領域中央に配置された
+- arm64 DMG: `Right-Stuff.Agent.IDE_0.3.8_aarch64.dmg`（8,720,889 bytes、8.3 MB）、SHA-256 `1388fd8b21cc6a43121bd74959fd2f2dd3e1b701e2f7bf7f272aad7b6fb34c53`、`Mach-O 64-bit executable arm64`、ad-hoc 署名
 
 ## 設計メモ
 

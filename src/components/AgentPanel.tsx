@@ -304,7 +304,7 @@ function RuntimeView() {
 
       <div className="runtime-output">
         <div className="runtime-output-head">
-          <span>snapshot --json</span>
+          <span>snapshot</span>
           {snapshot?.command && <code>{snapshot.command.join(" ")}</code>}
         </div>
         <pre>

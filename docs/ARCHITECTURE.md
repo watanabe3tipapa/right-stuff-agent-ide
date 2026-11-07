@@ -233,8 +233,8 @@ request/response 相関とイベント購読を使い、Debug タブと同じ DA
 Agent Panel (Deploy タブ / /deploy / /logs / /rollback)
   → api.openship_* (Tauri invoke)
   → Rust: 設定・ID・URL を正規化して検証
-  → CLI を検出できれば openship --json deploy
-      → 失敗または未検出なら REST POST /api/deployments
+  → CLI を検出できれば openship --json deploy --project <id> --branch <branch>
+      → 未検出なら REST POST /api/deployments
   → deploy / rollback は必ずネイティブ承認ダイアログ
   → 結果と実行コマンドを監査ログへ記録
   → デプロイ履歴・ログは Rust 経由で取得し UI に表示
@@ -242,7 +242,7 @@ Agent Panel (Deploy タブ / /deploy / /logs / /rollback)
 
 - 接続設定は SQLite の `openship_config`、PAT は OS キーチェーン
   (`com.rightstuff.agentide.openship`) に保存する。WebView へトークンを返さない。
-- CLI は設定されたパス、`PATH`、`OPENSHIP_BIN` の順に検出する。
+- CLI は設定された `cliPath`、`OPENSHIP_BIN`、`PATH` の順に検出する。
 - REST はセルフホストの Openship を想定し、`http://` は
   localhost / 127.0.0.1 / ::1 のみ許可する。
 - 履歴・ログ・ロールバックの REST 経路:

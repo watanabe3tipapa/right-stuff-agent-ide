@@ -195,7 +195,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     {
       id: "agent:snapshot",
       label: "スナップショットを取得",
-      hint: "agent-desktop snapshot --json",
+      hint: "agent-desktop snapshot",
       icon: "sparkles",
       keywords: "snapshot agent desktop",
       run: () => void takeSnapshot(),

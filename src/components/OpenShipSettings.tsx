@@ -177,7 +177,7 @@ export function OpenShipSettings() {
         />
         <p className="field-help">
           REST API を使う場合に指定します。http:// は localhost / 127.0.0.1 /
-          ::1 でのみ使用できます。末尾のスラッシュは自動で除去されます。
+          ::1 でのみ使用できます。末尾のスラッシュと <code>/api</code> は自動で除去されます。
         </p>
 
         <div className="settings-grid">
@@ -246,8 +246,8 @@ export function OpenShipSettings() {
           </div>
         </div>
         <p className="field-help">
-          CLI パスを空にすると <code>PATH</code> と環境変数{" "}
-          <code>OPENSHIP_BIN</code> から検出します。
+          CLI パスを空にすると環境変数 <code>OPENSHIP_BIN</code> と{" "}
+          <code>PATH</code> から検出します。
         </p>
 
         <div className="settings-divider" />

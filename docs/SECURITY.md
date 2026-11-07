@@ -95,7 +95,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - プロジェクト ID・デプロイ ID・ブランチ名は英数字と `-` / `_` に制限する。CLI 実行時は配列引数で渡し、シェルを介さない。
 - `deploy` と `rollback` は変更操作として扱い、Passive モードでは拒否する。Assistive / Autonomous でもネイティブ承認ダイアログを必ず表示し、`agent_policy` で省略できない。
 - 実行したコマンド・終了コード・失敗時の出力抜粋は監査ログに記録する。PAT とレスポンス本文全体は記録しない。
-- CLI は `cliPath`、`PATH`、`OPENSHIP_BIN` の順に検出する。設定された CLI パスは実行ファイルとして存在するか確認する。
+- CLI は `cliPath`、`OPENSHIP_BIN`、`PATH` の順に検出する。設定された CLI パスは実行ファイルとして存在するか確認する。
 - REST はセルフホストの Openship を想定する。履歴・ログの取得は読み取り操作、デプロイ・ロールバックは承認必須の変更操作として扱う。
 
 ## Git 連携

@@ -104,6 +104,20 @@ fn truncate(value: String) -> String {
     }
 }
 
+/// The CLI writes machine-readable errors to stdout, so fall back to it when
+/// stderr is empty. Without this the audit log loses the failure reason.
+fn failure_detail(output: &AgentRunResult) -> Option<&str> {
+    if output.ok {
+        return None;
+    }
+    let detail = if output.stderr.trim().is_empty() {
+        output.stdout.trim()
+    } else {
+        output.stderr.trim()
+    };
+    (!detail.is_empty()).then_some(detail)
+}
+
 /// Validate the action and its arguments before anything is executed.
 ///
 /// The CLI is invoked without a shell, so quoting is not an issue. This layer
@@ -363,19 +377,8 @@ pub async fn agent_run(
     match &result {
         Ok(output) => {
             let outcome = if output.ok { "ok" } else { "error" };
-            let detail = if output.ok {
-                None
-            } else {
-                Some(output.stderr.trim())
-            };
-            log_action(
-                &state,
-                &policy,
-                audit.as_ref(),
-                &args,
-                outcome,
-                detail.filter(|value| !value.is_empty()),
-            );
+            let detail = failure_detail(output);
+            log_action(&state, &policy, audit.as_ref(), &args, outcome, detail);
         }
         Err(error) => {
             log_action(
@@ -406,7 +409,8 @@ pub async fn agent_snapshot(
         policy::load_policy(&conn)?
     };
 
-    let mut args = vec!["snapshot".to_string(), "--json".to_string()];
+    // `snapshot` already returns JSON; the CLI rejects an unknown `--json` flag.
+    let mut args = vec!["snapshot".to_string()];
     if let Some(app) = app.filter(|value| !value.trim().is_empty()) {
         args.push("--app".into());
         args.push(app);
@@ -451,19 +455,8 @@ pub async fn agent_snapshot(
     match &result {
         Ok(output) => {
             let outcome = if output.ok { "ok" } else { "error" };
-            let detail = if output.ok {
-                None
-            } else {
-                Some(output.stderr.trim())
-            };
-            log_action(
-                &state,
-                &policy,
-                None,
-                &args,
-                outcome,
-                detail.filter(|value| !value.is_empty()),
-            );
+            let detail = failure_detail(output);
+            log_action(&state, &policy, None, &args, outcome, detail);
         }
         Err(error) => {
             log_action(
@@ -553,5 +546,33 @@ mod tests {
                 "{action} should require approval"
             );
         }
+    }
+
+    fn result(ok: bool, stdout: &str, stderr: &str) -> AgentRunResult {
+        AgentRunResult {
+            ok,
+            code: Some(if ok { 0 } else { 2 }),
+            stdout: stdout.into(),
+            stderr: stderr.into(),
+            command: vec!["agent-desktop".into()],
+        }
+    }
+
+    #[test]
+    fn failure_detail_prefers_stderr() {
+        let output = result(false, "stdout", "stderr");
+        assert_eq!(failure_detail(&output), Some("stderr"));
+    }
+
+    #[test]
+    fn failure_detail_falls_back_to_stdout() {
+        let output = result(false, "{\"ok\":false}", "");
+        assert_eq!(failure_detail(&output), Some("{\"ok\":false}"));
+    }
+
+    #[test]
+    fn failure_detail_is_none_on_success_or_empty_output() {
+        assert_eq!(failure_detail(&result(true, "", "")), None);
+        assert_eq!(failure_detail(&result(false, "", "")), None);
     }
 }

@@ -533,7 +533,7 @@ mod tests {
             &conn,
             &policy,
             Some(&meta),
-            &["snapshot".into(), "--json".into()],
+            &["snapshot".into()],
             "ok",
             Some("success"),
         )
@@ -547,7 +547,7 @@ mod tests {
         assert_eq!(entries[0].outcome.as_deref(), Some("ok"));
         assert_eq!(
             entries[0].command.as_deref(),
-            Some(&["snapshot".to_string(), "--json".to_string()][..])
+            Some(&["snapshot".to_string()][..])
         );
     }
 

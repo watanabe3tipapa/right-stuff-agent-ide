@@ -151,8 +151,21 @@ fn compact_message_redacted(value: &str, token: Option<&str>) -> String {
     compact_message(&redacted)
 }
 
+/// Openship may report a failed operation as JSON on stdout with an empty
+/// stderr, so keep the CLI diagnostics visible in the audit log.
+fn failure_detail(result: &OpenShipDeployResult) -> String {
+    if result.stderr.trim().is_empty() {
+        result.stdout.clone()
+    } else {
+        result.stderr.clone()
+    }
+}
+
 fn validate_base_url(raw: &str) -> AppResult<String> {
     let trimmed = raw.trim().trim_end_matches('/');
+    // The SDK accepts an `/api` suffix, but every request in this module adds
+    // `/api` itself. Normalize it away so both forms work.
+    let trimmed = trimmed.strip_suffix("/api").unwrap_or(trimmed);
     if trimmed.is_empty() {
         return Ok(String::new());
     }
@@ -632,14 +645,31 @@ fn confirm(app: &tauri::AppHandle, title: &str, message: String) -> bool {
         .blocking_show()
 }
 
-fn cli_deploy(config: &OpenShipConfig, root: &Path) -> AppResult<OpenShipDeployResult> {
+fn cli_deploy(
+    config: &OpenShipConfig,
+    root: &Path,
+    project_id: &str,
+    branch: &str,
+) -> AppResult<OpenShipDeployResult> {
     let Some(binary) = detect_cli(config) else {
         return Err(AppError::Other(
             "Openship CLI が見つかりません。CLI をインストールするか、Base URL とトークンを設定してください。".into(),
         ));
     };
 
-    let args = ["--json", "deploy"];
+    // `--json` is a global flag, so it must precede the subcommand. The
+    // configured project and branch are explicit so the CLI does not depend on
+    // the active `.openship/project.json` link or the current Git branch.
+    let mut owned = vec!["--json".to_string(), "deploy".to_string()];
+    if !project_id.trim().is_empty() {
+        owned.push("--project".into());
+        owned.push(project_id.trim().to_string());
+    }
+    if !branch.trim().is_empty() {
+        owned.push("--branch".into());
+        owned.push(branch.trim().to_string());
+    }
+    let args = owned.iter().map(String::as_str).collect::<Vec<_>>();
     let output = run_cli(&binary, Some(root), &args).map_err(|error| {
         AppError::Other(format!("Openship CLI を起動できませんでした: {error}"))
     })?;
@@ -657,9 +687,8 @@ fn cli_deploy(config: &OpenShipConfig, root: &Path) -> AppResult<OpenShipDeployR
         code: output.status.code(),
         stdout,
         stderr,
-        command: std::iter::once("openship")
-            .chain(args)
-            .map(str::to_string)
+        command: std::iter::once("openship".to_string())
+            .chain(owned.iter().cloned())
             .collect(),
         deployment,
     })
@@ -968,7 +997,11 @@ pub async fn openship_deploy(
     let cli = detect_cli(&config);
 
     let target = if cli.is_some() {
-        format!("Openship CLI (--json deploy) / branch: {branch}")
+        if project_id.trim().is_empty() {
+            format!("Openship CLI (--json deploy) / branch: {branch}")
+        } else {
+            format!("Openship CLI (--json deploy) / project: {project_id} / branch: {branch}")
+        }
     } else {
         format!("Openship API POST /api/deployments / project: {project_id} / branch: {branch}")
     };
@@ -989,7 +1022,7 @@ pub async fn openship_deploy(
 
     let result = if cli.is_some() {
         let root = state.root()?;
-        cli_deploy(&config, &root)?
+        cli_deploy(&config, &root, &project_id, &branch)?
     } else {
         if project_id.trim().is_empty() {
             audit(
@@ -1012,7 +1045,7 @@ pub async fn openship_deploy(
             .as_ref()
             .map(|deployment| format!("{} ({})", deployment.id, deployment.status))
     } else {
-        Some(result.stderr.clone())
+        Some(failure_detail(&result))
     };
     audit(&state, outcome, result.command.clone(), detail);
     Ok(result)
@@ -1142,7 +1175,7 @@ pub async fn openship_rollback(
         if ok {
             Some(format!("deployment {deployment_id}"))
         } else {
-            Some(result.stderr.clone())
+            Some(failure_detail(&result))
         },
     );
     Ok(result)
@@ -1238,5 +1271,30 @@ mod tests {
     #[test]
     fn defaults_are_valid() {
         assert!(normalize_config(OpenShipConfig::default()).is_ok());
+    }
+
+    #[test]
+    fn strips_an_api_suffix_from_the_base_url() {
+        let mut config = config();
+        config.base_url = "https://openship.example.com/api/".into();
+        let normalized = normalize_config(config).unwrap();
+        assert_eq!(normalized.base_url, "https://openship.example.com");
+    }
+
+    fn result(stdout: &str, stderr: &str) -> OpenShipDeployResult {
+        OpenShipDeployResult {
+            ok: false,
+            code: Some(1),
+            stdout: stdout.into(),
+            stderr: stderr.into(),
+            command: Vec::new(),
+            deployment: None,
+        }
+    }
+
+    #[test]
+    fn failure_detail_prefers_stderr_and_falls_back_to_stdout() {
+        assert_eq!(failure_detail(&result("out", "err")), "err");
+        assert_eq!(failure_detail(&result("out", "")), "out");
     }
 }

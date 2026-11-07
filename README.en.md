@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.7-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.8-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,16 +23,16 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 
 ## Download
 
-v0.3.7 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.8 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.7_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.7_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.8_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.8_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
 > The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
 >
-> The Intel x64 build (v0.3.7) has been installed and launched on an Intel Core i7 Mac running macOS 15.8.3, with its SHA-256 checksum verified.
+> The Intel x64 build (v0.3.8) has been installed and launched on an Intel Core i7 Mac running macOS 15.8.3, with its SHA-256 checksum verified.
 
 ## Concept
 
@@ -78,7 +78,7 @@ Workspace management, the Monaco editor, SQLite version history, the Agent Deskt
 - **LLM chat** — OpenAI / Ollama / LM Studio / OpenRouter and other OpenAI-compatible APIs, with streaming output, cancellation, and a connection test. API keys are stored in the OS keychain
 - **Plan generation and approval** — describe an intent and the LLM proposes a plan built only from allowlisted Agent Desktop actions. Every step is validated before display; plans are approved as a unit, run step by step in Assistive mode, or run sequentially in Autonomous mode. Invalid actions and arguments from the model are rejected before execution
 - **Approval audit log** — plan creation, approval, rejection, and cancellation, action runs, blocks, and cancellations, policy changes, and Openship deploys and rollbacks are recorded in local SQLite. The Audit tab lists entries newest first; records older than the retention period (30 days by default) and entries beyond the latest 5,000 are pruned automatically
-- **Openship integration (local-first)** — the Deploy tab handles deployment history, logs, and rollbacks. When the `openship` CLI is detected it is preferred; only when it is missing or fails does the app fall back to the self-hosted REST API. Connection settings live in SQLite, the PAT in the OS keychain, and mutating operations always pass through native approval. See the [architecture diagram](./docs/diagrams/openship-local-first.html)
+- **Openship integration (local-first)** — the Deploy tab handles deployment history, logs, and rollbacks. When the `openship` CLI is detected it is preferred; only when it is missing does the app fall back to the self-hosted REST API. Connection settings live in SQLite, the PAT in the OS keychain, and mutating operations always pass through native approval. See the [architecture diagram](./docs/diagrams/openship-local-first.html)
 - **Agent policy** — read-only actions can be set to allow / ask / block, mutating actions to ask / block. The native approval for mutating actions cannot be skipped, and blocked actions are rejected in Rust before execution
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, agent, Git, and terminal commands. `⌘P` opens Quick Open and `⌘J` toggles the terminal
@@ -269,7 +269,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.7 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.8 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
@@ -299,8 +299,9 @@ vercel --prod          # Deploy to production
 
 ## Known limitations
 
-- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. In addition to Apple Silicon, the v0.3.7 x64 build has been launch-tested on an Intel Core i7 Mac running macOS 15.8.3. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned). In v0.3.7 on Intel x64, the main window may open off-screen or on another display on first launch; a fix is planned for the next release
+- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. In addition to Apple Silicon, the v0.3.8 x64 build has been launch-tested on an Intel Core i7 Mac running macOS 15.8.3. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned). v0.3.8 opens the main window centered on the primary display and corrects restored windows that would be off-screen
 - The `agent-desktop` CLI is not bundled and must be installed separately
+- Openship history, logs, and rollbacks use the self-hosted REST API. If you use the CLI only, set a Base URL and PAT to use those features. CLI deploys pass the configured Project ID and Branch explicitly
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
 - Plans can run allowlisted Agent Desktop actions and manifest-declared skills. Skill execution is limited to the fixed editor, Git, allowlisted program, and DAP handlers
 - The terminal skill runs only allowlisted programs and does not accept PTY input or arbitrary shell strings. Debugging supports `lldb-dap` and `debugpy` only

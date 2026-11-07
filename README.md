@@ -12,7 +12,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.7-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.8-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,16 +23,16 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 
 ## ダウンロード
 
-v0.3.7 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.3.8 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.7_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.7_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.8_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.8_x64.dmg`
 
 対応 OS は **macOS 11 以降（Apple Silicon / Intel）のみ**です。Windows / Linux 版は提供しません。
 
 > DMG は Apple Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。
 >
-> Intel x64 版（v0.3.7）は、Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。
+> Intel x64 版（v0.3.8）は、Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。
 
 ## コンセプト
 
@@ -78,7 +78,7 @@ v0.3.7 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 - **LLM チャット** — OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続。ストリーミング表示、生成停止、接続テストに対応。API キーは OS キーチェーンに保存
 - **計画立案と承認** — 意図を入力すると LLM が Agent Desktop の許可アクションだけを使った実行計画を生成。手順ごとの引数検証、計画単位の承認、Assistive での個別実行、Autonomous での連続実行に対応。モデルが生成した不正なアクションや引数は実行前に拒否
 - **承認監査ログ** — 計画の作成・承認・却下・中止、操作の実行・拒否・キャンセル、ポリシー変更、Openship のデプロイ・ロールバックをローカルの SQLite に記録。Audit タブで新しい順に確認でき、保持期間（既定 30 日）を過ぎた記録と最新 5,000 件を超えた記録は自動で削除
-- **Openship 連携（ローカルファースト）** — Deploy タブからデプロイ履歴・ログ・ロールバックを操作。`openship` CLI を検出できれば CLI を優先し、未検出または失敗時のみセルフホスト REST API にフォールバック。接続設定は SQLite、PAT は OS キーチェーンに保存し、変更操作は必ずネイティブ承認ダイアログを通ります。構成図は [docs/diagrams/openship-local-first.html](./docs/diagrams/openship-local-first.html)
+- **Openship 連携（ローカルファースト）** — Deploy タブからデプロイ履歴・ログ・ロールバックを操作。`openship` CLI を検出できれば CLI を優先し、未検出のときのみセルフホスト REST API にフォールバック。接続設定は SQLite、PAT は OS キーチェーンに保存し、変更操作は必ずネイティブ承認ダイアログを通ります。構成図は [docs/diagrams/openship-local-first.html](./docs/diagrams/openship-local-first.html)
 - **エージェントポリシー** — 読み取り専用アクションは「許可 / 確認 / 禁止」、変更アクションは「確認 / 禁止」から選択。変更アクションのネイティブ承認を省略することはできず、ポリシーで禁止した操作は Rust 側で実行前に拒否
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェント、Git、ターミナルの操作を検索して実行。`⌘P` はクイックオープン、`⌘J` はターミナルの表示切替
@@ -272,7 +272,7 @@ GUI から起動したアプリでは `PATH` が限られるため、検出時�
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.3.7 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
+- v0.3.8 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。署名・公証は先送りとし、当面はこの状態で配布します
 - 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません
 
@@ -302,8 +302,9 @@ vercel --prod          # 本番環境へデプロイ
 
 ## 既知の制約
 
-- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。Apple Silicon に加え、v0.3.7 の x64 版を Intel Core i7 / macOS 15.8.3 の実機で起動確認済みです。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。v0.3.7 の Intel x64 版では、初回起動時にウィンドウが画面外や別ディスプレイに開く場合があります（次回リリースで補正）
+- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。Apple Silicon に加え、v0.3.8 の x64 版を Intel Core i7 / macOS 15.8.3 の実機で起動確認済みです。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。v0.3.8 では起動時にプライマリモニタ中央へ配置し、画面外に復元された場合はタイトルバーが見える位置へ補正します
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
+- Openship の履歴・ログ・ロールバックはセルフホスト REST API 経由です。CLI のみで使用する場合は Base URL と PAT を設定しないと履歴系は使えません。CLI のデプロイは設定した Project ID / Branch を明示的に渡します
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
 - 計画の実行対象は Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます。スキルから実行できる操作は、エディタ・Git・許可プログラム・DAP の固定ハンドラのみです
 - ターミナルスキルは許可リストのプログラムだけを実行し、PTY への直接入力や任意のシェル文字列は扱いません。デバッグは `lldb-dap` と `debugpy` のみに対応します

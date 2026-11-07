@@ -585,8 +585,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
             "agent",
             result.ok
               ? `スナップショットを取得しました。\n\`\`\`json\n${result.stdout.slice(0, 4000)}\n\`\`\``
-              : `スナップショットに失敗しました (exit ${result.code ?? "?"})。\n\`\`\`\n${result.stderr.slice(0, 2000)}\n\`\`\``,
-            { command: "agent-desktop snapshot --json", local: true },
+              : `スナップショットに失敗しました (exit ${result.code ?? "?"})。\n\`\`\`\n${(result.stderr.trim() || result.stdout.trim()).slice(0, 2000)}\n\`\`\``,
+            { command: "agent-desktop snapshot", local: true },
           ),
         ],
       }));

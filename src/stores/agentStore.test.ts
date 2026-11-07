@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   llmConfig: vi.fn(),
   llmCancel: vi.fn(),
   agentRun: vi.fn(),
+  agentSnapshot: vi.fn(),
   auditLogAdd: vi.fn(),
   agentPolicy: vi.fn(),
   agentPolicySet: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("../lib/api", () => ({
     llmConfig: mocks.llmConfig,
     llmCancel: mocks.llmCancel,
     agentRun: mocks.agentRun,
+    agentSnapshot: mocks.agentSnapshot,
     auditLogAdd: mocks.auditLogAdd,
     agentPolicy: mocks.agentPolicy,
     agentPolicySet: mocks.agentPolicySet,
@@ -50,7 +52,7 @@ function plan(): AgentPlan {
         id: "step-1",
         kind: "agent",
         title: "状態確認",
-        command: ["snapshot", "--json"],
+        command: ["snapshot"],
         action: "snapshot",
         risk: "read",
         status: "approved",
@@ -77,6 +79,7 @@ function resetStore() {
     planRaw: "",
     planError: null,
     executingStepId: null,
+    snapshot: null,
     streaming: false,
     busy: false,
     messages: [],
@@ -110,7 +113,7 @@ describe("plan generation", () => {
       ) => {
         onEvent({
           type: "delta",
-          text: '```json\n{"goal":"Safari を確認","steps":[{"title":"状態確認","command":["snapshot","--json"]}]}\n```',
+          text: '```json\n{"goal":"Safari を確認","steps":[{"title":"状態確認","command":["snapshot"]}]}\n```',
         });
         onEvent({ type: "done", finishReason: "stop" });
       },
@@ -209,7 +212,7 @@ describe("plan approval and execution", () => {
     await useAgentStore.getState().runPlanStep("step-1");
 
     expect(mocks.agentRun).toHaveBeenCalledWith(
-      ["snapshot", "--json"],
+      ["snapshot"],
       expect.objectContaining({
         planId: "plan-1",
         stepId: "step-1",
@@ -325,5 +328,32 @@ describe("policy and audit", () => {
     expect(state.audit).toHaveLength(51);
     expect(state.auditHasMore).toBe(false);
     expect(mocks.auditLog).toHaveBeenLastCalledWith(50, 50);
+  });
+});
+
+describe("snapshot", () => {
+  it("stores a successful snapshot and labels the command", async () => {
+    mocks.agentSnapshot.mockResolvedValue(runResult(true, '{"ok":true}'));
+
+    await useAgentStore.getState().takeSnapshot();
+
+    const state = useAgentStore.getState();
+    expect(state.snapshot?.ok).toBe(true);
+    expect(state.busy).toBe(false);
+    expect(state.messages[state.messages.length - 1]?.command).toBe(
+      "agent-desktop snapshot",
+    );
+  });
+
+  it("shows stdout when the CLI reports an error there", async () => {
+    mocks.agentSnapshot.mockResolvedValue(
+      runResult(false, '{"ok":false,"error":{"code":"INVALID_ARGS"}}', ""),
+    );
+
+    await useAgentStore.getState().takeSnapshot();
+
+    const messages = useAgentStore.getState().messages;
+    const text = messages[messages.length - 1]?.text ?? "";
+    expect(text).toContain("INVALID_ARGS");
   });
 });

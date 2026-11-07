@@ -1,6 +1,6 @@
 [package]
 name = "right-stuff-agent-ide"
-version = "0.3.7"
+version = "0.3.8"
 description = "Agent-driven IDE built on Right-Stuff Editor and Agent Desktop"
 authors = ["watanabe3tipapa"]
 edition = "2024"

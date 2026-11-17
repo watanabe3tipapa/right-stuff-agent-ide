@@ -47,6 +47,9 @@ pub struct AppState {
     pub db: Mutex<Connection>,
     pub http: reqwest::Client,
     pub llm_cancel: Mutex<Option<Arc<CancelFlag>>>,
+    /// Cancellation flags for in-flight `skill_run` / `skill_verify` calls,
+    /// keyed by the run id the frontend passed in.
+    pub skill_runs: Mutex<HashMap<String, Arc<CancelFlag>>>,
     pub terminals: Mutex<HashMap<String, TerminalHandle>>,
     pub lsp_sessions: Mutex<HashMap<String, RpcSession>>,
     pub dap_sessions: Mutex<HashMap<String, RpcSession>>,
@@ -72,6 +75,7 @@ impl AppState {
             db: Mutex::new(conn),
             http,
             llm_cancel: Mutex::new(None),
+            skill_runs: Mutex::new(HashMap::new()),
             terminals: Mutex::new(HashMap::new()),
             lsp_sessions: Mutex::new(HashMap::new()),
             dap_sessions: Mutex::new(HashMap::new()),

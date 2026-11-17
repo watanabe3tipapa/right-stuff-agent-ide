@@ -86,6 +86,7 @@ v0.3.8 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 - **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリ・ワークスペース（デモ）を操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
 - **スキル実行** — `.agents/skills/*.json` の v1 マニフェストを読み込み・検証し、`editor.readFile` / `replaceText` / `createFile` をポリシーと承認付きで実行（Agent パネルの Skills タブと設定のスキルタブから操作）
 - **検証ループ** — スキル実行後に `package.json` / `Cargo.toml` から解決した typecheck・lint・test を実行し、結果と出力を Skills タブに表示。検証コマンドはワークスペース構成から決まり、マニフェストから任意のコマンドは受け取りません
+- **実行の停止** — 実行中のターミナルスキルと検証チェックを、Skills タブの「停止」または Plan タブの「中止」から停止できます。停止は `runId` 単位でプロセスグループに伝わり、監査ログに `cancelled` として残ります
 - **Git スキル** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を固定ハンドラで実行。読み取り系は承認なし、書き込み系は承認ダイアログを挟み、結果はローカルの監査ログに残します
 - **ターミナルスキル** — `terminal.run` が npm / pnpm / yarn / cargo / node / python3 / pytest / make を `program + args` で直接実行。シェル文字列を組み立てず、独立プロセスグループ・タイムアウト・出力上限を適用します
 - **デバッグスキル** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` が DAP の request/response で Debug タブと同じセッションを操作。`debug.start` は initialize → launch → initialized → configurationDone のハンドシェイクを行います
@@ -307,7 +308,7 @@ vercel --prod          # 本番環境へデプロイ
 - Openship の履歴・ログ・ロールバックはセルフホスト REST API 経由です。CLI のみで使用する場合は Base URL と PAT を設定しないと履歴系は使えません。CLI のデプロイは設定した Project ID / Branch を明示的に渡します
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です
 - 計画の実行対象は Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます。スキルから実行できる操作は、エディタ・Git・許可プログラム・DAP の固定ハンドラのみです
-- ターミナルスキルは許可リストのプログラムだけを実行し、PTY への直接入力や任意のシェル文字列は扱いません。デバッグは `lldb-dap` と `debugpy` のみに対応します
+- ターミナルスキルは許可リストのプログラムだけを実行し、PTY への直接入力や任意のシェル文字列は扱いません。実行中の停止（`skill_cancel`）はターミナルスキルと検証チェックが対象で、エディタ・Git・デバッグの同期ハンドラは途中停止できません。デバッグは `lldb-dap` と `debugpy` のみに対応します
 - Git パネルはローカルの `git` CLI を利用します。`git` がインストールされていない場合はエラーを表示します。マージ・リベース・プッシュなどの履歴操作は未対応です
 - 統合ターミナルは Tauri 版でのみ利用できます。ブラウザデモでは Git とターミナルは無効です。PTY はアプリ終了時に停止します
 - 検証ループは `package.json`（npm / pnpm / yarn）と `Cargo.toml` を持つワークスペースだけを対象にします。検証コマンドは `npm run typecheck` などの固定の組み合わせで、任意のコマンドは実行しません

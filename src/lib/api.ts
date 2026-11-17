@@ -254,10 +254,26 @@ export const api = {
     skillId: string,
     actionId: string,
     checks?: VerificationCheckName[],
+    runId?: string,
   ): Promise<VerificationResult> {
     return isTauri
-      ? call<VerificationResult>("skill_verify", { skillId, actionId, checks })
+      ? call<VerificationResult>("skill_verify", {
+          skillId,
+          actionId,
+          checks,
+          runId,
+        })
       : demoApi.skillVerify(skillId, actionId, checks);
+  },
+
+  /**
+   * Stops an in-flight skill run or verification. When `runId` is omitted the
+   * native side cancels every running skill.
+   */
+  skillCancel(runId?: string): Promise<boolean> {
+    return isTauri
+      ? call<boolean>("skill_cancel", { runId })
+      : demoApi.skillCancel(runId);
   },
 
   /**

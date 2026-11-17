@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
@@ -17,9 +19,10 @@ use crate::skills::{
     self, Decision, HandlerOutcome, Risk, SkillAction, SkillCatalog, SkillManifest,
     VerificationCheck, params,
 };
-use crate::state::AppState;
+use crate::state::{AppState, CancelFlag};
 
 static RUN_SEQUENCE: AtomicU64 = AtomicU64::new(1);
+const MAX_RUN_ID_CHARS: usize = 64;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,6 +39,10 @@ pub struct SkillRequest {
     pub skill_id: String,
     pub action_id: String,
     pub params: Value,
+    /// Optional run id supplied by the UI so `skill_cancel` can stop the run
+    /// while it is still in flight. Falls back to an id generated in Rust.
+    #[serde(default)]
+    pub run_id: Option<String>,
     #[serde(default)]
     pub plan_id: Option<String>,
     #[serde(default)]
@@ -222,11 +229,17 @@ pub async fn skill_run(
         decision = Decision::Block;
     }
 
-    let run_id = format!(
-        "skill-{}-{}",
-        now_millis(),
-        RUN_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-    );
+    let run_id = match request.run_id.clone() {
+        Some(id) => {
+            validate_run_id(&id)?;
+            id
+        }
+        None => format!(
+            "skill-{}-{}",
+            now_millis(),
+            RUN_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ),
+    };
 
     if decision == Decision::Block {
         let audit_id = record_skill_audit(
@@ -251,7 +264,25 @@ pub async fn skill_run(
         });
     }
 
+    let registration = RunRegistration::register(&state.skill_runs, run_id.clone())?;
+
     let preview = preview_for(&root, action, &request.params, manifest.limits.max_bytes)?;
+    if registration.is_cancelled() {
+        return Ok(cancelled_skill_result(
+            &state,
+            &agent_policy,
+            &request,
+            CancelledRun {
+                run_id,
+                decision,
+                started,
+                changed_files: Vec::new(),
+                stdout: String::new(),
+                exit_code: None,
+            },
+        ));
+    }
+
     if decision == Decision::Ask && !confirm_skill(&app, manifest, action, preview.as_ref()) {
         let audit_id = record_skill_audit(
             &state,
@@ -275,19 +306,55 @@ pub async fn skill_run(
         });
     }
 
+    if registration.is_cancelled() {
+        return Ok(cancelled_skill_result(
+            &state,
+            &agent_policy,
+            &request,
+            CancelledRun {
+                run_id,
+                decision,
+                started,
+                changed_files: Vec::new(),
+                stdout: String::new(),
+                exit_code: None,
+            },
+        ));
+    }
+
     let conn = lock_db(&state)?;
     let result = execute_handler(
         &root,
         &conn,
-        Some(&app),
-        Some(&state),
+        HandlerContext {
+            app: Some(&app),
+            state: Some(&state),
+            cancel: Some(registration.flag()),
+        },
         action,
         &request.params,
         manifest,
     );
     let duration_ms = started.elapsed().as_millis() as u64;
+    let cancelled = registration.is_cancelled();
 
     match result {
+        Ok(outcome) if cancelled => {
+            drop(conn);
+            Ok(cancelled_skill_result(
+                &state,
+                &agent_policy,
+                &request,
+                CancelledRun {
+                    run_id,
+                    decision,
+                    started,
+                    changed_files: outcome.changed_files,
+                    stdout: truncate_chars(&outcome.stdout, manifest.limits.max_output_chars),
+                    exit_code: outcome.exit_code,
+                },
+            ))
+        }
         Ok(outcome) => {
             let detail = outcome.detail.clone();
             drop(conn);
@@ -334,6 +401,22 @@ pub async fn skill_run(
                 error_code: None,
             })
         }
+        Err(_) if cancelled => {
+            drop(conn);
+            Ok(cancelled_skill_result(
+                &state,
+                &agent_policy,
+                &request,
+                CancelledRun {
+                    run_id,
+                    decision,
+                    started,
+                    changed_files: Vec::new(),
+                    stdout: String::new(),
+                    exit_code: None,
+                },
+            ))
+        }
         Err(error) => {
             drop(conn);
             let message = error.to_string();
@@ -370,6 +453,7 @@ pub async fn skill_verify(
     skill_id: String,
     action_id: String,
     checks: Option<Vec<VerificationCheck>>,
+    run_id: Option<String>,
     state: State<'_, AppState>,
 ) -> AppResult<VerificationResult> {
     let root = state.root()?;
@@ -406,6 +490,19 @@ pub async fn skill_verify(
         )
     };
 
+    let run_id = match run_id {
+        Some(id) => {
+            validate_run_id(&id)?;
+            id
+        }
+        None => format!(
+            "verify-{}-{}",
+            now_millis(),
+            RUN_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ),
+    };
+    let registration = RunRegistration::register(&state.skill_runs, run_id)?;
+
     let planned = verify::plan_checks(&root, &requested, verification.mode)?;
     let needs_approval = planned.iter().any(|check| {
         check.skip_reason.is_none()
@@ -417,11 +514,27 @@ pub async fn skill_verify(
         skill_id: skill_id.clone(),
         action_id: action_id.clone(),
         params: Value::Null,
+        run_id: None,
         plan_id: None,
         step_id: None,
         title: Some("検証".into()),
         mode: None,
     };
+
+    if registration.is_cancelled() {
+        record_skill_audit(
+            &state,
+            &agent_policy,
+            &audit_request,
+            "verification_run",
+            "cancelled",
+            Some("実行前にキャンセルされました"),
+        );
+        return Ok(VerificationResult {
+            status: CheckStatus::Cancelled,
+            checks: Vec::new(),
+        });
+    }
 
     if needs_approval && !confirm_verification(&app, &planned, verification.timeout_ms) {
         record_skill_audit(
@@ -438,17 +551,41 @@ pub async fn skill_verify(
         });
     }
 
+    if registration.is_cancelled() {
+        record_skill_audit(
+            &state,
+            &agent_policy,
+            &audit_request,
+            "verification_run",
+            "cancelled",
+            Some("承認後にキャンセルされました"),
+        );
+        return Ok(VerificationResult {
+            status: CheckStatus::Cancelled,
+            checks: Vec::new(),
+        });
+    }
+
     let run_root = root.clone();
     let max_output = manifest.limits.max_output_chars;
     let timeout = Duration::from_millis(verification.timeout_ms);
     let stop_on_failure = verification.stop_on_failure;
+    let cancel = registration.shared();
     let result = tauri::async_runtime::spawn_blocking(move || {
-        verify::run_planned(&run_root, planned, timeout, stop_on_failure, max_output)
+        verify::run_planned(
+            &run_root,
+            planned,
+            timeout,
+            stop_on_failure,
+            max_output,
+            Some(&cancel),
+        )
     })
     .await
     .map_err(|error| AppError::Other(format!("検証の実行に失敗しました: {error}")))?;
 
     let outcome = match result.status {
+        CheckStatus::Cancelled => "cancelled",
         CheckStatus::Failed | CheckStatus::Timeout => "error",
         _ => "ok",
     };
@@ -462,6 +599,143 @@ pub async fn skill_verify(
     );
 
     Ok(result)
+}
+
+/// Cancel an in-flight skill run or verification. When `run_id` is omitted,
+/// every running skill and verification is cancelled.
+#[tauri::command]
+pub async fn skill_cancel(run_id: Option<String>, state: State<'_, AppState>) -> AppResult<bool> {
+    let runs = state
+        .skill_runs
+        .lock()
+        .map_err(|_| AppError::Other("実行状態ロックの取得に失敗しました".into()))?;
+    match run_id {
+        Some(run_id) => {
+            validate_run_id(&run_id)?;
+            match runs.get(&run_id) {
+                Some(flag) => {
+                    flag.cancel();
+                    Ok(true)
+                }
+                None => Ok(false),
+            }
+        }
+        None => {
+            for flag in runs.values() {
+                flag.cancel();
+            }
+            Ok(!runs.is_empty())
+        }
+    }
+}
+
+fn validate_run_id(run_id: &str) -> AppResult<()> {
+    let valid = !run_id.is_empty()
+        && run_id.chars().count() <= MAX_RUN_ID_CHARS
+        && run_id
+            .chars()
+            .all(|value| value.is_ascii_alphanumeric() || value == '-' || value == '_');
+    if valid {
+        Ok(())
+    } else {
+        Err(AppError::Other(
+            "runId は英数字と - _ を使い 64 文字以内で指定してください".into(),
+        ))
+    }
+}
+
+/// Keeps an in-flight run in `AppState::skill_runs` so `skill_cancel` can reach
+/// its flag, and removes it again when the command finishes.
+struct RunRegistration<'a> {
+    runs: &'a Mutex<HashMap<String, Arc<CancelFlag>>>,
+    run_id: String,
+    flag: Arc<CancelFlag>,
+}
+
+impl<'a> RunRegistration<'a> {
+    fn register(
+        runs: &'a Mutex<HashMap<String, Arc<CancelFlag>>>,
+        run_id: String,
+    ) -> AppResult<Self> {
+        validate_run_id(&run_id)?;
+        let flag = Arc::new(CancelFlag::default());
+        {
+            let mut runs = runs
+                .lock()
+                .map_err(|_| AppError::Other("実行状態ロックの取得に失敗しました".into()))?;
+            if runs.contains_key(&run_id) {
+                return Err(AppError::Other(format!(
+                    "同じ runId が実行中です: {run_id}"
+                )));
+            }
+            runs.insert(run_id.clone(), Arc::clone(&flag));
+        }
+        Ok(Self { runs, run_id, flag })
+    }
+
+    fn flag(&self) -> &CancelFlag {
+        &self.flag
+    }
+
+    fn shared(&self) -> Arc<CancelFlag> {
+        Arc::clone(&self.flag)
+    }
+
+    fn is_cancelled(&self) -> bool {
+        self.flag.is_cancelled()
+    }
+}
+
+impl Drop for RunRegistration<'_> {
+    fn drop(&mut self) {
+        if let Ok(mut runs) = self.runs.lock() {
+            let matches = runs
+                .get(&self.run_id)
+                .is_some_and(|current| Arc::ptr_eq(current, &self.flag));
+            if matches {
+                runs.remove(&self.run_id);
+            }
+        }
+    }
+}
+
+/// Everything a cancelled run has collected so far. Grouping the fields keeps
+/// `cancelled_skill_result` within clippy's argument limit.
+struct CancelledRun {
+    run_id: String,
+    decision: Decision,
+    started: Instant,
+    changed_files: Vec<String>,
+    stdout: String,
+    exit_code: Option<i32>,
+}
+
+fn cancelled_skill_result(
+    state: &State<'_, AppState>,
+    agent_policy: &AgentPolicy,
+    request: &SkillRequest,
+    run: CancelledRun,
+) -> SkillRunResult {
+    let audit_id = record_skill_audit(
+        state,
+        agent_policy,
+        request,
+        "skill_cancelled",
+        "cancelled",
+        Some("実行中にキャンセルされました"),
+    );
+    SkillRunResult {
+        run_id: run.run_id,
+        status: SkillRunStatus::Cancelled,
+        decision: run.decision,
+        changed_files: run.changed_files,
+        stdout: run.stdout,
+        stderr: "実行はキャンセルされました".into(),
+        exit_code: run.exit_code,
+        duration_ms: run.started.elapsed().as_millis() as u64,
+        audit_id,
+        error_code: Some("user_cancelled".into()),
+    }
 }
 
 fn summarize_verification(result: &VerificationResult) -> String {
@@ -498,6 +772,7 @@ fn verification_status_label(status: CheckStatus) -> &'static str {
         CheckStatus::Failed => "failed",
         CheckStatus::Skipped => "skipped",
         CheckStatus::Timeout => "timeout",
+        CheckStatus::Cancelled => "cancelled",
     }
 }
 
@@ -534,11 +809,19 @@ fn verification_message(planned: &[verify::PlannedCheck], timeout_ms: u64) -> St
     truncate_chars(&message, 4_000)
 }
 
+/// Runtime handles a handler may need. Bundled so the dispatcher stays within
+/// clippy's argument limit as handlers gain options.
+#[derive(Clone, Copy, Default)]
+struct HandlerContext<'a> {
+    app: Option<&'a AppHandle>,
+    state: Option<&'a AppState>,
+    cancel: Option<&'a CancelFlag>,
+}
+
 fn execute_handler(
     root: &Path,
     conn: &rusqlite::Connection,
-    app: Option<&AppHandle>,
-    state: Option<&AppState>,
+    ctx: HandlerContext<'_>,
     action: &SkillAction,
     params: &Value,
     manifest: &SkillManifest,
@@ -592,9 +875,9 @@ fn execute_handler(
         }
         handler if handler.starts_with("git.") => skills::git::run(root, handler, params),
         handler if handler.starts_with("terminal.") => {
-            skills::terminal::run(root, handler, params, manifest)
+            skills::terminal::run(root, handler, params, manifest, ctx.cancel)
         }
-        handler if handler.starts_with("debug.") => match (app, state) {
+        handler if handler.starts_with("debug.") => match (ctx.app, ctx.state) {
             (Some(app), Some(state)) => skills::debug::run(app, state, root, handler, params),
             _ => Err(AppError::Other(
                 "デバッグ操作はアプリから実行する必要があります".into(),
@@ -850,8 +1133,7 @@ mod tests {
         let outcome = execute_handler(
             &root,
             &conn,
-            None,
-            None,
+            HandlerContext::default(),
             &action,
             &json!({ "path": "app.ts" }),
             &manifest,
@@ -874,8 +1156,7 @@ mod tests {
         let outcome = execute_handler(
             &root,
             &conn,
-            None,
-            None,
+            HandlerContext::default(),
             &replace,
             &json!({
                 "path": "app.ts",
@@ -896,8 +1177,7 @@ mod tests {
         let outcome = execute_handler(
             &root,
             &conn,
-            None,
-            None,
+            HandlerContext::default(),
             &create,
             &json!({ "path": "src/new.ts", "content": "export {};" }),
             &manifest,
@@ -925,8 +1205,7 @@ mod tests {
         let error = execute_handler(
             &root,
             &conn,
-            None,
-            None,
+            HandlerContext::default(),
             &action,
             &json!({
                 "path": "app.ts",
@@ -953,10 +1232,48 @@ mod tests {
         let mut action = action(&manifest, "editor.readFile");
         action.handler = "editor.unknown".into();
 
-        let error = execute_handler(&root, &conn, None, None, &action, &json!({}), &manifest)
-            .expect_err("unknown handler");
+        let error = execute_handler(
+            &root,
+            &conn,
+            HandlerContext::default(),
+            &action,
+            &json!({}),
+            &manifest,
+        )
+        .expect_err("unknown handler");
         assert!(error.to_string().contains("未実装"));
 
         fs::remove_dir_all(root).expect("clean workspace");
+    }
+
+    #[test]
+    fn validates_run_ids() {
+        assert!(validate_run_id("run-1_2").is_ok());
+        assert!(validate_run_id("a").is_ok());
+        assert!(validate_run_id("").is_err());
+        assert!(validate_run_id("bad id").is_err());
+        assert!(validate_run_id("日本語").is_err());
+        assert!(validate_run_id(&"a".repeat(MAX_RUN_ID_CHARS)).is_ok());
+        assert!(validate_run_id(&"a".repeat(MAX_RUN_ID_CHARS + 1)).is_err());
+    }
+
+    #[test]
+    fn registers_and_removes_a_run() {
+        let runs = Mutex::new(HashMap::new());
+        let guard = RunRegistration::register(&runs, "run-1".into()).expect("register");
+        assert!(runs.lock().expect("lock").contains_key("run-1"));
+        guard.flag().cancel();
+        assert!(guard.is_cancelled());
+        drop(guard);
+        assert!(runs.lock().expect("lock").is_empty());
+    }
+
+    #[test]
+    fn rejects_duplicate_run_ids() {
+        let runs = Mutex::new(HashMap::new());
+        let guard = RunRegistration::register(&runs, "dup".into()).expect("register");
+        assert!(RunRegistration::register(&runs, "dup".into()).is_err());
+        drop(guard);
+        assert!(runs.lock().expect("lock").is_empty());
     }
 }

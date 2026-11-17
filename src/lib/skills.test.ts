@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { SkillCatalog, SkillManifest } from "../shared/types";
 import {
   DEFAULT_SKILL_POLICY,
+  createRunId,
   describeSkillCatalog,
   findSkill,
   findSkillAction,
@@ -166,5 +167,14 @@ describe("validateSkillParams", () => {
         tags: ["1", 2],
       }),
     ).toMatch(/型/);
+  });
+});
+
+describe("createRunId", () => {
+  it("matches the run id format accepted by the native side", () => {
+    const runId = createRunId();
+    expect(runId).toMatch(/^[A-Za-z0-9_-]{1,64}$/);
+    expect(runId.startsWith("run-")).toBe(true);
+    expect(createRunId()).not.toBe(runId);
   });
 });

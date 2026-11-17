@@ -340,14 +340,19 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 ### 7.2 キャンセルとタイムアウト
 
-> `editor.*` は同期処理で子プロセスを起動しない。`terminal.run` は子プロセスを起動するが、
-> ハンドラ内でタイムアウトとプロセスグループの終了まで完結する。
-> `runId` は監査用に発行し、非同期の `skill_cancel` は v0.4.x 以降で追加する。
+> `editor.*` と `git.*`、`debug.*` は同期処理で子プロセスを中断できない。
+> `terminal.run` と検証チェックは `exec.rs` の共通実行基盤を使い、キャンセルと
+> タイムアウトでプロセスグループごと停止する（v0.3.9）。
 
-- 実行ごとに `runId` を発行する
-- `skill_cancel(runId)` で子プロセスを終了する
+- 実行ごとに `runId` を発行する。UI が `runId` を渡した場合はそれを使い、
+  省略時は Rust が `skill-<millis>-<seq>` / `verify-<millis>-<seq>` を発行する
+- `runId` は `[A-Za-z0-9_-]` を 64 文字以内。同じ `runId` の二重実行は拒否する
+- `skill_cancel(runId)` で子プロセスを終了し、結果は `status: "cancelled"` で返す
+- `skill_cancel()` を引数なしで呼ぶと、実行中のスキルと検証をすべて停止する
 - タイムアウトはアクション単位で適用し、プロセスグループを終了する
-- 計画のキャンセルは実行中の `runId` も停止する
+- 計画のキャンセル（`cancelPlanStep`）は実行中の `runId` も停止する
+- 検証は残りのチェックを `skipped`（理由「キャンセルにより実行しませんでした」）にし、
+  全体の `status` を `cancelled` にする
 
 ### 7.3 同時実行
 
@@ -400,7 +405,7 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 ### 9.3 結果と停止
 
-- 各 check は `passed` / `failed` / `skipped` / `timeout` を返す
+- 各 check は `passed` / `failed` / `skipped` / `timeout` / `cancelled` を返す
 - 失敗した check がある場合、その手順を `failed` にし、既定では計画を停止する
 - 現状は自動修正しない。UI に「失敗した検証」と出力を表示し、ユーザーが次の計画を立てる
 - 検証出力は既定では LLM に送らない。送る場合はユーザーが明示的に選ぶ
@@ -416,7 +421,8 @@ Rust のローダーは JSON Schema に加えて次を検査する。
   超えたらグループごと SIGKILL する。出力は `limits.maxOutputChars` で打ち切る。
 - 承認は `verification.autoRun` と `allowChecks` で決める。`test` は `allowChecks` から除外されるため、
   常にネイティブ承認を求める。
-- 結果は `passed` / `failed` / `skipped` / `timeout` を返し、監査ログの `verification_run` に記録する。
+- 結果は `passed` / `failed` / `skipped` / `timeout` / `cancelled` を返し、監査ログの
+  `verification_run` に記録する。`cancelled` は v0.3.9 で追加した。
 
 ### 9.5 実装メモ（v0.3.6）
 
@@ -546,7 +552,7 @@ export type AgentPlanStep =
 | `skill_decision` | 実装済み | 有効な `allow` / `ask` / `block` を解決する |
 | `skill_preview` | 実装済み | 実行前の差分・警告を返す |
 | `skill_run` | 実装済み | 承認・実行・監査を行う |
-| `skill_cancel` | 未実装（v0.4.x） | 実行中のスキルを停止する |
+| `skill_cancel` | 実装済み（v0.3.9） | 実行中のスキルと検証を停止する |
 | `skill_verify` | 実装済み（v0.3.5） | 検証チェックを実行する |
 
 ```ts
@@ -554,6 +560,8 @@ interface SkillRequest {
   skillId: string;
   actionId: string;
   params: Record<string, unknown>;
+  /** 省略時は Rust が発行する。実行中に止めるには UI が発行して渡す（v0.3.9）。 */
+  runId?: string;
   planId?: string;
   stepId?: string;
   mode?: "passive" | "assistive" | "autonomous";
@@ -577,10 +585,10 @@ interface SkillRunResult {
 }
 
 interface VerificationResult {
-  status: "passed" | "failed" | "skipped" | "timeout";
+  status: "passed" | "failed" | "skipped" | "timeout" | "cancelled";
   checks: {
     name: "typecheck" | "lint" | "test";
-    status: "passed" | "failed" | "skipped" | "timeout";
+    status: "passed" | "failed" | "skipped" | "timeout" | "cancelled";
     command: string[];
     exitCode: number | null;
     output: string;
@@ -682,7 +690,7 @@ interface VerificationResult {
 | ターミナルハンドラ | 実装済み（v0.3.6） | `src-tauri/src/skills/terminal.rs` |
 | デバッグハンドラ | 実装済み（v0.3.6） | `src-tauri/src/skills/debug.rs` |
 | 共通プロセス実行 | 実装済み（v0.3.6） | `src-tauri/src/skills/exec.rs` |
-| `skill_cancel` / タイムアウト | 未実装（v0.4.x） | — |
+| `skill_cancel` / タイムアウト | 実装済み（v0.3.9、タイムアウトは v0.3.5） | `src-tauri/src/skills/exec.rs` / `src-tauri/src/commands/skills.rs` |
 | フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |
 | フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |
 | 人間向けスキルライブラリ / ショーケース窓（v0.3.4） | 実装済み | `src/lib/skillLibrary.ts` / `src/components/SkillLibrary.tsx` |

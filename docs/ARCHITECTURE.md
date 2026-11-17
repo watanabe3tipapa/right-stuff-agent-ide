@@ -218,6 +218,10 @@ request/response 相関とイベント購読を使い、Debug タブと同じ DA
 `src/lib/report.ts` で自己完結 HTML に変換し、承認 → 実行 → 検証 → 結果の
 インライン SVG フロー図、明暗テーマ、パラメータ、変更ファイル、検証出力を含める。
 保存は Rust の `report_export` が `.agents/reports/*.html` だけを受け付ける。
+v0.3.9 では、`skill_run` / `skill_verify` が UI 発行の `runId` を受け取り、
+`AppState::skill_runs` に登録した `CancelFlag` を `exec.rs` の待機ループで確認する
+協調的キャンセルを追加した。`skill_cancel` は指定した `runId`（省略時は全件）を
+停止し、ターミナルスキルと検証チェックのプロセスグループを終了する。
 
 スキーマ、承認フロー、パス・コマンドの制限、監査項目、API、テスト計画は
 [SKILLS.md](./SKILLS.md) を参照。機械可読スキーマは

@@ -16,7 +16,7 @@ const planStatusCopy: Record<AgentPlanStatus, string> = {
   running: "実行中",
   completed: "完了",
   failed: "失敗",
-  cancelled: "却下",
+  cancelled: "中止",
 };
 
 const stepStatusCopy: Record<PlanStepStatus, string> = {
@@ -26,6 +26,7 @@ const stepStatusCopy: Record<PlanStepStatus, string> = {
   done: "完了",
   failed: "失敗",
   skipped: "スキップ",
+  cancelled: "中止",
 };
 
 function PlanCard({ plan }: { plan: AgentPlan }) {
@@ -35,6 +36,7 @@ function PlanCard({ plan }: { plan: AgentPlan }) {
   const rejectPlan = useAgentStore((state) => state.rejectPlan);
   const resetPlan = useAgentStore((state) => state.resetPlan);
   const runPlanStep = useAgentStore((state) => state.runPlanStep);
+  const cancelPlanStep = useAgentStore((state) => state.cancelPlanStep);
   const executePlan = useAgentStore((state) => state.executePlan);
 
   const busy = executingStepId !== null;
@@ -153,8 +155,7 @@ function PlanCard({ plan }: { plan: AgentPlan }) {
           <button
             type="button"
             className="btn small ghost"
-            onClick={rejectPlan}
-            disabled={busy}
+            onClick={() => void cancelPlanStep()}
           >
             中止
           </button>

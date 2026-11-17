@@ -22,6 +22,7 @@ import type {
   SkillPolicy,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
+import { createRunId } from "../lib/skills";
 import { toRequestMessages } from "../lib/llm";
 import {
   buildPlanMessages,
@@ -77,6 +78,8 @@ interface AgentState {
   planRaw: string;
   planError: string | null;
   executingStepId: string | null;
+  /** runId of the in-flight skill step, used by `cancelPlanStep`. */
+  executingRunId: string | null;
   policy: AgentPolicy | null;
   policyLoading: boolean;
   policyError: string | null;
@@ -115,6 +118,7 @@ interface AgentState {
   rejectPlan: () => void;
   resetPlan: () => void;
   runPlanStep: (stepId: string) => Promise<void>;
+  cancelPlanStep: () => Promise<void>;
   executePlan: () => Promise<void>;
   refreshPolicy: () => Promise<void>;
   savePolicy: (policy: AgentPolicy) => Promise<AgentPolicy>;
@@ -176,6 +180,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   planRaw: "",
   planError: null,
   executingStepId: null,
+  executingRunId: null,
   policy: null,
   policyLoading: false,
   policyError: null,
@@ -788,6 +793,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
     set({
       executingStepId: stepId,
+      executingRunId: null,
       plan: {
         ...plan,
         status: "running",
@@ -815,15 +821,53 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         if (!step.skillId || !step.skillActionId) {
           throw new Error("スキル手順に skillId または actionId がありません。");
         }
+        const runId = createRunId();
+        set({ executingRunId: runId });
         const result = await api.skillRun({
           skillId: step.skillId,
           actionId: step.skillActionId,
           params: step.params ?? {},
+          runId,
           planId: plan.id,
           stepId: step.id,
           title: step.title,
           mode,
         });
+        if (result.status === "cancelled") {
+          const stdout = result.stdout.trim().slice(0, 8_000);
+          set((state) => {
+            if (!state.plan) return { executingStepId: null, executingRunId: null };
+            return {
+              executingStepId: null,
+              executingRunId: null,
+              plan: {
+                ...state.plan,
+                status: "cancelled",
+                steps: state.plan.steps.map((entry) =>
+                  entry.id === stepId
+                    ? {
+                        ...entry,
+                        status: "cancelled" as const,
+                        output: stdout || undefined,
+                        error: undefined,
+                      }
+                    : entry,
+                ),
+              },
+            };
+          });
+          logAudit({
+            kind: "plan_cancelled",
+            mode,
+            planId: plan.id,
+            stepId: step.id,
+            title: step.title,
+            outcome: "cancelled",
+            detail: "実行中のスキルをキャンセルしました",
+          });
+          appendLocal(set, "実行中のスキルをキャンセルしました。");
+          return;
+        }
         ok = result.status === "ok";
         output = [
           result.stdout.trim(),
@@ -851,7 +895,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       }
 
       set((state) => {
-        if (!state.plan) return { executingStepId: null };
+        if (!state.plan) return { executingStepId: null, executingRunId: null };
         const steps = state.plan.steps.map((entry) =>
           entry.id === stepId
             ? {
@@ -868,6 +912,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         );
         return {
           executingStepId: null,
+          executingRunId: null,
           plan: {
             ...state.plan,
             steps,
@@ -878,9 +923,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     } catch (error) {
       const messageText = errorMessage(error);
       set((state) => {
-        if (!state.plan) return { executingStepId: null };
+        if (!state.plan) return { executingStepId: null, executingRunId: null };
         return {
           executingStepId: null,
+          executingRunId: null,
           plan: {
             ...state.plan,
             status: "failed",
@@ -898,6 +944,27 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         };
       });
     }
+  },
+
+  async cancelPlanStep() {
+    const { plan, executingStepId, executingRunId } = get();
+    if (!plan || plan.status === "cancelled") return;
+    if (executingRunId) {
+      try {
+        await api.skillCancel(executingRunId);
+      } catch (error) {
+        appendLocal(set, `キャンセルに失敗しました: ${errorMessage(error)}`);
+      }
+      return;
+    }
+    if (executingStepId) {
+      appendLocal(
+        set,
+        "エージェント手順は実行中に停止できません。完了を待ってください。",
+      );
+      return;
+    }
+    get().rejectPlan();
   },
 
   async executePlan() {

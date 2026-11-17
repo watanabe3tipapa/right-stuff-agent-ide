@@ -5,6 +5,15 @@
 
 ## リリース履歴
 
+### v0.3.9
+
+- [x] スキルの停止 — 新コマンド `skill_cancel { runId? }` を追加し、UI が発行した `runId` で実行中のスキルを停止（`terminal.run` が対象）
+- [x] 検証の停止 — `skill_verify` に `runId` を追加し、実行中のチェックをプロセスグループごと停止。残りは `skipped`、全体は `cancelled` として返す
+- [x] 共通実行基盤 — `skills/exec.rs` に `CancelFlag` を渡し、タイムアウトと同じループでキャンセルを検知
+- [x] 計画の停止 — Plan タブの「中止」で実行中のスキル手順も停止し、ステップを `cancelled` にする
+- [x] UI — Skills パネルに「停止」ボタン、検証結果と計画ステップに `cancelled` 表示
+- [x] 監査 — 実行中の停止を `skill_cancelled` / `verification_run` に記録
+
 ### v0.3.8
 
 - [x] ウィンドウ位置の補正 — 起動時はプライマリモニタの作業領域中央に配置し、macOS が切断済みディスプレイのフレームを復元した場合はタイトルバーが見えるモニタ中央へ移動（`src-tauri/tauri.conf.json` の `center`、`src-tauri/src/window_state.rs`、単体テスト 8 件）
@@ -122,7 +131,6 @@
 ## 次の候補
 
 - [ ] Anthropic 固有 API のアダプター
-- [ ] `skill_cancel` と実行中検証のキャンセル
 - [ ] DAP の attach と条件付きブレークポイント
 - [ ] 署名・公証と自動更新
 - [ ] 拡張機能エコシステム
@@ -227,7 +235,8 @@ x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 
 - レポートは WebView の `src/lib/report.ts` で生成し、Rust の `report_export` は保存だけを担当する。保存先は `.agents/reports/*.html` に限定し、ファイル名は英数字と `.` `_` `-` のみ。
 - ターミナルスキルは PTY ではなく `program + args` を直接実行する。許可プログラムは `npm` / `pnpm` / `yarn` / `cargo` / `node` / `python3` / `pytest` / `make`。
-- `skills/exec.rs` が独立プロセスグループ、タイムアウト、出力上限を共通化する。
+- `skills/exec.rs` が独立プロセスグループ、タイムアウト、出力上限を共通化する。キャンセルも同じループで検知し、`process_group(0)` のグループごと SIGKILL する。
+- `skill_run` / `skill_verify` は UI 発行の `runId` を任意で受け取り、`AppState::skill_runs` に `CancelFlag` を登録する。登録は RAII ガードで外れ、`skill_cancel` は `runId` 指定または全件停止に使う。`editor.*` / `git.*` / `debug.*` は同期ハンドラのため途中停止できない。
 - DAP は `rpc.rs` の request/response 相関とイベント購読を使い、Debug タブと同じセッションを共有する。
 - マニフェストから任意のコマンド文字列は受け取らない。実行は Rust の固定ハンドラと許可リストだけが行う。
 - `package.json` の `overrides.minimatch` は、ESLint / typescript-eslint が参照する推移的依存を 11.0.3 以上に固定するためのもの。上流が同等以上を解決するようになったら削除を検討する。

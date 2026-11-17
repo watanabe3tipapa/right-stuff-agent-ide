@@ -87,6 +87,7 @@ Workspace management, the Monaco editor, SQLite version history, the Agent Deskt
 - **Skill execution** — v1 manifests in `.agents/skills/*.json` are loaded and validated, and `editor.readFile` / `replaceText` / `createFile` run with policy and approval (from the Skills tab in the agent panel and the Skills tab in settings)
 - **Git skills ** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` run through fixed handlers. Reads need no approval; writes pass through the native approval dialog and are recorded in the local audit log
 - **Terminal skill ** — `terminal.run` executes npm / pnpm / yarn / cargo / node / python3 / pytest / make as `program + args`, never as a shell string, with an isolated process group, timeout, and output cap
+- **Cancellation** — stop a running terminal skill or verification check from the Skills tab, or stop a running skill step from the Plan tab. Cancellation is delivered per `runId` to the process group and recorded as `cancelled` in the audit log
 - **Debug skills ** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` drive DAP request/response and share the Debug tab session. `debug.start` performs the initialize → launch → initialized → configurationDone handshake
 - **HTML reports ** — turn a skill run into a self-contained HTML report with an inline SVG approval → run → verify → result flow, light/dark themes, parameters, changed files, and verification output. Preview it in the app or save it under `.agents/reports/`; no CDN or telemetry
 - **Theme** — dark theme, overlay title bar, native macOS window
@@ -304,7 +305,7 @@ vercel --prod          # Deploy to production
 - Openship history, logs, and rollbacks use the self-hosted REST API. If you use the CLI only, set a Base URL and PAT to use those features. CLI deploys pass the configured Project ID and Branch explicitly
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet
 - Plans can run allowlisted Agent Desktop actions and manifest-declared skills. Skill execution is limited to the fixed editor, Git, allowlisted program, and DAP handlers
-- The terminal skill runs only allowlisted programs and does not accept PTY input or arbitrary shell strings. Debugging supports `lldb-dap` and `debugpy` only
+- The terminal skill runs only allowlisted programs and does not accept PTY input or arbitrary shell strings. Cancellation (`skill_cancel`) covers terminal skills and verification checks; synchronous editor, Git, and debug handlers cannot be interrupted mid-run. Debugging supports `lldb-dap` and `debugpy` only
 - The Git panel uses the local `git` CLI. If `git` is missing, the panel reports an error. Merge, rebase, push, and other history operations are not implemented
 - The integrated terminal is Tauri-only. Git and the terminal are disabled in the browser demo. PTYs stop when the app exits
 - The verification loop only targets workspaces with `package.json` (npm / pnpm / yarn) or `Cargo.toml`. It runs a fixed set of commands such as `npm run typecheck` and never arbitrary commands

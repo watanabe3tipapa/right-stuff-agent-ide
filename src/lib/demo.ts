@@ -68,7 +68,7 @@ npm run tauri dev
   "package.json": `{
   "name": "right-stuff-agent-ide",
   "private": true,
-  "version": "0.3.8",
+  "version": "0.3.9",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -428,7 +428,7 @@ export const demoApi = {
   async appInfo(): Promise<AppInfo> {
     return {
       name: "Right-Stuff Agent IDE",
-      version: "0.3.8-demo",
+      version: "0.3.9-demo",
       tauriVersion: "browser",
       platform: "browser",
       arch: "web",
@@ -741,7 +741,7 @@ export const demoApi = {
     }
 
     return {
-      runId: `demo-${started}`,
+      runId: request.runId ?? `demo-${started}`,
       status: "ok",
       decision: decision.decision,
       changedFiles,
@@ -751,6 +751,12 @@ export const demoApi = {
       durationMs: Date.now() - started,
       auditId: 0,
     };
+  },
+
+  async skillCancel(runId?: string): Promise<boolean> {
+    // The demo has no subprocesses to stop.
+    void runId;
+    return false;
   },
 
   async skillVerify(

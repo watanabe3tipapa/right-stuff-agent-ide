@@ -114,6 +114,7 @@ pub fn run() {
             commands::skills::skill_decision,
             commands::skills::skill_preview,
             commands::skills::skill_run,
+            commands::skills::skill_cancel,
             commands::skills::skill_verify,
             commands::report::report_export,
             commands::policy::agent_policy_get,

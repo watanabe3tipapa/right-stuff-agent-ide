@@ -6,6 +6,7 @@ use serde_json::Value;
 use crate::error::{AppError, AppResult};
 use crate::skills::exec;
 use crate::skills::{HandlerOutcome, SkillManifest, params};
+use crate::state::CancelFlag;
 
 /// Programs the skill may launch. The list is deliberately small and is
 /// checked again in Rust even though the manifest also lists it.
@@ -20,16 +21,22 @@ pub fn run(
     handler: &str,
     params: &Value,
     manifest: &SkillManifest,
+    cancel: Option<&CancelFlag>,
 ) -> AppResult<HandlerOutcome> {
     match handler {
-        "terminal.run" => run_command(root, params, manifest),
+        "terminal.run" => run_command(root, params, manifest, cancel),
         other => Err(AppError::Other(format!(
             "未実装のターミナルハンドラです: {other}"
         ))),
     }
 }
 
-fn run_command(root: &Path, params: &Value, manifest: &SkillManifest) -> AppResult<HandlerOutcome> {
+fn run_command(
+    root: &Path,
+    params: &Value,
+    manifest: &SkillManifest,
+    cancel: Option<&CancelFlag>,
+) -> AppResult<HandlerOutcome> {
     let program = params::string_param(params, "program")?.trim();
     if !ALLOWED_PROGRAMS.contains(&program) {
         return Err(AppError::Other(format!(
@@ -62,12 +69,22 @@ fn run_command(root: &Path, params: &Value, manifest: &SkillManifest) -> AppResu
         &args,
         timeout,
         manifest.limits.max_output_chars,
+        cancel,
     );
 
     let command_line = std::iter::once(program.to_string())
         .chain(args.iter().cloned())
         .collect::<Vec<_>>()
         .join(" ");
+    if result.cancelled {
+        return Ok(HandlerOutcome {
+            stdout: result.output,
+            detail: format!("{command_line} はキャンセルされました"),
+            failed: true,
+            exit_code: None,
+            ..HandlerOutcome::default()
+        });
+    }
     if result.timed_out {
         return Ok(HandlerOutcome {
             stdout: result.output,
@@ -122,6 +139,7 @@ mod tests {
             "terminal.run",
             &json!({ "program": "sh", "args": ["-c", "echo hi"] }),
             &manifest(),
+            None,
         )
         .expect_err("sh is not allowed");
         assert!(error.to_string().contains("許可"));
@@ -138,6 +156,7 @@ mod tests {
             "terminal.run",
             &json!({ "program": "npm", "args": args }),
             &manifest(),
+            None,
         )
         .expect_err("too many args");
         assert!(error.to_string().contains("32"));
@@ -148,6 +167,7 @@ mod tests {
             "terminal.run",
             &json!({ "program": "npm", "args": [long] }),
             &manifest(),
+            None,
         )
         .expect_err("arg too long");
         assert!(error.to_string().contains("長すぎ"));

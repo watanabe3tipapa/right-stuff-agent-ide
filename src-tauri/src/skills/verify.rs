@@ -9,6 +9,7 @@ use serde_json::Value;
 use crate::error::{AppError, AppResult};
 use crate::skills::exec;
 use crate::skills::{VerificationCheck, VerificationMode};
+use crate::state::CancelFlag;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -17,6 +18,7 @@ pub enum CheckStatus {
     Failed,
     Skipped,
     Timeout,
+    Cancelled,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -200,18 +202,27 @@ fn node_scripts(root: &Path) -> AppResult<Option<(PackageManager, BTreeSet<Strin
 }
 
 /// Execute the planned checks. Failures are returned in the result instead of
-/// bubbling up, so the caller can report every check consistently.
+/// bubbling up, so the caller can report every check consistently. When the
+/// cancel flag is set, the running check is stopped and the remaining checks
+/// are reported as cancelled.
 pub fn run_planned(
     root: &Path,
     planned: Vec<PlannedCheck>,
     timeout: Duration,
     stop_on_failure: bool,
     max_output_chars: usize,
+    cancel: Option<&CancelFlag>,
 ) -> VerificationResult {
     let mut results = Vec::new();
     let mut stopped = false;
+    let mut cancelled = false;
 
     for check in planned {
+        if cancelled || cancel.is_some_and(CancelFlag::is_cancelled) {
+            cancelled = true;
+            results.push(check.skipped("キャンセルにより実行しませんでした"));
+            continue;
+        }
         if stopped {
             results.push(check.skipped("stopOnFailure により後続の検証をスキップしました"));
             continue;
@@ -220,8 +231,11 @@ pub fn run_planned(
             results.push(check.skipped(reason));
             continue;
         }
-        let result = run_one(root, &check, timeout, max_output_chars);
+        let result = run_one(root, &check, timeout, max_output_chars, cancel);
         let failed = matches!(result.status, CheckStatus::Failed | CheckStatus::Timeout);
+        if result.status == CheckStatus::Cancelled {
+            cancelled = true;
+        }
         results.push(result);
         if failed && stop_on_failure {
             stopped = true;
@@ -229,7 +243,11 @@ pub fn run_planned(
     }
 
     VerificationResult {
-        status: aggregate(&results),
+        status: if cancelled {
+            CheckStatus::Cancelled
+        } else {
+            aggregate(&results)
+        },
         checks: results,
     }
 }
@@ -239,9 +257,19 @@ fn run_one(
     check: &PlannedCheck,
     timeout: Duration,
     max_output_chars: usize,
+    cancel: Option<&CancelFlag>,
 ) -> VerificationCheckResult {
-    let output = exec::run(root, &check.program, &check.args, timeout, max_output_chars);
-    let status = if output.timed_out {
+    let output = exec::run(
+        root,
+        &check.program,
+        &check.args,
+        timeout,
+        max_output_chars,
+        cancel,
+    );
+    let status = if output.cancelled {
+        CheckStatus::Cancelled
+    } else if output.timed_out {
         CheckStatus::Timeout
     } else if output.success {
         CheckStatus::Passed
@@ -261,6 +289,11 @@ fn run_one(
 
 fn aggregate(checks: &[VerificationCheckResult]) -> CheckStatus {
     if checks
+        .iter()
+        .any(|check| check.status == CheckStatus::Cancelled)
+    {
+        CheckStatus::Cancelled
+    } else if checks
         .iter()
         .any(|check| check.status == CheckStatus::Timeout)
     {
@@ -284,6 +317,7 @@ fn aggregate(checks: &[VerificationCheckResult]) -> CheckStatus {
 mod tests {
     use std::fs;
     use std::path::PathBuf;
+    use std::thread;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use super::*;
@@ -365,7 +399,7 @@ mod tests {
         .expect("plan");
         assert_eq!(planned.len(), 1);
         assert!(planned[0].skip_reason.is_some());
-        let result = run_planned(&root, planned, Duration::from_secs(1), true, 100);
+        let result = run_planned(&root, planned, Duration::from_secs(1), true, 100, None);
         assert_eq!(result.status, CheckStatus::Skipped);
         fs::remove_dir_all(root).ok();
     }
@@ -396,10 +430,75 @@ mod tests {
             args: vec!["-c".into(), "echo hello; echo boom >&2".into()],
             skip_reason: None,
         }];
-        let result = run_planned(&root, planned, Duration::from_secs(5), true, 1_000);
+        let result = run_planned(&root, planned, Duration::from_secs(5), true, 1_000, None);
         assert_eq!(result.status, CheckStatus::Passed);
         assert!(result.checks[0].output.contains("hello"));
         assert!(result.checks[0].output.contains("[stderr]"));
+        fs::remove_dir_all(root).ok();
+    }
+
+    fn sleep_check() -> PlannedCheck {
+        PlannedCheck {
+            name: VerificationCheck::Test,
+            ecosystem: "test",
+            program: "sh".into(),
+            args: vec!["-c".into(), "sleep 5".into()],
+            skip_reason: None,
+        }
+    }
+
+    #[test]
+    fn skips_every_check_when_cancelled_before_start() {
+        let root = workspace("cancel");
+        let cancel = CancelFlag::default();
+        cancel.cancel();
+        let planned = vec![sleep_check(), sleep_check()];
+        let result = run_planned(
+            &root,
+            planned,
+            Duration::from_secs(10),
+            true,
+            1_000,
+            Some(&cancel),
+        );
+        assert_eq!(result.status, CheckStatus::Cancelled);
+        assert!(
+            result
+                .checks
+                .iter()
+                .all(|check| check.status == CheckStatus::Skipped)
+        );
+        assert!(
+            result
+                .checks
+                .iter()
+                .all(|check| check.output.contains("キャンセル"))
+        );
+        fs::remove_dir_all(root).ok();
+    }
+
+    #[test]
+    fn reports_a_check_cancelled_while_it_is_running() {
+        let root = workspace("cancel-running");
+        let cancel = std::sync::Arc::new(CancelFlag::default());
+        let trigger = std::sync::Arc::clone(&cancel);
+        let handle = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(200));
+            trigger.cancel();
+        });
+        let planned = vec![sleep_check(), sleep_check()];
+        let result = run_planned(
+            &root,
+            planned,
+            Duration::from_secs(10),
+            true,
+            1_000,
+            Some(&cancel),
+        );
+        handle.join().expect("cancel thread");
+        assert_eq!(result.status, CheckStatus::Cancelled);
+        assert_eq!(result.checks[0].status, CheckStatus::Cancelled);
+        assert_eq!(result.checks[1].status, CheckStatus::Skipped);
         fs::remove_dir_all(root).ok();
     }
 }

@@ -116,7 +116,8 @@ session, trace, --version, --help
 | `skill_decision` | `{ skillId, actionId }` | `{ skillId, actionId, decision, risk }` |
 | `skill_preview` | `{ skillId, actionId, params, mode? }` | `SkillPreviewResult` |
 | `skill_run` | `{ request }` | `SkillRunResult` |
-| `skill_verify` | `{ skillId, actionId, checks? }` | `VerificationResult` |
+| `skill_cancel` | `{ runId? }` | 停止を通知できたら `true` |
+| `skill_verify` | `{ skillId, actionId, checks?, runId? }` | `VerificationResult` |
 | `report_export` | `{ fileName, html }` | 保存したレポートの相対パス |
 
 `skills_list` は `<workspace>/.agents/skills/*.json` を読み、検証済みの
@@ -136,6 +137,16 @@ session, trace, --version, --help
 省略するとマニフェストの `verification.checks` を使う。コマンド文字列は
 マニフェストから受け取らず、`verification.autoRun` と `allowChecks` に沿って
 ネイティブ承認を省略する。
+
+`skill_run` と `skill_verify` は `runId` を任意で受け取る。UI が
+`[A-Za-z0-9_-]` を 64 文字以内で発行した ID を使い、`skill_cancel { runId }` で
+実行中のプロセスグループを終了する。`runId` を省略した場合は Rust が発行する
+ため、完了するまで `skill_cancel` の対象にはできない。`skill_cancel` を引数なしで
+呼ぶと、実行中のスキルと検証をすべて停止する。停止した実行は
+`status: "cancelled"`（検証は `checks[]` の `cancelled` / `skipped`）として返り、
+監査ログの `skill_cancelled` / `verification_run` に記録する。`editor.*` と
+`git.*`、`debug.*` は子プロセスを中断できないため、停止は `terminal.run` と
+検証チェックが対象になる。
 
 `skill_policy_set` は保存前に `allow` の書き込みアクションを `ask` へ丸め、
 `test` を自動許可の対象から外す。`skill_decision` はポリシーとマニフェストの
@@ -200,6 +211,8 @@ interface SkillRequest {
   skillId: string;
   actionId: string;
   params: Record<string, unknown>;
+  /** 実行中に止めるための ID。省略時は Rust が発行する。 */
+  runId?: string;
   planId?: string;
   stepId?: string;
   title?: string;
@@ -236,7 +249,9 @@ report_export({ fileName: string, html: string }): Promise<string>;
 `skill_run` に渡す引数は `{ request: SkillRequest }` の形にする。検証ループは
 v0.3.5 で `skill_verify` として追加した。v0.3.6 では `skill_run` のディスパッチに
 `git.*` / `terminal.run` / `debug.*` を追加した。デバッグ操作は同じ `sessionId` を
-Debug タブと共有する。設計は [SKILLS.md](./SKILLS.md) を参照。
+Debug タブと共有する。v0.3.9 では `skill_cancel` を追加し、UI が発行した `runId` で
+実行中の `terminal.run` と検証チェックを停止できる。設計は
+[SKILLS.md](./SKILLS.md) を参照。
 
 ## 計画立案
 
@@ -252,7 +267,7 @@ interface AgentPlanStep {
   action: string;
   risk: "read" | "write"; // 許可リストから決定 (モデルの自己申告は使わない)
   rationale?: string;
-  status: "pending" | "approved" | "running" | "done" | "failed" | "skipped";
+  status: "pending" | "approved" | "running" | "done" | "failed" | "skipped" | "cancelled";
   output?: string;
   error?: string;
 }

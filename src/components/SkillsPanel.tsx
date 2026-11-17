@@ -11,7 +11,7 @@ import type {
 import { api, errorMessage } from "../lib/api";
 import { buildSkillReport, reportFileName } from "../lib/report";
 import { openSkillLibraryWindow } from "../lib/skillWindow";
-import { skillRiskLabel, validateSkillParams } from "../lib/skills";
+import { createRunId, skillRiskLabel, validateSkillParams } from "../lib/skills";
 import { useAgentStore } from "../stores/agentStore";
 import { Icon } from "./Icon";
 
@@ -145,6 +145,7 @@ function SkillActionCard({
     null,
   );
   const [busy, setBusy] = useState<"preview" | "run" | "verify" | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [report, setReport] = useState<{ html: string; name: string } | null>(
     null,
   );
@@ -188,7 +189,9 @@ function SkillActionCard({
       setPreview(null);
       return;
     }
+    const runId = createRunId();
     setBusy("run");
+    setActiveRunId(runId);
     setPreviewError(null);
     setResult(null);
     setVerification(null);
@@ -197,6 +200,7 @@ function SkillActionCard({
         skillId: skill.id,
         actionId: action.id,
         params,
+        runId,
         mode,
         title: `${skill.name} / ${action.description}`,
       });
@@ -211,20 +215,35 @@ function SkillActionCard({
     } catch (error) {
       setPreviewError(errorMessage(error));
     } finally {
+      setActiveRunId(null);
       setBusy(null);
     }
   }
 
   async function runVerification() {
+    const runId = createRunId();
     setBusy("verify");
+    setActiveRunId(runId);
     setPreviewError(null);
     setVerification(null);
     try {
-      setVerification(await api.skillVerify(skill.id, action.id));
+      setVerification(
+        await api.skillVerify(skill.id, action.id, undefined, runId),
+      );
     } catch (error) {
       setPreviewError(errorMessage(error));
     } finally {
+      setActiveRunId(null);
       setBusy(null);
+    }
+  }
+
+  async function cancelRun() {
+    if (!activeRunId) return;
+    try {
+      await api.skillCancel(activeRunId);
+    } catch (error) {
+      setPreviewError(errorMessage(error));
     }
   }
 
@@ -328,6 +347,16 @@ function SkillActionCard({
               {busy === "verify" ? "検証中…" : "検証を実行"}
             </button>
           )}
+          {(busy === "run" || busy === "verify") && activeRunId && (
+            <button
+              type="button"
+              className="btn small ghost"
+              onClick={() => void cancelRun()}
+            >
+              <Icon name="stop" size={12} />
+              停止
+            </button>
+          )}
         </div>
 
         {previewError && (
@@ -406,7 +435,11 @@ function SkillActionCard({
                 <details
                   className={`skill-verify-check ${check.status}`}
                   key={`${check.name}-${check.ecosystem}-${index}`}
-                  open={check.status === "failed" || check.status === "timeout"}
+                  open={
+                    check.status === "failed" ||
+                    check.status === "timeout" ||
+                    check.status === "cancelled"
+                  }
                 >
                   <summary>
                     <span className={`skill-verify-status ${check.status}`}>

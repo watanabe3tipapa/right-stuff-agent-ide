@@ -1866,6 +1866,10 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   color: var(--danger);
 }
 
+.plan-step-status.cancelled {
+  color: var(--accent3);
+}
+
 .plan-command {
   display: block;
   margin-top: 6px;
@@ -5345,6 +5349,10 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   border-color: color-mix(in oklab, var(--danger) 40%, transparent);
 }
 
+.skill-verify.cancelled {
+  border-color: color-mix(in oklab, var(--accent3) 40%, transparent);
+}
+
 .skill-verify-check {
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -5391,6 +5399,12 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
 .skill-verify-status.skipped {
   border: 1px solid var(--line-strong);
   color: var(--ink-dim);
+}
+
+.skill-verify-status.cancelled {
+  border: 1px solid color-mix(in oklab, var(--accent3) 45%, transparent);
+  background: color-mix(in oklab, var(--accent3) 12%, transparent);
+  color: var(--accent3);
 }
 
 .skill-verify-command {

@@ -157,3 +157,16 @@ export function describeSkillCatalog(catalog: SkillCatalog | null): string {
 export function skillCommandLabel(skillId: string, actionId: string): string {
   return `skill ${skillId} ${actionId}`;
 }
+
+/**
+ * Run id passed to `skill_run` / `skill_verify` so `skill_cancel` can reach a
+ * run that has not finished yet. Rust accepts 1-64 chars of [A-Za-z0-9_-].
+ */
+export function createRunId(): string {
+  const prefix = Date.now().toString(36);
+  const uuid =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID().replace(/-/g, "")
+      : Math.random().toString(36).slice(2, 12);
+  return `run-${prefix}-${uuid}`;
+}

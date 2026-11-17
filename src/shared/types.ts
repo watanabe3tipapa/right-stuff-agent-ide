@@ -244,6 +244,8 @@ export interface SkillRequest {
   skillId: string;
   actionId: string;
   params: Record<string, unknown>;
+  /** Client-generated id so `skill_cancel` can stop the run while in flight. */
+  runId?: string;
   planId?: string;
   stepId?: string;
   title?: string;
@@ -267,7 +269,12 @@ export interface SkillRunResult {
 }
 
 export type VerificationCheckName = "typecheck" | "lint" | "test";
-export type VerificationStatus = "passed" | "failed" | "skipped" | "timeout";
+export type VerificationStatus =
+  | "passed"
+  | "failed"
+  | "skipped"
+  | "timeout"
+  | "cancelled";
 
 export interface VerificationCheckResult {
   name: VerificationCheckName;
@@ -294,7 +301,8 @@ export type PlanStepStatus =
   | "running"
   | "done"
   | "failed"
-  | "skipped";
+  | "skipped"
+  | "cancelled";
 
 export type AgentPlanStatus =
   | "draft"

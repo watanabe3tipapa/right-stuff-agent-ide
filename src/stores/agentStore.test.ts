@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AgentPlan, AgentRunResult } from "../shared/types";
+import type { AgentPlan, AgentRunResult, SkillRunResult } from "../shared/types";
 import { DEFAULT_LLM_CONFIG } from "../lib/llm";
 import { defaultAgentPolicy } from "../lib/policy";
 import { useAgentStore } from "./agentStore";
@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   agentPolicy: vi.fn(),
   agentPolicySet: vi.fn(),
   auditLog: vi.fn(),
+  skillRun: vi.fn(),
+  skillCancel: vi.fn(),
 }));
 
 vi.mock("../lib/api", () => ({
@@ -29,6 +31,8 @@ vi.mock("../lib/api", () => ({
     agentPolicy: mocks.agentPolicy,
     agentPolicySet: mocks.agentPolicySet,
     auditLog: mocks.auditLog,
+    skillRun: mocks.skillRun,
+    skillCancel: mocks.skillCancel,
   },
   errorMessage: (error: unknown) => String(error),
 }));
@@ -70,6 +74,29 @@ function plan(): AgentPlan {
   };
 }
 
+function skillPlan(): AgentPlan {
+  return {
+    id: "plan-skill",
+    goal: "置換する",
+    createdAt: 0,
+    status: "approved",
+    steps: [
+      {
+        id: "step-skill",
+        kind: "skill",
+        title: "置換",
+        command: [],
+        action: "editor.replaceText",
+        risk: "write",
+        skillId: "code-edit",
+        skillActionId: "editor.replaceText",
+        params: { path: "a.ts", oldText: "a", newText: "b" },
+        status: "approved",
+      },
+    ],
+  };
+}
+
 function resetStore() {
   useAgentStore.setState({
     mode: "assistive",
@@ -79,6 +106,7 @@ function resetStore() {
     planRaw: "",
     planError: null,
     executingStepId: null,
+    executingRunId: null,
     snapshot: null,
     streaming: false,
     busy: false,
@@ -275,6 +303,55 @@ describe("plan approval and execution", () => {
     expect(mocks.auditLogAdd).toHaveBeenCalledWith(
       expect.objectContaining({ kind: "plan_rejected", planId: "plan-1" }),
     );
+  });
+
+  it("cancels a running skill step through skill_cancel", async () => {
+    let resolveRun: ((value: SkillRunResult) => void) | undefined;
+    mocks.skillRun.mockImplementation(
+      () =>
+        new Promise<SkillRunResult>((resolve) => {
+          resolveRun = resolve;
+        }),
+    );
+    mocks.skillCancel.mockResolvedValue(true);
+    useAgentStore.setState({ plan: skillPlan(), mode: "assistive" });
+
+    const running = useAgentStore.getState().runPlanStep("step-skill");
+    await vi.waitFor(() => {
+      expect(useAgentStore.getState().executingRunId).not.toBeNull();
+    });
+    const runId = useAgentStore.getState().executingRunId;
+    expect(runId).toBeTruthy();
+    expect(mocks.skillRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        runId,
+        planId: "plan-skill",
+        stepId: "step-skill",
+      }),
+    );
+
+    await useAgentStore.getState().cancelPlanStep();
+    expect(mocks.skillCancel).toHaveBeenCalledWith(runId);
+
+    resolveRun?.({
+      runId: runId as string,
+      status: "cancelled",
+      decision: "ask",
+      changedFiles: [],
+      stdout: "partial",
+      stderr: "実行はキャンセルされました",
+      exitCode: null,
+      durationMs: 5,
+      auditId: 1,
+    });
+    await running;
+
+    const state = useAgentStore.getState();
+    expect(state.executingStepId).toBeNull();
+    expect(state.executingRunId).toBeNull();
+    expect(state.plan?.status).toBe("cancelled");
+    expect(state.plan?.steps[0]?.status).toBe("cancelled");
+    expect(state.plan?.steps[0]?.output).toBe("partial");
   });
 });
 

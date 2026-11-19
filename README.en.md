@@ -32,7 +32,7 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 > The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
 >
-> The Intel x64 build was installed and launched on an Intel Core i7 Mac running macOS 15.8.3, with its SHA-256 checksum verified, in v0.3.8.
+> The Intel x64 build (v0.3.9) was SHA-256 checked and launched from its DMG on an Intel Core i7 Mac running macOS 15.8.4.
 
 ## Concept
 
@@ -301,7 +301,7 @@ vercel --prod          # Deploy to production
 
 ## Known limitations
 
-- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. In addition to Apple Silicon, the v0.3.8 x64 build has been launch-tested on an Intel Core i7 Mac running macOS 15.8.3. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned). v0.3.8 opens the main window centered on the primary display and corrects restored windows that would be off-screen
+- This app is macOS-only (macOS 11 or later); no Windows or Linux builds are provided. In addition to Apple Silicon, the v0.3.9 x64 build has been launch-tested on an Intel Core i7 Mac running macOS 15.8.4. Notarization is deferred, and the distribution DMGs are not Developer ID signed (arm64 is ad-hoc signed; x64 is unsigned). v0.3.8 and later open the main window centered on the primary display and correct restored windows that would be off-screen
 - The `agent-desktop` CLI is not bundled and must be installed separately
 - Openship history, logs, and rollbacks use the self-hosted REST API. If you use the CLI only, set a Base URL and PAT to use those features. CLI deploys pass the configured Project ID and Branch explicitly
 - LLM support covers OpenAI-compatible APIs only. The Tauri app connects through the settings dialog; the browser demo does not support LLM chat. Anthropic-specific APIs are not supported yet

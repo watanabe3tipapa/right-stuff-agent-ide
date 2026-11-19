@@ -32,7 +32,7 @@ v0.3.9 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 > DMG は Apple Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。
 >
-> Intel x64 版は、v0.3.8 で Intel Core i7 / macOS 15.8.3 の実機による SHA-256 照合、インストール、起動を確認済みです。
+> Intel x64 版（v0.3.9）は、Intel Core i7 / macOS 15.8.4 の実機で SHA-256 を照合し、DMG からの起動を確認済みです。
 
 ## コンセプト
 
@@ -304,7 +304,7 @@ vercel --prod          # 本番環境へデプロイ
 
 ## 既知の制約
 
-- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。Apple Silicon に加え、v0.3.8 の x64 版を Intel Core i7 / macOS 15.8.3 の実機で起動確認済みです。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。v0.3.8 では起動時にプライマリモニタ中央へ配置し、画面外に復元された場合はタイトルバーが見える位置へ補正します
+- 本アプリは macOS 専用です（macOS 11 以降）。Windows / Linux 版は提供しません。Apple Silicon に加え、v0.3.9 の x64 版を Intel Core i7 / macOS 15.8.4 の実機で起動確認済みです。公証は先送りで、配布用 DMG は Developer ID 署名を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。v0.3.8 以降では起動時にプライマリモニタ中央へ配置し、画面外に復元された場合はタイトルバーが見える位置へ補正します
 - `agent-desktop` CLI は同梱していません。別途インストールが必要です
 - Openship の履歴・ログ・ロールバックはセルフホスト REST API 経由です。CLI のみで使用する場合は Base URL と PAT を設定しないと履歴系は使えません。CLI のデプロイは設定した Project ID / Branch を明示的に渡します
 - LLM は OpenAI 互換 API のみ対応します。Tauri 版では設定画面から接続できますが、ブラウザデモでは利用できません。Anthropic 固有 API は未対応です

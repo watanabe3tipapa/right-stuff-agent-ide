@@ -29,8 +29,8 @@ v0.3.9 は、ブラウザデモを実際に触れる状態へ近づけ、ラン�
 
 | アーキテクチャ | ファイル | サイズ | SHA-256 |
 |---|---|---|---|
-| Apple Silicon (arm64) | [Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.9/Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg) | ビルド後に追記 | ビルド後に追記 |
-| Intel (x86_64) | [Right-Stuff.Agent.IDE_0.3.9_x64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.9/Right-Stuff.Agent.IDE_0.3.9_x64.dmg) | ビルド後に追記 | ビルド後に追記 |
+| Apple Silicon (arm64) | [Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.9/Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg) | 8.8 MB | `cd995e234dae5a645bc16723480dab072a1aff27b4dc062f942df4f0ba5ae972` |
+| Intel (x86_64) | [Right-Stuff.Agent.IDE_0.3.9_x64.dmg](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/download/v0.3.9/Right-Stuff.Agent.IDE_0.3.9_x64.dmg) | 9.3 MB | `568334e522ce4d1abac24151c1842f29b8f67219320032cb6f78011d5e925503` |
 
 > **注意:** どちらのビルドも Apple の公証（notarization）を受けていません。ダウンロードした Mac では初回起動時に Gatekeeper の警告が表示されます。「システム設定 > プライバシーとセキュリティ」から許可するか、アプリを右クリックして「開く」を選んでください。arm64 版は ad-hoc 署名済み、x64 版は未署名です。Apple Silicon で x64 版を動かす場合は Rosetta 2 が必要です。
 

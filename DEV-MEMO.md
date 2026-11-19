@@ -209,6 +209,17 @@ x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 - 注意: 検証では `curl` で DMG を取得したため quarantine 属性が付かず、Gatekeeper の「開く」操作は不要だった。ブラウザから取得した DMG では警告が出る
 - 初回起動時にウィンドウがプライマリモニタ以外の位置（`position: 45, -1086`）に開いたため、起動位置をプライマリモニタ中央に固定し、画面外なら補正する仕組みを追加した（v0.3.8）
 
+### 実機検証（v0.3.9 / Intel）
+
+2026-11-19 に Intel Core i7-1068NG7 / macOS 15.8.4（x86_64）で確認した。
+
+- DMG: `Right-Stuff.Agent.IDE_0.3.9_x64.dmg`（9,755,017 bytes、9.3 MB）
+- SHA-256: `568334e522ce4d1abac24151c1842f29b8f67219320032cb6f78011d5e925503`
+- 実行ファイル: `Mach-O 64-bit executable x86_64`、`CFBundleShortVersionString` は `0.3.9`、最低 OS は `11.0`
+- 署名: 未署名（`codesign` は "code object is not signed at all"）
+- 起動: DMG をマウントして一時フォルダへコピー後に起動し、ワークスペース、Monaco エディタ、Agent パネル、ステータスバーの `v0.3.9` を確認
+- arm64 DMG: `Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg`（9,270,976 bytes、8.8 MB）、SHA-256 `cd995e234dae5a645bc16723480dab072a1aff27b4dc062f942df4f0ba5ae972`、`Mach-O 64-bit executable arm64`、ad-hoc 署名
+
 ### 実機検証（v0.3.8 / Openship CLI 0.9.11）
 
 2026-11-07 に Intel Core i7-1068NG7 / macOS 15.8.3（x86_64）で Openship CLI 0.9.11 を実機確認した。CLI は Volta 管理の `~/.volta/bin/openship` に入る。

@@ -69,6 +69,17 @@ export const api = {
     return isTauri ? call<AppInfo>("app_info") : demoApi.appInfo();
   },
 
+  demoStorageStatus(): { available: boolean; lastSaveOk: boolean } | null {
+    return isTauri ? null : demoApi.storageStatus();
+  },
+
+  demoReset(): Promise<void> {
+    if (isTauri) {
+      return Promise.reject(new Error("デモのリセットはブラウザでのみ利用できます。"));
+    }
+    return demoApi.resetDemo();
+  },
+
   /**
    * Ask the user to resolve unsaved changes before the window closes. The
    * handler must call `event.preventDefault()` when the close should be

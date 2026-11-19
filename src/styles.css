@@ -254,6 +254,30 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   text-decoration: underline;
 }
 
+.demo-banner.warn {
+  border-bottom-color: color-mix(in oklab, var(--accent3) 45%, transparent);
+}
+
+.demo-reset {
+  border: 1px solid color-mix(in oklab, var(--accent3) 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent3);
+  font: inherit;
+  font-size: 11px;
+  padding: 2px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.demo-reset:hover {
+  background: color-mix(in oklab, var(--accent3) 14%, transparent);
+}
+
+html[data-shot="true"] .demo-banner {
+  display: none;
+}
+
 .agent-health {
   display: inline-flex;
   align-items: center;
@@ -4291,6 +4315,7 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -4854,7 +4879,14 @@ html[data-platform="macos"][data-runtime="tauri"] .topbar {
 .skills-head-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
+  flex: 0 0 auto;
+}
+
+.skills-head-actions .btn {
+  white-space: nowrap;
 }
 
 .skill-lib {

@@ -4,9 +4,9 @@
 
 **書く、任せる、確かめる。エージェントとワークスペースを、ひとつの画面へ。**
 
-right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用のデスクトップ IDE です。[Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) の執筆体験と [Agent Desktop](https://github.com/vercel-labs/agent-desktop) の OS レベル操作を統合し、Markdown の編集からエージェントによるアプリ操作までを同じワークスペースで扱います。
+right-stuff-agent-ide は、エージェントとワークスペースを同じ画面に置くために作っている、macOS 専用のデスクトップ IDE です。Tauri 2.0 + React 18 で構築し、[Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) の執筆体験と [Agent Desktop](https://github.com/vercel-labs/agent-desktop) の OS レベル操作を統合しています。
 
-> **位置付け:** 開発の主力は Tauri 2.0 のネイティブアプリで、GitHub Releases の DMG からインストールできます。Vercel で公開している LP とブラウザデモは、インストールせずに UI を試すためのサンプル（参考実装）です。
+> **位置付け:** 個人が自分用に作っている **Hobby project（Early Access）** です。商用サポートや SLA はありません。開発の主力は Tauri 2.0 のネイティブアプリで、GitHub Releases の DMG からインストールできます。Vercel の LP とブラウザデモは、インストールせずに UI を試すためのものです。
 
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
@@ -15,7 +15,7 @@ right-stuff-agent-ide は、Tauri 2.0 + React 18 で構築した macOS 専用の
 [![Version](https://img.shields.io/badge/version-v0.3.8-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
-[![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Status](https://img.shields.io/badge/status-Early%20Access-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
@@ -83,7 +83,7 @@ v0.3.8 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 - **Agent Desktop ブリッジ** — `agent-desktop` CLI を検出し、許可されたアクションのみ実行。コマンドと出力はそのまま UI に表示
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェント、Git、ターミナルの操作を検索して実行。`⌘P` はクイックオープン、`⌘J` はターミナルの表示切替
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
-- **ブラウザデモ（サンプル）** — Tauri なしでも `npm run dev` でインメモリ・ワークスペース（デモ）を操作可能。Vercel ではインストールせずに UI を試せるサンプルとして公開
+- **ブラウザデモ** — Tauri なしでも `npm run dev` でデモ用ワークスペースを操作可能。編集内容・履歴・スキルポリシーはそのブラウザの localStorage に保存され、デモバーの「初期状態に戻す」で削除できます。Vercel ではインストールせずに UI を試せます
 - **スキル実行** — `.agents/skills/*.json` の v1 マニフェストを読み込み・検証し、`editor.readFile` / `replaceText` / `createFile` をポリシーと承認付きで実行（Agent パネルの Skills タブと設定のスキルタブから操作）
 - **検証ループ** — スキル実行後に `package.json` / `Cargo.toml` から解決した typecheck・lint・test を実行し、結果と出力を Skills タブに表示。検証コマンドはワークスペース構成から決まり、マニフェストから任意のコマンドは受け取りません
 - **実行の停止** — 実行中のターミナルスキルと検証チェックを、Skills タブの「停止」または Plan タブの「中止」から停止できます。停止は `runId` 単位でプロセスグループに伝わり、監査ログに `cancelled` として残ります
@@ -191,7 +191,7 @@ npm run tauri build -- --debug --no-bundle
 npm run dev
 ```
 
-`http://localhost:1420` で、`src/lib/demo.ts` のインメモリ・ワークスペースを使って UI を操作できます。変更はページを再読み込みするとリセットされます。
+`http://localhost:1420` で、`src/lib/demo.ts` のデモ用ワークスペースを使って UI を操作できます。編集内容・履歴・スキルポリシーはブラウザの localStorage に保存されます。デモバーの「初期状態に戻す」で削除できます。LLM・Git・ターミナル・OS 操作は Tauri 版のみです。
 
 ### 主要コマンド
 
@@ -206,6 +206,7 @@ npm run dev
 | `npm run check` | 型検査 + `cargo check` |
 | `npm run tauri build` | macOS アプリ（`.app` / `.dmg`）をビルド |
 | `npm run preview` | `dist/` をローカルでプレビュー |
+| `npm run screenshots` | LP 用スクリーンショットと OGP 画像を再生成（Chrome headless） |
 
 ### 依存関係の監査
 
@@ -277,9 +278,9 @@ GUI から起動したアプリでは `PATH` が限られるため、検出時�
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。署名・公証は先送りとし、当面はこの状態で配布します
 - 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません
 
-## サンプル公開（Vercel）
+## ブラウザデモの公開（Vercel）
 
-ランディングページとブラウザデモは、インストールせずに UI を試せるサンプルとして Vercel で公開中です。製品版は GitHub Releases の DMG で配布しており、開発の主力は Tauri 2.0 のネイティブアプリです。
+ランディングページとブラウザデモは、インストールせずに UI を試せる Hobby project のデモとして Vercel で公開しています。配布版は GitHub Releases の DMG で、開発の主力は Tauri 2.0 のネイティブアプリです。
 
 | URL | 内容 |
 |---|---|
@@ -291,7 +292,7 @@ GUI から起動したアプリでは `PATH` が限られるため、検出時�
 | パス | 内容 |
 |---|---|
 | `/` | ランディングページ（`right-stuff-agent-ide-lp.html`） |
-| `/app/` | ブラウザデモ（Vite ビルド、`src/lib/demo.ts` の仮想ワークスペース） |
+| `/app/` | ブラウザデモ（Vite ビルド、`src/lib/demo.ts` のデモ用ワークスペース。編集内容は localStorage に保存） |
 
 ```bash
 npm run build:vercel   # dist-vercel/ を生成（LP + /app/）
@@ -299,7 +300,7 @@ vercel                 # プレビュー環境へデプロイ
 vercel --prod          # 本番環境へデプロイ
 ```
 
-`vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内のメモリ上で動作し、変更は保存されません。
+`vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内で動作し、編集内容・履歴・スキルポリシーはそのブラウザの localStorage に保存されます。サーバーへは送信しません。
 
 ## 既知の制約
 
@@ -317,7 +318,7 @@ vercel --prod          # 本番環境へデプロイ
 - 計画と実行結果はメモリ上にのみ保持され、再起動すると失われます。変更操作は計画承認後も、実行時に OS のネイティブ承認ダイアログで確認します（ポリシーで「許可」にすることはできません）
 - 監査ログはローカルの SQLite に保存され、保持期間の既定は 30 日、上限は 5,000 件です。監査ログを無効にしても既存の記録は残ります
 - スナップショットはメモリ上にのみ保持され、再起動すると失われます
-- ブラウザデモの変更は永続化されません
+- ブラウザデモの変更は、そのブラウザの localStorage に保存されます。サーバーへは送信しません。localStorage が使えない環境では再読み込みで失われます。デモバーの「初期状態に戻す」で削除できます
 - 同期・共同編集は提供していません
 - macOS の Dock メニュー「終了」、ログアウト、再起動による終了は OS が直接アプリを終了するため、未保存確認の対象外です（`⌘Q` とアプリメニューの「終了」は確認します）
 - 自動更新はありません
@@ -352,7 +353,8 @@ src/
 │   └── ConfirmDialog.tsx           # 確認モーダル
 ├── lib/
 │   ├── api.ts                      # Tauri invoke ラッパー
-│   ├── demo.ts                     # ブラウザ用インメモリ・ワークスペース
+│   ├── demo.ts                     # ブラウザ用デモ・ワークスペース
+│   ├── demoStorage.ts              # デモの localStorage 保存・復元・検証
 │   ├── llm.ts                      # LLM プロンプト・リクエスト変換
 │   ├── plan.ts                     # 計画プロンプト・JSON 解析・引数検証
 │   ├── policy.ts                   # ポリシー既定値・表示ラベル

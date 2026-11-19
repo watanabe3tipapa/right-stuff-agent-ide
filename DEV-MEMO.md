@@ -13,6 +13,12 @@
 - [x] 計画の停止 — Plan タブの「中止」で実行中のスキル手順も停止し、ステップを `cancelled` にする
 - [x] UI — Skills パネルに「停止」ボタン、検証結果と計画ステップに `cancelled` 表示
 - [x] 監査 — 実行中の停止を `skill_cancelled` / `verification_run` に記録
+- [x] ブラウザデモの永続化 — `src/lib/demoStorage.ts` を追加し、ワークスペース・履歴・スキルポリシーを localStorage に保存。バージョン付きスキーマ、パスの検証、履歴の剪定、保存失敗時のフォールバックを含む
+- [x] デモのリセット — `api.demoReset()` とデモバーの「初期状態に戻す」、保存できない環境向けの警告表示
+- [x] デモのディープリンク — `?tab=` / `?file=` / `?preview=1` / `?shot=1` に対応
+- [x] スクリーンショット自動化 — `scripts/capture-screenshots.mjs` と `npm run screenshots` を追加。Chrome headless で LP 用 WebP と OGP 画像を生成
+- [x] LP 刷新 — 実画面と CSS のみの画面ツアー、Hobby project / Early Access の位置付け、できないこと・セキュリティ・FAQ を整理
+- [x] ドキュメント整合 — README / README.en / DEV-MEMO / index.html / sitemap / 404 を更新
 
 ### v0.3.8
 
@@ -143,6 +149,8 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run build:vercel
+npm run screenshots   # LP 用画像と OGP を再生成
 
 # Rust（PATH に cargo を通す）
 export PATH="$HOME/.cargo/bin:$PATH"

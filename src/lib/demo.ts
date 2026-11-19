@@ -28,14 +28,23 @@ import type {
   VersionSummary,
   WorkspaceInfo,
 } from "../shared/types";
+import {
+  clearDemoSnapshot,
+  DEMO_MAX_VERSIONS_PER_FILE,
+  getDemoStorage,
+  loadDemoSnapshot,
+  pruneVersions,
+  saveDemoSnapshot,
+} from "./demoStorage";
 import { DEFAULT_LLM_CONFIG } from "./llm";
 import { defaultAgentPolicy } from "./policy";
 import { DEFAULT_SKILL_POLICY } from "./skills";
 
 /**
  * In-browser fallback used by `npm run dev` when the app is not running inside
- * Tauri. It keeps a small virtual workspace in memory so the whole UI can be
- * reviewed without the native shell.
+ * Tauri. It keeps a small virtual workspace so the whole UI can be reviewed
+ * without the native shell. The snapshot is stored in localStorage when the
+ * browser allows it, so edits survive a reload.
  */
 
 const ROOT = "/demo/right-stuff-agent-ide";
@@ -45,23 +54,32 @@ const startedAt = Date.now();
 const initialFiles: Record<string, string> = {
   "README.md": `# Right-Stuff Agent IDE
 
-Right-Stuff Editor の執筆体験と Agent Desktop の OS レベル操作能力を統合した、
-エージェント駆動型 IDE です。
+自分が使うために作っている、macOS 向けのエージェント IDE。
+書く、任せる、実機で確かめる。
 
-## 現在のフェーズ
+## これは何か
 
-- [x] Tauri 2.0 + React 18 の基盤
+- **書く** — Monaco で Markdown とコードを編集
+- **任せる** — 承認した計画をエージェントが実行
+- **確かめる** — 実機の画面を読み取り、結果をレポートに残す
+- **ローカルファースト** — 原稿・履歴・監査ログは端末内
+
+> ブラウザデモの変更は、このブラウザの localStorage に保存されます。
+> LLM・Git・ターミナル・OS 操作は Tauri 版でのみ動作します。
+
+## 現在のバージョン
+
 - [x] ワークスペース / ファイルツリー
 - [x] Monaco エディタ + Markdown プレビュー
-- [x] バージョン履歴 (SQLite)
-- [x] Agent Desktop ブリッジ
-- [x] OpenAI 互換 LLM チャット (Tauri 版のみ)
-- [x] 計画立案と計画単位の承認 (Tauri 版のみ)
+- [x] バージョン履歴（Tauri 版は SQLite、デモは localStorage）
+- [x] スキル実行と検証ループ
+- [x] 計画立案と承認 (Tauri 版のみ)
+- [x] Agent Desktop 連携 (Tauri 版のみ)
 
 ## 開発
 
 \`\`\`bash
-npm install
+npm ci
 npm run tauri dev
 \`\`\`
 `,
@@ -164,8 +182,7 @@ pub fn run() {
 `,
 };
 
-const files = new Map<string, string>(Object.entries(initialFiles));
-const dirs = new Set<string>([
+const initialDirs = [
   "src",
   "src/components",
   "src-tauri",
@@ -173,10 +190,61 @@ const dirs = new Set<string>([
   "docs",
   ".agents",
   ".agents/skills",
-]);
-const versions: VersionContent[] = [];
-let nextVersionId = 1;
+];
+
+const initialModifiedAt = new Map<string, number>(
+  Object.keys(initialFiles).map((path) => [path, startedAt]),
+);
+const loadedSnapshot = loadDemoSnapshot();
+const files = new Map<string, string>(
+  Object.entries(loadedSnapshot?.files ?? initialFiles),
+);
+const dirs = new Set<string>(loadedSnapshot?.dirs ?? initialDirs);
+const versions: VersionContent[] = loadedSnapshot?.versions ?? [];
+let nextVersionId = loadedSnapshot?.nextVersionId ?? 1;
+const modifiedAt = new Map<string, number>(
+  Object.entries(
+    loadedSnapshot?.modifiedAt ?? Object.fromEntries(initialModifiedAt),
+  ),
+);
 const deleted = new Map<string, string>();
+let demoSkillPolicy = loadedSnapshot?.skillPolicy
+  ? { ...DEFAULT_SKILL_POLICY(), ...loadedSnapshot.skillPolicy, version: 1 }
+  : DEFAULT_SKILL_POLICY();
+let lastSaveOk = true;
+
+function persistDemoState(): void {
+  const kept = pruneVersions(versions);
+  if (kept.length !== versions.length) {
+    versions.splice(0, versions.length, ...kept);
+  }
+
+  lastSaveOk = saveDemoSnapshot({
+    version: 1,
+    files: Object.fromEntries(files),
+    dirs: [...dirs],
+    versions,
+    nextVersionId,
+    modifiedAt: Object.fromEntries(modifiedAt),
+    skillPolicy: demoSkillPolicy,
+    savedAt: Date.now(),
+  });
+
+  if (!lastSaveOk && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("rsai:demo-storage-error"));
+  }
+}
+
+function languageForPath(path: string): string {
+  if (path.endsWith(".md")) return "markdown";
+  if (path.endsWith(".json")) return "json";
+  if (path.endsWith(".tsx") || path.endsWith(".ts")) return "typescript";
+  if (path.endsWith(".jsx") || path.endsWith(".js")) return "javascript";
+  if (path.endsWith(".rs")) return "rust";
+  if (path.endsWith(".css")) return "css";
+  if (path.endsWith(".html")) return "html";
+  return "plaintext";
+}
 
 function demoRoot(): WorkspaceInfo {
   return { root: ROOT, name: ROOT_NAME };
@@ -200,7 +268,7 @@ function entryFor(path: string): FileEntry {
     path,
     isDir: dir,
     size: dir ? 0 : new Blob([files.get(path) ?? ""]).size,
-    modified: startedAt,
+    modified: dir ? null : (modifiedAt.get(path) ?? startedAt),
     children: dir ? buildChildren(path) : [],
   };
 }
@@ -243,12 +311,18 @@ function record(path: string, content: string): number {
   // 履歴は新しい順に保持する。ID は配列の長さではなく単調増加カウンタで
   // 採番し、将来履歴を間引いても既存 ID と衝突しないようにする。
   const id = nextVersionId++;
+  const timestamp = Date.now();
   versions.unshift({
     id,
     path,
     content,
-    createdAt: Date.now(),
+    createdAt: timestamp,
   });
+  modifiedAt.set(path, timestamp);
+
+  if (versions.length > DEMO_MAX_VERSIONS_PER_FILE * 2) {
+    versions.splice(0, versions.length, ...pruneVersions(versions));
+  }
   return id;
 }
 
@@ -352,8 +426,6 @@ function demoSkillCatalog(): SkillCatalog {
   };
 }
 
-let demoSkillPolicy = DEFAULT_SKILL_POLICY();
-
 function demoSkillDecision(skillId: string, actionId: string): SkillDecisionResult {
   const catalog = demoSkillCatalog();
   const action = catalog.skills
@@ -425,6 +497,31 @@ function demoSkillPreview(
 }
 
 export const demoApi = {
+  storageStatus(): { available: boolean; lastSaveOk: boolean } {
+    return { available: getDemoStorage() !== null, lastSaveOk };
+  },
+
+  async resetDemo(): Promise<void> {
+    files.clear();
+    for (const [path, content] of Object.entries(initialFiles)) {
+      files.set(path, content);
+    }
+
+    dirs.clear();
+    for (const dir of initialDirs) dirs.add(dir);
+
+    versions.splice(0, versions.length);
+    nextVersionId = 1;
+    modifiedAt.clear();
+    for (const [path, timestamp] of initialModifiedAt) {
+      modifiedAt.set(path, timestamp);
+    }
+    deleted.clear();
+    demoSkillPolicy = DEFAULT_SKILL_POLICY();
+    lastSaveOk = true;
+    clearDemoSnapshot();
+  },
+
   async appInfo(): Promise<AppInfo> {
     return {
       name: "Right-Stuff Agent IDE",
@@ -455,9 +552,9 @@ export const demoApi = {
     return {
       path,
       content,
-      language: path.endsWith(".md") ? "markdown" : path.endsWith(".json") ? "json" : "plaintext",
+      language: languageForPath(path),
       size: content.length,
-      modified: startedAt,
+      modified: modifiedAt.get(path) ?? startedAt,
     };
   },
 
@@ -465,6 +562,7 @@ export const demoApi = {
     ensureParent(path);
     files.set(path, content);
     const versionId = record(path, content);
+    persistDemoState();
     return { path, versionId, savedAt: Date.now(), size: content.length };
   },
 
@@ -477,6 +575,7 @@ export const demoApi = {
       files.set(path, "");
       record(path, "");
     }
+    persistDemoState();
     return path;
   },
 
@@ -497,8 +596,14 @@ export const demoApi = {
     }
     for (const [key, value] of movingFiles) {
       files.delete(key);
-      files.set(key === from ? to : `${to}${key.slice(from.length)}`, value);
+      const nextPath = key === from ? to : `${to}${key.slice(from.length)}`;
+      files.set(nextPath, value);
+      if (modifiedAt.has(key)) {
+        modifiedAt.set(nextPath, modifiedAt.get(key) ?? Date.now());
+        modifiedAt.delete(key);
+      }
     }
+    persistDemoState();
     return to;
   },
 
@@ -511,8 +616,10 @@ export const demoApi = {
     );
     for (const [key, value] of movingFiles) {
       files.delete(key);
+      modifiedAt.delete(key);
       deleted.set(key, value);
     }
+    persistDemoState();
     return `.right-stuff/trash/${Date.now()}/${path}`;
   },
 
@@ -669,6 +776,7 @@ export const demoApi = {
 
   async skillPolicySet(policy: SkillPolicy): Promise<SkillPolicy> {
     demoSkillPolicy = { ...DEFAULT_SKILL_POLICY(), ...policy, version: 1 };
+    persistDemoState();
     return demoSkillPolicy;
   },
 
@@ -739,6 +847,8 @@ export const demoApi = {
       changedFiles.push(path);
       stdout = `${path} を作成しました`;
     }
+
+    if (changedFiles.length > 0) persistDemoState();
 
     return {
       runId: request.runId ?? `demo-${started}`,

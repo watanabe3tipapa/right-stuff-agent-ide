@@ -190,7 +190,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             ? state.notice
             : {
                 id: Date.now(),
-                text: "デモモードのため、変更はページを再読み込みすると失われます（サーバーには送信されません）。",
+                text: "このブラウザに保存しました（サーバーには送信されません）。",
               },
         };
       });

@@ -43,19 +43,19 @@ export function Welcome() {
             <div className="welcome-card-icon"><Icon name="pencil" size={16} /></div>
             <h2>執筆体験</h2>
             <p>Markdown をそのまま書き、プレビューし、バージョン履歴から復元。</p>
-            <span className="welcome-tag">Phase 0</span>
+            <span className="welcome-tag">Editor</span>
           </article>
           <article className="welcome-card">
             <div className="welcome-card-icon green"><Icon name="sparkles" size={16} /></div>
             <h2>エージェント操作</h2>
             <p>LLM が計画を立て、承認した手順を Agent Desktop で実行。結果をその場で確認。</p>
-            <span className="welcome-tag">Phase 1</span>
+            <span className="welcome-tag">Agent</span>
           </article>
           <article className="welcome-card">
             <div className="welcome-card-icon amber"><Icon name="terminal" size={16} /></div>
             <h2>IDE 機能</h2>
-            <p>Monaco、ターミナル、Git、LSP、DAP を段階的に統合していく。</p>
-            <span className="welcome-tag">Phase 2</span>
+            <p>ネイティブ版では、ターミナル、Git、LSP、DAP も同じ画面に。</p>
+            <span className="welcome-tag">IDE</span>
           </article>
         </div>
 

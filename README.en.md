@@ -4,9 +4,9 @@
 
 **Write, delegate, verify. An IDE where agents and your workspace share one screen.**
 
-right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React 18. It combines the writing experience of [Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) with the OS-level control of [Agent Desktop](https://github.com/vercel-labs/agent-desktop), so Markdown editing and agent-driven app operations live in the same workspace.
+right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the workspace on one screen. It is built with Tauri 2.0 and React 18, combining the writing experience of [Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) with the OS-level control of [Agent Desktop](https://github.com/vercel-labs/agent-desktop).
 
-> **Status:** The Tauri 2.0 native app is the main development target and is available as a DMG on GitHub Releases. The landing page and browser demo on Vercel are a sample (reference implementation) for trying the UI without installing the app.
+> **Status:** This is a personal **hobby project (Early Access)**, not a commercial product. There is no commercial support or SLA. The Tauri 2.0 native app is the main development target and is available as a DMG on GitHub Releases. The landing page and browser demo on Vercel are for trying the UI without installing the app.
 
 > **Files stay local. Actions stay visible.** Drafts remain in the folder you choose, and every command an agent runs is shown with its output in the UI. No accounts, telemetry, or cloud sync.
 
@@ -15,7 +15,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built with Tauri 2.0 and React
 [![Version](https://img.shields.io/badge/version-v0.3.8-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
-[![Phase](https://img.shields.io/badge/local--first-openship-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
+[![Status](https://img.shields.io/badge/status-Early%20Access-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Vercel](https://img.shields.io/badge/Vercel-live-black.svg)](https://right-stuff-agent-ide.vercel.app/)
 [![GitHub issues](https://img.shields.io/github/issues/watanabe3tipapa/right-stuff-agent-ide.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues)
 
@@ -83,7 +83,7 @@ Workspace management, the Monaco editor, SQLite version history, the Agent Deskt
 - **Agent Desktop bridge** — detects the `agent-desktop` CLI and runs only allowlisted actions, showing the command and output in the UI
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, agent, Git, and terminal commands. `⌘P` opens Quick Open and `⌘J` toggles the terminal
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
-- **Browser demo (sample)** — run the in-memory demo workspace with `npm run dev` without Tauri. On Vercel it is published as a sample for trying the UI without installing the app
+- **Browser demo** — run the demo workspace with `npm run dev` without Tauri. Edits, history, and skill policies are saved in the browser's localStorage and can be cleared with the "初期状態に戻す" (Reset demo) button. On Vercel it lets you try the UI without installing the app
 - **Skill execution** — v1 manifests in `.agents/skills/*.json` are loaded and validated, and `editor.readFile` / `replaceText` / `createFile` run with policy and approval (from the Skills tab in the agent panel and the Skills tab in settings)
 - **Git skills ** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` run through fixed handlers. Reads need no approval; writes pass through the native approval dialog and are recorded in the local audit log
 - **Terminal skill ** — `terminal.run` executes npm / pnpm / yarn / cargo / node / python3 / pytest / make as `program + args`, never as a shell string, with an isolated process group, timeout, and output cap
@@ -189,7 +189,7 @@ npm run tauri build -- --debug --no-bundle
 npm run dev
 ```
 
-Open `http://localhost:1420` to use the in-memory workspace from `src/lib/demo.ts`. Changes reset when the page reloads.
+Open `http://localhost:1420` to use the demo workspace from `src/lib/demo.ts`. Edits, history, and skill policies are saved in the browser's localStorage and can be cleared with the "初期状態に戻す" (Reset demo) button. LLM, Git, terminal, and OS actions are available only in the Tauri build.
 
 ### Main commands
 
@@ -204,6 +204,7 @@ Open `http://localhost:1420` to use the in-memory workspace from `src/lib/demo.t
 | `npm run check` | Type check + `cargo check` |
 | `npm run tauri build` | Build the macOS app (`.app` / `.dmg`) |
 | `npm run preview` | Preview `dist/` locally |
+| `npm run screenshots` | Regenerate LP screenshots and the OGP image (headless Chrome) |
 
 ### Dependency audit
 
@@ -274,9 +275,9 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
-## Sample deployment (Vercel)
+## Browser demo deployment (Vercel)
 
-The landing page and browser demo are live on Vercel as a sample for trying the UI without installing the app. The native Tauri 2.0 app is distributed as a DMG on GitHub Releases and remains the main development target.
+The landing page and browser demo are live on Vercel as a hobby-project demo for trying the UI without installing the app. The native Tauri 2.0 app is distributed as a DMG on GitHub Releases and remains the main development target.
 
 | URL | Content |
 |---|---|
@@ -288,7 +289,7 @@ Paths in the repository:
 | Path | Content |
 |---|---|
 | `/` | Landing page (`right-stuff-agent-ide-lp.html`) |
-| `/app/` | Browser demo (Vite build using the in-memory workspace from `src/lib/demo.ts`) |
+| `/app/` | Browser demo (Vite build using the demo workspace from `src/lib/demo.ts`; edits are saved to localStorage) |
 
 ```bash
 npm run build:vercel   # Produce dist-vercel/ (LP + /app/)
@@ -296,7 +297,7 @@ vercel                 # Deploy to a preview environment
 vercel --prod          # Deploy to production
 ```
 
-`vercel.json` defines the build command and output directory. The demo runs in browser memory, so changes are not persisted.
+`vercel.json` defines the build command and output directory. The demo runs in the browser, and edits, history, and skill policies are saved in that browser's localStorage. Nothing is sent to a server.
 
 ## Known limitations
 
@@ -314,7 +315,7 @@ vercel --prod          # Deploy to production
 - Plans and their results are kept in memory only and are lost on restart. Mutating steps still show the native OS approval dialog even after the plan is approved (the policy cannot set them to allow)
 - The audit log is stored in local SQLite with a default retention of 30 days and a 5,000-row cap. Disabling it leaves existing records in place
 - Snapshots live in memory only and are lost on restart
-- Browser demo changes are not persisted
+- Browser demo changes are saved in that browser's localStorage and are not sent to a server. If localStorage is unavailable, changes are lost on reload. Use "初期状態に戻す" (Reset demo) in the demo bar to clear them
 - No sync or collaborative editing
 - Quitting from the macOS Dock menu, logging out, or restarting bypasses the unsaved-changes prompt because the OS terminates the app directly (`⌘Q` and the app menu Quit item are guarded)
 - No auto-update
@@ -349,7 +350,8 @@ src/
 │   └── ConfirmDialog.tsx           # Confirmation modal
 ├── lib/
 │   ├── api.ts                      # Tauri invoke wrapper
-│   ├── demo.ts                     # In-memory browser workspace
+│   ├── demo.ts                     # Browser demo workspace
+│   ├── demoStorage.ts              # Demo localStorage save / load / validation
 │   ├── llm.ts                      # LLM prompts and request conversion
 │   ├── plan.ts                     # Plan prompt, JSON parsing, argument validation
 │   ├── policy.ts                   # Policy defaults and display labels

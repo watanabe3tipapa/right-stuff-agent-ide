@@ -241,8 +241,8 @@ export function SkillLibrary() {
         </div>
       )}
       {!isTauri && (
-        <div className="dialog-note warn skill-lib-message" role="note">
-          ブラウザデモではワークスペースへの追加はページを再読み込みすると失われます。
+        <div className="dialog-note skill-lib-message" role="note">
+          追加したスキルはこのブラウザに保存されます（サーバーには送信されません）。
         </div>
       )}
 

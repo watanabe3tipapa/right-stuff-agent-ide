@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 
-import type { AppInfo, FileEntry } from "./shared/types";
+import type { AgentPanelTab, AppInfo, FileEntry } from "./shared/types";
 import { api, errorMessage } from "./lib/api";
 import { initDap } from "./lib/dap";
 import { disposeLsp, initLsp, syncLspFiles } from "./lib/lsp";
@@ -9,6 +9,7 @@ import { confirmUnsavedChanges, useEditorStore } from "./stores/editorStore";
 import { useGitStore } from "./stores/gitStore";
 import { useWorkspaceStore } from "./stores/workspaceStore";
 import { AgentPanel } from "./components/AgentPanel";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { FileTree } from "./components/FileTree";
 import { Icon } from "./components/Icon";
 import { StatusBar } from "./components/StatusBar";
@@ -86,6 +87,8 @@ export function App() {
   const [quickOpen, setQuickOpen] = useState(false);
   const [symbolOpen, setSymbolOpen] = useState(false);
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState(false);
+  const [storageWarning, setStorageWarning] = useState(false);
   const booted = useRef(false);
   const openedWorkspace = useRef<string | null>(null);
   const quitting = useRef(false);
@@ -113,6 +116,37 @@ export function App() {
         document.documentElement.dataset.runtime = api.isTauri ? "tauri" : "browser";
       });
   }, [initWorkspace, refreshAgentStatus, refreshLlm, refreshPolicy]);
+
+  useEffect(() => {
+    if (api.isTauri) return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("shot") === "1") {
+      document.documentElement.dataset.shot = "true";
+    }
+
+    const requestedTab = params.get("tab");
+    const tabs: AgentPanelTab[] = [
+      "chat",
+      "plan",
+      "skills",
+      "git",
+      "debug",
+      "deploy",
+      "audit",
+      "runtime",
+    ];
+    if (requestedTab && tabs.includes(requestedTab as AgentPanelTab)) {
+      useAgentStore.getState().setPanelTab(requestedTab as AgentPanelTab);
+    }
+
+    const status = api.demoStorageStatus();
+    if (status && !status.available) setStorageWarning(true);
+
+    const onStorageError = () => setStorageWarning(true);
+    window.addEventListener("rsai:demo-storage-error", onStorageError);
+    return () => window.removeEventListener("rsai:demo-storage-error", onStorageError);
+  }, []);
 
   useEffect(() => {
     if (!api.isTauri) return;
@@ -179,13 +213,27 @@ export function App() {
     openedWorkspace.current = root;
     if (useEditorStore.getState().activePath) return;
 
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("file");
+    const requestedEntry = requested
+      ? findEntry(tree, (entry) => entry.path === requested)
+      : null;
     const readme =
-      tree.find((entry) => !entry.isDir && entry.name.toLowerCase() === "readme.md") ??
-      findEntry(tree, (entry) => entry.name.toLowerCase().endsWith(".md")) ??
-      findEntry(tree, () => true);
+      requestedEntry && !requestedEntry.isDir
+        ? requestedEntry
+        : tree.find((entry) => !entry.isDir && entry.name.toLowerCase() === "readme.md") ??
+          findEntry(tree, (entry) => entry.name.toLowerCase().endsWith(".md")) ??
+          findEntry(tree, () => true);
 
     if (readme && !readme.isDir) {
-      void useEditorStore.getState().openFile(readme.path);
+      void useEditorStore
+        .getState()
+        .openFile(readme.path)
+        .then(() => {
+          if (params.get("preview") === "1" && !useEditorStore.getState().preview) {
+            useEditorStore.getState().togglePreview();
+          }
+        });
     }
   }, [info?.root, tree]);
 
@@ -290,17 +338,37 @@ export function App() {
 
   const error = workspaceError ?? editorError;
 
+  const resetDemo = async () => {
+    setResetConfirm(false);
+    try {
+      await api.demoReset();
+      useEditorStore.getState().closeAll();
+      await useWorkspaceStore.getState().refresh();
+      await useAgentStore.getState().refreshSkills();
+      await useAgentStore.getState().refreshSkillPolicy();
+      setStorageWarning(false);
+    } catch (resetError) {
+      useEditorStore.setState({ error: errorMessage(resetError) });
+    }
+  };
+
   return (
     <div className="app">
       <TopBar onOpenPalette={() => setPaletteOpen(true)} />
 
       {!api.isTauri && (
-        <div className="demo-banner" role="status">
+        <div className={`demo-banner${storageWarning ? " warn" : ""}`} role="status">
           <Icon name="alert" size={13} />
           <span>
-            <strong>ブラウザデモ</strong> — 変更はメモリ上のみで、再読み込みすると失われます。
-            LLM と Agent Desktop は動作しません。
+            <strong>ブラウザプレビュー</strong> —{" "}
+            {storageWarning
+              ? "このブラウザに保存できません。変更は再読み込みで失われます。"
+              : "変更はこのブラウザに保存されます（サーバーには送信されません）。"}{" "}
+            LLM・OS 操作・Git・ターミナルは Tauri 版のみです。
           </span>
+          <button type="button" className="demo-reset" onClick={() => setResetConfirm(true)}>
+            初期状態に戻す
+          </button>
           <a href="/">LP に戻る</a>
         </div>
       )}
@@ -358,6 +426,17 @@ export function App() {
         </Suspense>
       )}
       <UnsavedChangesDialog />
+
+      {resetConfirm && (
+        <ConfirmDialog
+          title="デモを初期状態に戻す"
+          message="このブラウザに保存したファイル、編集履歴、スキルポリシーを削除して初期状態に戻します。この操作は取り消せません。"
+          confirmLabel="初期状態に戻す"
+          danger
+          onCancel={() => setResetConfirm(false)}
+          onConfirm={() => void resetDemo()}
+        />
+      )}
 
       {notice && (
         <div className="toast info" role="status">

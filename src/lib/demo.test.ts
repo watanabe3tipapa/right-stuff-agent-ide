@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { demoApi } from "./demo";
+
+beforeEach(async () => {
+  await demoApi.resetDemo();
+});
 
 describe("demo workspace", () => {
   it("exposes the sample tree", async () => {

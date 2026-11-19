@@ -3,1545 +3,1655 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Right-Stuff Agent IDE</title>
-<meta name="description" content="Right-Stuff Editor と Agent Desktop を統合した、エージェントが IDE を直接操作する次世代開発環境。">
+<title>Right-Stuff Agent IDE — 自分が使うために作っている、エージェント IDE</title>
+<meta name="description" content="書く、任せる、実機で確かめる。macOS 向けのローカルファーストなエージェント IDE です。個人開発の Hobby project として、できることとできないことを正直に公開しています。">
+<meta name="author" content="watanabe3tipapa">
 <meta name="theme-color" content="#0d1117">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://right-stuff-agent-ide.vercel.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Right-Stuff Agent IDE">
 <meta property="og:locale" content="ja_JP">
-<meta property="og:title" content="Right-Stuff Agent IDE">
-<meta property="og:description" content="Right-Stuff Editor と Agent Desktop を統合した、エージェントが IDE を直接操作する次世代開発環境。">
+<meta property="og:title" content="Right-Stuff Agent IDE — 自分が使うために作っている、エージェント IDE">
+<meta property="og:description" content="書く、任せる、実機で確かめる。macOS 向けのローカルファーストなエージェント IDE。個人開発の Hobby project です。">
 <meta property="og:url" content="https://right-stuff-agent-ide.vercel.app/">
 <meta property="og:image" content="https://right-stuff-agent-ide.vercel.app/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Right-Stuff Agent IDE — エージェント駆動型デスクトップ IDE">
+<meta property="og:image:alt" content="Right-Stuff Agent IDE の実画面。ファイルツリー、Monaco エディタ、エージェントパネルが並ぶ。">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Right-Stuff Agent IDE">
-<meta name="twitter:description" content="Right-Stuff Editor と Agent Desktop を統合した、エージェントが IDE を直接操作する次世代開発環境。">
+<meta name="twitter:title" content="Right-Stuff Agent IDE — 自分が使うために作っている、エージェント IDE">
+<meta name="twitter:description" content="書く、任せる、実機で確かめる。macOS 向けのローカルファーストなエージェント IDE。個人開発の Hobby project です。">
 <meta name="twitter:image" content="https://right-stuff-agent-ide.vercel.app/og-image.png">
-<meta name="twitter:image:alt" content="Right-Stuff Agent IDE — エージェント駆動型デスクトップ IDE">
+<meta name="twitter:image:alt" content="Right-Stuff Agent IDE の実画面。ファイルツリー、Monaco エディタ、エージェントパネルが並ぶ。">
 <link rel="icon" type="image/svg+xml" href="/rs-mark.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Noto+Sans+JP:wght@400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
 <style>
 :root {
+  color-scheme: dark;
   --bg: #0d1117;
   --surface: #161b22;
   --surface-raised: #1c2128;
   --ink: #e6edf3;
   --ink-muted: #8b949e;
-  --ink-dim: #484f58;
+  --ink-dim: #5b6572;
   --accent: #58a6ff;
   --accent-weak: color-mix(in oklab, var(--accent) 12%, var(--surface));
-  --accent-glow: color-mix(in oklab, var(--accent) 25%, transparent);
   --accent2: #3fb950;
   --accent2-weak: color-mix(in oklab, var(--accent2) 12%, var(--surface));
   --accent3: #d29922;
+  --accent3-weak: color-mix(in oklab, var(--accent3) 12%, var(--surface));
   --line: color-mix(in oklab, var(--ink) 10%, transparent);
-  --line-strong: color-mix(in oklab, var(--ink) 18%, transparent);
-  --radius: 10px;
-  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -12px rgba(0,0,0,0.5);
+  --line-strong: color-mix(in oklab, var(--ink) 19%, transparent);
+  --radius: 12px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 18px 48px -24px rgba(0, 0, 0, 0.7);
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
   --step-0: clamp(0.95rem, 0.92rem + 0.2vw, 1.05rem);
-  --step-1: clamp(1.1rem, 1.05rem + 0.3vw, 1.3rem);
-  --step-2: clamp(1.4rem, 1.2rem + 1vw, 2rem);
-  --step-3: clamp(2rem, 1.5rem + 2.5vw, 3.2rem);
-  --space: clamp(1.2rem, 1rem + 1vw, 2rem);
+  --step-1: clamp(1.12rem, 1.06rem + 0.3vw, 1.32rem);
+  --step-2: clamp(1.5rem, 1.26rem + 1.1vw, 2.15rem);
+  --step-3: clamp(2.05rem, 1.45rem + 2.7vw, 3.45rem);
+  --space: clamp(1.15rem, 0.95rem + 0.9vw, 1.9rem);
 }
 * { box-sizing: border-box; margin: 0; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  font-family: var(--sans);
   font-size: var(--step-0);
   line-height: 1.85;
   color: var(--ink);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
+a { color: var(--accent); }
+img { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Status strip */
+.status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45em 1.2em;
+  padding: 0.55em var(--space);
+  border-bottom: 1px solid var(--line);
+  background: #0a0e14;
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+.status-strip .item { display: inline-flex; align-items: center; gap: 0.45em; white-space: nowrap; }
+.status-strip .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent2);
+  box-shadow: 0 0 6px var(--accent2);
+}
+.status-strip strong { color: var(--ink); font-weight: 600; }
+.status-strip .right { margin-left: auto; }
+
+/* Navigation */
 nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: color-mix(in oklab, var(--bg) 85%, transparent);
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
-  padding: 0.8em var(--space);
+  padding: 0.72em var(--space);
 }
-nav .nav-inner {
-  max-width: 1100px;
+.nav-inner {
+  max-width: 1120px;
   margin: 0 auto;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1.2em;
 }
-nav .logo {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-weight: 700;
-  font-size: 1.15rem;
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
   color: var(--ink);
   text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
-nav .logo .logo-icon {
+.logo-mark {
   width: 28px; height: 28px;
+  border-radius: 7px;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 6px;
+  color: var(--bg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
-  color: var(--bg);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
 }
-nav .nav-links {
+.nav-links {
   display: flex;
-  gap: 1.5em;
-  list-style: none;
+  align-items: center;
+  gap: 1.15em;
+  margin-left: auto;
   padding: 0;
+  list-style: none;
 }
-nav .nav-links a {
+.nav-links a {
   color: var(--ink-muted);
   text-decoration: none;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 500;
-  transition: color 0.2s;
+  white-space: nowrap;
 }
-nav .nav-links a:hover { color: var(--accent); }
-nav .nav-cta {
-  background: var(--accent);
-  color: var(--bg);
-  padding: 0.4em 1em;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-decoration: none;
-  transition: opacity 0.2s;
-}
-nav .nav-cta:hover { opacity: 0.85; }
-nav .nav-github {
+.nav-links a:hover { color: var(--accent); }
+.nav-cta {
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
-}
-nav .nav-github svg {
-  width: 15px;
-  height: 15px;
-  fill: currentColor;
-}
-@media (max-width: 700px) {
-  nav .nav-links { display: none; }
-}
-.sample-banner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4em 1em;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75em var(--space);
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink-muted);
-  font-size: 0.82rem;
-  line-height: 1.6;
-  text-align: center;
-}
-.sample-banner strong {
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.sample-banner a {
-  color: var(--accent);
+  gap: 0.4em;
+  padding: 0.42em 1em;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg) !important;
+  font-weight: 700;
   text-decoration: none;
+  font-size: 0.8rem;
+  white-space: nowrap;
 }
-.sample-banner a:hover { text-decoration: underline; }
-header.hero {
+.nav-cta:hover { opacity: 0.86; }
+@media (max-width: 860px) {
+  .nav-links { display: none; }
+  .nav-inner { justify-content: space-between; }
+}
+.logo { min-width: 0; }
+@media (max-width: 380px) {
+  .logo-text { display: none; }
+  .nav-inner { gap: 0.7em; }
+  .nav-cta { padding: 0.42em 0.85em; }
+}
+
+/* Hero */
+.hero {
   position: relative;
-  padding: calc(var(--space) * 3.5) var(--space) calc(var(--space) * 2.5);
-  text-align: center;
   overflow: hidden;
+  padding: calc(var(--space) * 3) var(--space) calc(var(--space) * 2);
+  text-align: center;
 }
-header.hero::before {
+.hero::before {
   content: "";
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 50% at 50% 0%, var(--accent-glow), transparent 70%),
-    radial-gradient(ellipse 40% 40% at 80% 60%, var(--accent2-weak), transparent 60%);
+    radial-gradient(ellipse 58% 46% at 50% -4%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(ellipse 38% 34% at 86% 38%, color-mix(in oklab, var(--accent2) 10%, transparent), transparent 70%);
   pointer-events: none;
 }
-header.hero .badge {
+.hero > * { position: relative; }
+.hero .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5em;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.78rem;
-  color: var(--accent);
+  padding: 0.34em 1em;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
-  padding: 0.35em 1em;
-  margin-bottom: 1.5em;
   background: var(--surface);
-  position: relative;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
 }
-header.hero .badge .dot {
+.hero .badge .dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--accent2);
   box-shadow: 0 0 6px var(--accent2);
-  animation: pulse 2s ease-in-out infinite;
 }
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-header.hero h1 {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
+.hero h1 {
+  margin: 0.9em auto 0.35em;
+  max-width: 22ch;
   font-size: var(--step-3);
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.5em;
-  position: relative;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
 }
-header.hero h1 .highlight {
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
+.highlight {
+  background: linear-gradient(92deg, var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-.block-line {
-  display: block;
-}
-header.hero .subtitle {
-  font-size: var(--step-1);
+.hero .subtitle {
+  max-width: 62ch;
+  margin: 0 auto;
   color: var(--ink-muted);
-  max-width: 56ch;
-  margin: 0 auto 1.8em;
-  position: relative;
+  font-size: var(--step-1);
+  line-height: 1.8;
 }
-header.hero .cta-group {
+@media (max-width: 480px) {
+  .hero h1 { font-size: clamp(1.65rem, 7.2vw, 2.1rem); letter-spacing: -0.03em; }
+}
+@media (max-width: 340px) {
+  .hero h1 { font-size: 1.5rem; }
+}
+.hero h1 .highlight { white-space: nowrap; }
+.hero .subtitle strong { color: var(--ink); font-weight: 600; }
+.cta-group {
   display: flex;
-  gap: 1em;
-  justify-content: center;
   flex-wrap: wrap;
-  position: relative;
-  margin-bottom: 2.5em;
+  justify-content: center;
+  gap: 0.75em;
+  margin: 1.7em 0 0.9em;
 }
-header.hero .cta-btn {
+.cta-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5em;
-  padding: 0.7em 1.6em;
-  border-radius: var(--radius);
-  font-weight: 600;
-  font-size: 0.95rem;
+  justify-content: center;
+  gap: 0.45em;
+  padding: 0.72em 1.4em;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font-size: 0.94rem;
+  font-weight: 700;
   text-decoration: none;
-  transition: transform 0.15s, opacity 0.2s;
+  transition: transform 0.15s ease, border-color 0.2s ease, opacity 0.2s ease;
 }
-header.hero .cta-btn:hover { transform: translateY(-2px); }
-header.hero .cta-primary {
-  background: linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 70%, var(--accent2)));
-  color: var(--bg);
+.cta-btn:hover { transform: translateY(-2px); }
+.cta-primary {
+  background: linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 62%, var(--accent2)));
+  color: #06121f;
 }
-header.hero .cta-secondary {
+.cta-secondary {
   background: var(--surface);
+  border-color: var(--line-strong);
   color: var(--ink);
-  border: 1px solid var(--line-strong);
 }
-.hero-mockup {
-  position: relative;
-  max-width: 900px;
-  margin: 0 auto;
-  border-radius: var(--radius);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  overflow: hidden;
-  box-shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
-}
-.hero-mockup .mockup-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  padding: 0.6em 1em;
-  background: var(--surface-raised);
-  border-bottom: 1px solid var(--line);
-}
-.hero-mockup .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
-.hero-mockup .mockup-dot.r { background: #ff5f57; }
-.hero-mockup .mockup-dot.y { background: #febc2e; }
-.hero-mockup .mockup-dot.g { background: #28c840; }
-.hero-mockup .mockup-title {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.7rem;
-  color: var(--ink-dim);
-  margin-left: 0.5em;
-}
-.hero-mockup .mockup-body {
-  display: grid;
-  grid-template-columns: 180px 1fr 220px;
-  min-height: 320px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.72rem;
-}
-@media (max-width: 700px) {
-  .hero-mockup .mockup-body { grid-template-columns: 1fr; }
-}
-.hero-mockup .mockup-sidebar {
-  background: var(--surface-raised);
-  border-right: 1px solid var(--line);
-  padding: 1em;
+.cta-tertiary {
+  background: transparent;
+  border-color: var(--line);
   color: var(--ink-muted);
 }
-.hero-mockup .mockup-sidebar .tree-line {
-  margin-bottom: 0.4em;
-  white-space: nowrap;
-}
-.hero-mockup .mockup-sidebar .tree-line.indent { padding-left: 1.2em; }
-.hero-mockup .mockup-sidebar .tree-line.indent-2 { padding-left: 2.4em; }
-.hero-mockup .mockup-sidebar .tree-line.active { color: var(--accent); }
-.hero-mockup .mockup-sidebar .tree-line .tree-caret { color: var(--ink-dim); }
-.hero-mockup .mockup-editor {
-  padding: 1em;
-  color: var(--ink);
+.cta-btn small { font-weight: 500; opacity: 0.7; }
+.hero .honest-note {
+  color: var(--ink-dim);
+  font-size: 0.82rem;
   line-height: 1.7;
 }
-.hero-mockup .mockup-editor .comment { color: var(--ink-dim); }
-.hero-mockup .mockup-editor .keyword { color: var(--accent); }
-.hero-mockup .mockup-editor .string { color: var(--accent2); }
-.hero-mockup .mockup-editor .func { color: #d2a8ff; }
-.hero-mockup .mockup-right {
-  background: var(--surface-raised);
-  border-left: 1px solid var(--line);
-  padding: 1em;
-  color: var(--ink-muted);
-}
-.hero-mockup .mockup-right .chat-bubble {
+.hero .honest-note strong { color: var(--accent3); font-weight: 600; }
+
+/* Hero screenshot */
+.window {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.6em;
-  margin-bottom: 0.6em;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.window-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.55em 0.9em;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-raised);
+}
+.window-dots { display: flex; gap: 0.38em; }
+.window-dots i { width: 9px; height: 9px; border-radius: 50%; background: #484f58; }
+.window-dots i:nth-child(1) { background: #ff5f57; }
+.window-dots i:nth-child(2) { background: #febc2e; }
+.window-dots i:nth-child(3) { background: #28c840; }
+.window-url {
+  margin-left: 0.45em;
+  color: var(--ink-dim);
+  font-family: var(--mono);
   font-size: 0.68rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.hero-mockup .mockup-right .chat-bubble.agent {
-  border-left: 2px solid var(--accent2);
+.hero-shot {
+  max-width: 1000px;
+  margin: 2.2em auto 0;
+  text-align: left;
 }
-.hero-mockup-note {
-  max-width: 900px;
-  margin: 0.9em auto 0;
-  color: var(--ink-muted);
-  font-size: 0.82rem;
+.hero-shot img { display: block; width: 100%; height: auto; }
+.hero-shot figcaption {
+  margin-top: 0.75em;
+  color: var(--ink-dim);
+  font-size: 0.78rem;
   line-height: 1.7;
   text-align: center;
 }
-.hero-mockup-note strong { color: var(--accent3); }
-.hero-mockup-note a { color: var(--accent); }
-main { max-width: 1100px; margin: 0 auto; padding: 0 var(--space); }
+.hero-shot figcaption strong { color: var(--accent2); font-weight: 600; }
+
+/* Quick facts */
+.facts {
+  max-width: 1000px;
+  margin: 1.6em auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--surface) 74%, transparent);
+  overflow: hidden;
+}
+.facts div {
+  padding: 0.85em 1em;
+  border-right: 1px solid var(--line);
+  text-align: left;
+}
+.facts div:last-child { border-right: none; }
+.facts b {
+  display: block;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.facts span { color: var(--ink-dim); font-size: 0.74rem; }
+@media (max-width: 680px) {
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts div:nth-child(2) { border-right: none; }
+  .facts div:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+}
+
+main { max-width: 1120px; margin: 0 auto; padding: 0 var(--space); }
+section {
+  margin-bottom: calc(var(--space) * 3.2);
+  scroll-margin-top: 5rem;
+}
+.section-header { margin-bottom: calc(var(--space) * 1.25); max-width: 64ch; }
+.section-label {
+  margin-bottom: 0.5em;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+h2 {
+  font-size: var(--step-2);
+  font-weight: 700;
+  line-height: 1.28;
+  letter-spacing: -0.02em;
+}
+.section-desc {
+  margin-top: 0.55em;
+  color: var(--ink-muted);
+  line-height: 1.8;
+}
+h3 { line-height: 1.4; letter-spacing: -0.01em; }
 code {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.86em;
-  padding: 0.05em 0.32em;
+  padding: 0.06em 0.34em;
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--surface-raised);
   color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.84em;
 }
-section { margin-bottom: calc(var(--space) * 3); }
-.section-header {
-  text-align: center;
-  margin-bottom: calc(var(--space) * 1.2);
+strong { color: var(--ink); }
+
+/* About */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: calc(var(--space) * 1.5);
+  align-items: start;
 }
-.section-label {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.72rem;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.6em;
-}
-h2 {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-size: var(--step-2);
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
-  margin-bottom: 0.4em;
-}
-.section-desc {
+@media (max-width: 820px) { .about-grid { grid-template-columns: 1fr; } }
+.about-grid p { color: var(--ink-muted); margin-top: 0.9em; line-height: 1.9; }
+.about-grid p strong { color: var(--ink); }
+blockquote {
+  margin: 1.4em 0 0;
+  padding: 1em 1.2em;
+  border-left: 2px solid var(--accent2);
+  background: var(--surface);
+  border-radius: 0 8px 8px 0;
   color: var(--ink-muted);
-  max-width: 56ch;
-  margin: 0 auto;
+  font-size: 0.95em;
+  line-height: 1.9;
 }
+blockquote p + p { margin-top: 0.7em; }
+.note-card {
+  padding: calc(var(--space) * 0.95);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.note-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.7em;
+  color: var(--accent3);
+  font-size: 1rem;
+}
+.note-card ul { list-style: none; padding: 0; display: grid; gap: 0.6em; }
+.note-card li {
+  position: relative;
+  padding-left: 1.15em;
+  color: var(--ink-muted);
+  font-size: 0.9em;
+  line-height: 1.7;
+}
+.note-card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent3);
+}
+.note-card li strong { color: var(--ink); }
+
+/* Three-step cards */
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1em;
+}
+@media (max-width: 820px) { .step-grid { grid-template-columns: 1fr; } }
+.step-card {
+  position: relative;
+  padding: calc(var(--space) * 1.05);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+.step-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+.step-card:nth-child(2)::before { background: var(--accent2); }
+.step-card:nth-child(3)::before { background: var(--accent3); }
+.step-card .num {
+  color: var(--ink-dim);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+.step-card h3 { margin-top: 0.35em; font-size: 1.22rem; }
+.step-card p { margin-top: 0.45em; color: var(--ink-muted); font-size: 0.92em; line-height: 1.8; }
+.step-card ul {
+  margin-top: 0.8em;
+  padding-left: 1.1em;
+  color: var(--ink-muted);
+  font-size: 0.86em;
+  line-height: 1.8;
+}
+.step-card li + li { margin-top: 0.25em; }
+.step-card li::marker { color: var(--accent); }
+
+/* Tables */
+.table-wrap {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+caption {
+  caption-side: top;
+  padding: 0.9em 1.1em 0;
+  color: var(--ink-dim);
+  font-size: 0.8rem;
+  text-align: left;
+}
+th, td {
+  padding: 0.72em 1em;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+th {
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+td { color: var(--ink-muted); line-height: 1.7; }
+tbody tr:last-child td { border-bottom: none; }
+td strong { color: var(--ink); }
+.yes { color: var(--accent2); font-weight: 600; white-space: nowrap; }
+.maybe { color: var(--accent3); font-weight: 600; white-space: nowrap; }
+.no { color: var(--ink-dim); font-weight: 600; white-space: nowrap; }
+
+/* Fit columns */
+.fit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1em;
+  margin-top: 1em;
+}
+@media (max-width: 760px) { .fit-grid { grid-template-columns: 1fr; } }
+.fit-card {
+  padding: calc(var(--space) * 0.85) calc(var(--space) * 1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.fit-card h3 { font-size: 0.98rem; margin-bottom: 0.55em; }
+.fit-card.good h3 { color: var(--accent2); }
+.fit-card.bad h3 { color: var(--ink-muted); }
+.fit-card ul { list-style: none; padding: 0; display: grid; gap: 0.45em; }
+.fit-card li {
+  position: relative;
+  padding-left: 1.15em;
+  color: var(--ink-muted);
+  font-size: 0.9em;
+  line-height: 1.7;
+}
+.fit-card.good li::before { content: "＋"; position: absolute; left: 0; color: var(--accent2); }
+.fit-card.bad li::before { content: "−"; position: absolute; left: 0; color: var(--ink-dim); }
+
+/* Feature grid */
 .feature-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
   gap: 1em;
 }
 .feature-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
   padding: calc(var(--space) * 0.9);
-  transition: border-color 0.2s, transform 0.2s;
-}
-.feature-card:hover {
-  border-color: var(--line-strong);
-  transform: translateY(-2px);
-}
-.feature-card .feature-icon {
-  width: 40px; height: 40px;
-  border-radius: 8px;
-  background: var(--accent-weak);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  margin-bottom: 0.8em;
-}
-.feature-card .feature-title {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 0.4em;
-}
-.feature-card .feature-desc {
-  font-size: 0.92em;
-  color: var(--ink-muted);
-  line-height: 1.7;
-}
-.usecase-flow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5em;
-  margin: 1.4em 0 2.2em;
-  padding: 1em 1.2em;
-  background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  color: var(--ink-muted);
-  font-size: 0.88rem;
+  background: var(--surface);
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
-.usecase-flow .flow-node {
-  padding: 0.28em 0.7em;
+.feature-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.feature-card .tag {
+  display: inline-block;
+  margin-bottom: 0.55em;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.11em;
+}
+.feature-card h3 { font-size: 1.06rem; margin-bottom: 0.4em; }
+.feature-card p { color: var(--ink-muted); font-size: 0.9em; line-height: 1.8; }
+.feature-card p + p { margin-top: 0.5em; }
+.feature-card .only {
+  display: inline-block;
+  margin-top: 0.7em;
+  padding: 0.1em 0.55em;
+  border: 1px solid var(--line-strong);
   border-radius: 999px;
-  background: var(--accent-weak);
-  color: var(--ink);
-  white-space: nowrap;
+  color: var(--ink-dim);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
 }
-.usecase-flow .flow-arrow { color: var(--ink-dim); }
-.usecase-group { margin-top: 2em; }
-.usecase-group h3 {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-weight: 600;
-  font-size: 1.25rem;
-  margin-bottom: 0.3em;
+
+/* Screenshot tour */
+.tour { position: relative; }
+.tour > input {
+  position: absolute;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
-.usecase-group > p {
-  color: var(--ink-muted);
-  font-size: 0.92rem;
-  line-height: 1.7;
-  margin-bottom: 1em;
-}
-.diagram-figure {
-  margin: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: var(--surface);
-  transition: border-color 0.2s;
-}
-.diagram-figure:hover { border-color: var(--line-strong); }
-.diagram-figure a { display: block; }
-.diagram-figure img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-.diagram-caption {
+.tour-tabs {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8em;
-  padding: 1em 1.2em;
+  gap: 0.5em;
+  margin-bottom: 0.9em;
+}
+.tour-tabs label {
+  padding: 0.45em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.tour-tabs label:hover { border-color: var(--line-strong); color: var(--ink); }
+.tour-panels { position: relative; }
+.tour-panel { display: none; }
+.tour-panel .window { box-shadow: var(--shadow); }
+.tour-panel img { display: block; width: 100%; height: auto; }
+.tour-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4em 1em;
+  padding: 0.8em 1em;
   border-top: 1px solid var(--line);
+  background: var(--surface);
   color: var(--ink-muted);
   font-size: 0.86rem;
   line-height: 1.7;
 }
-.diagram-caption strong { color: var(--ink); }
-.diagram-caption a {
-  flex: none;
-  color: var(--accent);
-  font-weight: 600;
-  text-decoration: none;
-}
-.diagram-caption a:hover { text-decoration: underline; }
-.eval-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 1em;
-}
-.eval-card {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: calc(var(--space) * 0.9);
-}
-.eval-card.good { border-top: 2px solid var(--accent2); }
-.eval-card.bad { border-top: 2px solid var(--accent3); }
-.eval-card h3 {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-size: 1.05rem;
-  margin-bottom: 0.7em;
-}
-.eval-card.good h3 { color: var(--accent2); }
-.eval-card.bad h3 { color: var(--accent3); }
-.eval-card ul {
-  display: flex;
-  flex-direction: column;
-  gap: 0.55em;
-  list-style: none;
-  padding: 0;
-}
-.eval-card li {
-  position: relative;
-  padding-left: 1.3em;
-  color: var(--ink-muted);
-  font-size: 0.9em;
-  line-height: 1.65;
-}
-.eval-card li::before {
-  content: "＋";
-  position: absolute;
-  left: 0;
-  color: var(--accent2);
-  font-weight: 600;
-}
-.eval-card.bad li::before {
-  content: "−";
-  color: var(--accent3);
-}
-.eval-card li strong {
+.tour-caption strong { color: var(--ink); }
+.tour-caption .hint { color: var(--ink-dim); font-size: 0.8rem; }
+#tour-1:checked ~ .tour-tabs label[for="tour-1"],
+#tour-2:checked ~ .tour-tabs label[for="tour-2"],
+#tour-3:checked ~ .tour-tabs label[for="tour-3"],
+#tour-4:checked ~ .tour-tabs label[for="tour-4"] {
+  border-color: var(--accent);
+  background: var(--accent-weak);
   color: var(--ink);
-  font-weight: 600;
 }
-.tutorial-steps {
+#tour-1:checked ~ .tour-panels #tour-panel-1,
+#tour-2:checked ~ .tour-panels #tour-panel-2,
+#tour-3:checked ~ .tour-panels #tour-panel-3,
+#tour-4:checked ~ .tour-panels #tour-panel-4 {
+  display: block;
+}
+#tour-1:focus-visible ~ .tour-tabs label[for="tour-1"],
+#tour-2:focus-visible ~ .tour-tabs label[for="tour-2"],
+#tour-3:focus-visible ~ .tour-tabs label[for="tour-3"],
+#tour-4:focus-visible ~ .tour-tabs label[for="tour-4"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Flow */
+.flow {
   display: flex;
-  flex-direction: column;
-  gap: 1.5em;
-}
-.tutorial-step {
-  display: grid;
-  grid-template-columns: 60px 1fr;
-  gap: 1.2em;
-  align-items: start;
-}
-@media (max-width: 600px) {
-  .tutorial-step { grid-template-columns: 1fr; }
-}
-.tutorial-step .step-num {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-size: 2.2rem;
-  font-weight: 800;
-  color: var(--accent);
-  opacity: 0.4;
-  line-height: 1;
-  text-align: center;
-}
-.tutorial-step .step-content {
-  background: var(--surface);
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.45em;
+  padding: 1em;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: calc(var(--space) * 0.8);
+  background: var(--surface);
+}
+.flow-step {
+  flex: 1 1 120px;
   min-width: 0;
-}
-.tutorial-step .step-title {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-weight: 600;
-  font-size: 1.15rem;
-  margin-bottom: 0.4em;
-}
-.tutorial-step .step-desc {
-  color: var(--ink-muted);
-  font-size: 0.95em;
-  margin-bottom: 0.8em;
-}
-.tutorial-step pre {
-  background: #0a0c10;
+  padding: 0.7em 0.8em;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.8em 1em;
-  overflow-x: auto;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.8rem;
-  line-height: 1.6;
-  margin: 0;
+  border-radius: 8px;
+  background: var(--surface-raised);
 }
+.flow-step b {
+  display: block;
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.flow-step span { color: var(--ink-dim); font-size: 0.74rem; line-height: 1.5; display: block; }
+.flow-arrow {
+  align-self: center;
+  color: var(--ink-dim);
+  font-family: var(--mono);
+  font-size: 0.9rem;
+}
+.flow-step.human { border-color: color-mix(in oklab, var(--accent) 40%, var(--line)); }
+.flow-step.auto { border-color: color-mix(in oklab, var(--accent2) 38%, var(--line)); }
+.flow-step.record { border-color: color-mix(in oklab, var(--accent3) 40%, var(--line)); }
+@media (max-width: 760px) {
+  .flow { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); align-self: flex-start; margin-left: 0.8em; }
+}
+
+/* Modes */
 .mode-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1em;
 }
+@media (max-width: 820px) { .mode-grid { grid-template-columns: 1fr; } }
 .mode-card {
-  background: var(--surface);
+  position: relative;
+  padding: calc(var(--space) * 0.95);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: calc(var(--space) * 0.9);
-  position: relative;
+  background: var(--surface);
   overflow: hidden;
 }
 .mode-card::before {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 3px;
+  height: 2px;
 }
-.mode-card.passive::before { background: var(--accent2); }
+.mode-card.passive::before { background: var(--ink-dim); }
 .mode-card.assistive::before { background: var(--accent); }
 .mode-card.autonomous::before { background: var(--accent3); }
 .mode-card .mode-tag {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.7rem;
-  padding: 0.2em 0.5em;
+  display: inline-block;
+  margin-bottom: 0.5em;
+  padding: 0.1em 0.55em;
   border-radius: 4px;
-  display: inline-block;
-  margin-bottom: 0.6em;
-}
-.mode-card.passive .mode-tag { background: var(--accent2-weak); color: var(--accent2); }
-.mode-card.assistive .mode-tag { background: var(--accent-weak); color: var(--accent); }
-.mode-card.autonomous .mode-tag { background: color-mix(in oklab, var(--accent3) 15%, var(--surface)); color: var(--accent3); }
-.mode-card .mode-title {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-weight: 600;
-  font-size: 1.1rem;
-  margin-bottom: 0.4em;
-}
-.mode-card .mode-desc {
-  font-size: 0.92em;
+  background: var(--surface-raised);
   color: var(--ink-muted);
-  line-height: 1.7;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
 }
-.tech-grid {
+.mode-card h3 { font-size: 1.05rem; margin-bottom: 0.35em; }
+.mode-card p { color: var(--ink-muted); font-size: 0.9em; line-height: 1.8; }
+
+/* Safety */
+.safety-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 0.8em;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 1.2em;
+  align-items: start;
 }
-.tech-item {
-  background: var(--surface);
-  border: 1px solid var(--line);
+@media (max-width: 880px) { .safety-grid { grid-template-columns: minmax(0, 1fr); } }
+.safety-table { table-layout: fixed; }
+.safety-table .col-kind { width: 16%; }
+.safety-table .col-example { width: 36%; }
+.safety-table .col-treatment { width: 48%; }
+.safety-table th { white-space: normal; }
+.safety-table .yes, .safety-table .maybe, .safety-table .no { white-space: normal; }
+.safety-grid > * { min-width: 0; }
+.notice {
+  padding: 1em 1.15em;
+  border: 1px solid color-mix(in oklab, var(--accent3) 38%, var(--line));
   border-radius: var(--radius);
-  padding: 1em;
-  display: flex;
-  align-items: center;
-  gap: 0.8em;
+  background: var(--accent3-weak);
 }
-.tech-item .tech-name {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ink);
-}
-.tech-item .tech-role {
-  font-size: 0.8rem;
-  color: var(--ink-muted);
-}
-.install-box {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: calc(var(--space) * 1.2);
-  text-align: center;
-}
-.install-box pre {
-  background: #0a0c10;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 1em 1.5em;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.9rem;
-  color: var(--accent2);
-  display: inline-block;
-  max-width: 100%;
-  overflow-x: auto;
-  margin: 1em 0;
-  text-align: left;
-}
-.notice-box {
-  background: color-mix(in oklab, var(--accent3) 8%, var(--surface));
-  border: 1px solid color-mix(in oklab, var(--accent3) 35%, var(--line));
-  border-radius: var(--radius);
-  padding: calc(var(--space) * 0.9);
-  margin-bottom: calc(var(--space) * 1.2);
-}
-.notice-box .notice-title {
+.notice h3 {
   display: flex;
   align-items: center;
   gap: 0.5em;
-  color: var(--accent3);
-  font-weight: 700;
   margin-bottom: 0.5em;
-}
-.notice-box ul {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0.5em 1.2em;
-  list-style: none;
-  padding: 0;
-}
-.notice-box li {
-  position: relative;
-  padding-left: 1.1em;
-  color: var(--ink-muted);
-  font-size: 0.88em;
-  line-height: 1.7;
-}
-.notice-box li::before {
-  content: "•";
-  position: absolute;
-  left: 0;
   color: var(--accent3);
+  font-size: 0.98rem;
 }
-.notice-box strong { color: var(--ink); }
-.shortcut-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: calc(var(--space) * 1.2);
-  background: var(--surface);
+.notice p { color: var(--ink-muted); font-size: 0.88em; line-height: 1.8; }
+.notice p + p { margin-top: 0.55em; }
+
+/* Use cases */
+.usecase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1em;
+}
+.usecase-card {
+  padding: calc(var(--space) * 0.9);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  overflow: hidden;
-  font-size: 0.88em;
-}
-.shortcut-table th,
-.shortcut-table td {
-  padding: 0.65em 1em;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
-}
-.shortcut-table th {
-  color: var(--ink);
-  font-weight: 600;
-  background: var(--surface-raised);
-}
-.shortcut-table td { color: var(--ink-muted); }
-.shortcut-table tr:last-child td { border-bottom: none; }
-.shortcut-table kbd {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.82em;
-  padding: 0.1em 0.4em;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  background: var(--surface-raised);
-  color: var(--ink);
-  white-space: nowrap;
-}
-.roadmap-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
-  gap: 0.9em;
-}
-.roadmap-item {
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: calc(var(--space) * 0.8);
-  position: relative;
 }
-.roadmap-item::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--ink-dim);
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-.roadmap-item.done::before { background: var(--accent2); }
-.roadmap-item.current::before { background: var(--accent); }
-.roadmap-item .roadmap-phase {
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.72rem;
-  color: var(--accent);
-  margin-bottom: 0.25em;
-}
-.roadmap-item .roadmap-title {
-  font-family: "Outfit", "Noto Sans JP", sans-serif;
-  font-weight: 600;
-  font-size: 1.05rem;
-  margin-bottom: 0.3em;
-}
-.roadmap-item .roadmap-meta {
-  font-size: 0.8rem;
-  color: var(--ink-dim);
-  margin-bottom: 0.5em;
-}
-.roadmap-item p {
-  color: var(--ink-muted);
-  font-size: 0.88em;
-  line-height: 1.7;
-}
-.roadmap-status {
-  display: inline-block;
-  margin-left: 0.5em;
-  padding: 0.1em 0.5em;
-  border-radius: 999px;
-  font-size: 0.62rem;
-  font-weight: 600;
-  vertical-align: middle;
-  background: var(--accent2-weak);
+.usecase-card .tag {
   color: var(--accent2);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
 }
-.roadmap-item.current .roadmap-status {
-  background: var(--accent-weak);
+.usecase-card h3 { margin: 0.35em 0 0.4em; font-size: 1.03rem; }
+.usecase-card p { color: var(--ink-muted); font-size: 0.9em; line-height: 1.8; }
+
+/* Getting started */
+.start-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1em;
+}
+@media (max-width: 820px) { .start-grid { grid-template-columns: minmax(0, 1fr); } }
+.start-card {
+  min-width: 0;
+  padding: calc(var(--space) * 0.95);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.start-card .num {
   color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
 }
-.tech-item { position: relative; }
-.tech-item .tech-phase {
-  position: absolute;
-  top: 0.5em;
-  right: 0.6em;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.6rem;
-  color: var(--ink-dim);
+.start-card h3 { margin: 0.3em 0 0.4em; font-size: 1.02rem; }
+.start-card p { color: var(--ink-muted); font-size: 0.9em; line-height: 1.8; }
+.start-card p + p { margin-top: 0.45em; }
+pre {
+  margin: 0.75em 0 0;
+  padding: 0.75em 0.9em;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #080b10;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  overflow-x: auto;
+}
+pre .prompt { color: var(--accent2); }
+pre .comment { color: var(--ink-dim); }
+details {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.95em 1.1em;
+}
+details + details { margin-top: 0.7em; }
+summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.94rem;
+  list-style: none;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: "＋";
+  display: inline-block;
+  width: 1.2em;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-weight: 400;
+}
+details[open] summary::before { content: "−"; }
+.details-body { min-width: 0; max-width: 100%; margin-top: 0.8em; color: var(--ink-muted); font-size: 0.9em; line-height: 1.8; }
+.details-body pre { max-width: 100%; }
+details:not([open]) .details-body { display: none; }
+.details-body p + p { margin-top: 0.55em; }
+.tech-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45em;
+  margin: 0.7em 0;
+  padding: 0;
+  list-style: none;
+}
+.tech-list li {
+  padding: 0.2em 0.6em;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 0.05em 0.45em;
-}
-.faq-item {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  margin-bottom: 0.8em;
-  overflow: hidden;
-}
-.faq-item summary {
-  padding: 1em 1.2em;
-  font-weight: 600;
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.faq-item summary::-webkit-details-marker { display: none; }
-.faq-item summary::after {
-  content: "+";
-  font-family: "JetBrains Mono", monospace;
-  color: var(--accent);
-  font-size: 1.2rem;
-}
-.faq-item[open] summary::after { content: "\2212"; }
-.faq-item .faq-answer {
-  padding: 0 1.2em 1.2em;
+  background: var(--surface-raised);
   color: var(--ink-muted);
-  font-size: 0.95em;
-  line-height: 1.8;
+  font-family: var(--mono);
+  font-size: 0.72rem;
 }
-.footer-cta {
-  background: var(--surface);
+
+/* Limitations */
+.limits-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1em;
+}
+@media (max-width: 820px) { .limits-grid { grid-template-columns: 1fr; } }
+.limit-card {
+  padding: calc(var(--space) * 0.95);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  background: var(--surface);
+}
+.limit-card h3 { margin-bottom: 0.6em; font-size: 1rem; }
+.limit-card.now h3 { color: var(--accent3); }
+.limit-card.next h3 { color: var(--accent); }
+.limit-card ul { list-style: none; padding: 0; display: grid; gap: 0.55em; }
+.limit-card li {
+  position: relative;
+  padding-left: 1.15em;
+  color: var(--ink-muted);
+  font-size: 0.89em;
+  line-height: 1.75;
+}
+.limit-card.now li::before { content: "×"; position: absolute; left: 0; color: var(--ink-dim); font-weight: 600; }
+.limit-card.next li::before { content: "→"; position: absolute; left: 0; color: var(--accent); }
+.limit-card li strong { color: var(--ink); }
+
+/* FAQ */
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  margin-bottom: 0.65em;
+  padding: 0 1.1em;
+}
+.faq-item summary { padding: 0.95em 0; }
+.faq-answer {
+  padding: 0 0 1em 1.2em;
+  color: var(--ink-muted);
+  font-size: 0.94em;
+  line-height: 1.85;
+}
+.faq-answer p + p { margin-top: 0.5em; }
+
+/* Footer */
+.footer-cta {
   padding: calc(var(--space) * 2) var(--space);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(ellipse 60% 90% at 50% 0%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 70%),
+    var(--surface);
   text-align: center;
   margin-bottom: calc(var(--space) * 2);
 }
-.footer-cta h2 {
-  margin-bottom: 0.5em;
-}
-.footer-cta p {
-  color: var(--ink-muted);
-  margin-bottom: 1.5em;
-}
+.footer-cta h2 { margin-bottom: 0.4em; }
+.footer-cta p { color: var(--ink-muted); max-width: 56ch; margin: 0 auto 1.4em; }
 footer {
-  text-align: center;
   padding: calc(var(--space) * 1.5) var(--space);
   border-top: 1px solid var(--line);
   color: var(--ink-dim);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  text-align: center;
 }
-footer .footer-links {
+.footer-links {
   display: flex;
-  justify-content: center;
-  gap: 1.5em;
-  margin-bottom: 1em;
   flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.2em;
+  margin-bottom: 0.9em;
 }
-footer .footer-links a {
-  color: var(--ink-muted);
-  text-decoration: none;
-  font-size: 0.85rem;
-}
-footer .footer-links a:hover { color: var(--accent); }
+.footer-links a { color: var(--ink-muted); text-decoration: none; font-size: 0.82rem; }
+.footer-links a:hover { color: var(--accent); }
+footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
+
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 @media print {
   body { background: #fff; color: #111; }
-  :root {
-    --bg: #fff; --surface: #f9f9f9; --ink: #111;
-    --accent: #0366d6; --accent2: #22863a;
-    --line: #ddd; --line-strong: #bbb;
-  }
-  nav, .hero-mockup, .footer-cta { display: none; }
+  .status-strip, nav, .hero::before, .footer-cta, .tour-tabs { display: none; }
+  .window { box-shadow: none; }
+  .tour-panel { display: block !important; margin-bottom: 1em; }
+  a { color: #0645ad; }
 }
-@page { size: A4; margin: 16mm; }
+@page { size: A4; margin: 14mm; }
 </style>
 </head>
 <body>
 
-<div class="sample-banner">
-  <strong>Sample</strong>
-  <span>Tauri 版（macOS 専用）は DMG で配布中です。この LP とブラウザデモは、インストールせずに UI を試すための参考実装です。</span>
-  <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8">DMG をダウンロード</a>
-  <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide">GitHub</a>
+<div class="status-strip">
+  <span class="item"><span class="dot"></span>Hobby project</span>
+  <span class="item">Early Access</span>
+  <span class="item">macOS 11+</span>
+  <span class="item">MIT</span>
+  <span class="item right">最新リリース <strong>v0.3.8</strong> ／ 開発中 <strong>v0.3.9</strong></span>
 </div>
 
 <nav>
   <div class="nav-inner">
-    <a href="/" class="logo">
-      <span class="logo-icon">RS</span>
-      Right-Stuff Agent IDE
-    </a>
+    <a href="#top" class="logo"><span class="logo-mark">RS</span><span class="logo-text">Right-Stuff Agent IDE</span></a>
     <ul class="nav-links">
-      <li><a href="#features">構成</a></li>
-      <li><a href="#use-cases">連携例</a></li>
-      <li><a href="#evaluation">評価</a></li>
-      <li><a href="#roadmap">ロードマップ</a></li>
-      <li><a href="#tutorial">動かし方</a></li>
-      <li><a href="#modes">モード</a></li>
-      <li><a href="#tech">技術</a></li>
+      <li><a href="#about">これは何か</a></li>
+      <li><a href="#features">できること</a></li>
+      <li><a href="#tour">実画面</a></li>
+      <li><a href="#safety">安全性</a></li>
+      <li><a href="#start">はじめ方</a></li>
       <li><a href="#faq">FAQ</a></li>
-      <li><a href="/app/">ブラウザデモ</a></li>
-      <li>
-        <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="nav-github" aria-label="GitHub リポジトリ" title="GitHub リポジトリ">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-          <span>GitHub</span>
-        </a>
-      </li>
+      <li><a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" target="_blank" rel="noreferrer">GitHub</a></li>
     </ul>
-    <a href="#install" class="nav-cta">サンプルについて</a>
+    <a href="/app/" class="nav-cta">ブラウザで試す</a>
   </div>
 </nav>
 
-<header class="hero">
-  <div class="badge"><span class="dot"></span> v0.3.8 / Sample Preview</div>
-  <h1>エージェントが IDE を<span class="highlight block-line">直接操作する</span></h1>
-  <p class="subtitle">Right-Stuff Editor（Markdown エディタ）の執筆体験に、Agent Desktop（Vercel Labs の OS 操作 CLI）を統合。スキル実行、検証ループ、自己完結 HTML レポートまで備えた Tauri 2.0 のネイティブ IDE を、ブラウザで試せるサンプルとともに紹介します。</p>
+<header class="hero" id="top">
+  <div class="badge"><span class="dot"></span>HOBBY PROJECT / EARLY ACCESS</div>
+  <h1>自分が使うために<br>作っている、<span class="highlight">エージェント IDE</span>。</h1>
+  <p class="subtitle">
+    書く、任せる、実機で確かめる。エージェントがファイルを編集し、ターミナルで検証し、macOS のアプリを操作する。結果はアクセシビリティツリーと検証ループで確認し、ローカルの監査ログと HTML レポートに残ります。<strong>原稿も履歴も端末の中。</strong>
+  </p>
   <div class="cta-group">
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" class="cta-btn cta-primary">DMG をダウンロード</a>
-    <a href="/app/" class="cta-btn cta-secondary">ブラウザデモを試す</a>
+    <a href="/app/" class="cta-btn cta-primary">ブラウザで試す</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">DMG をダウンロード <small>v0.3.8</small></a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">GitHub</a>
   </div>
+  <p class="honest-note">
+    完成品ではありません。<strong>足りないところは自分で直しながら育てています。</strong>
+    ブラウザデモの変更はこのブラウザに保存されます。LLM・Git・ターミナル・OS 操作は Tauri 版のみです。
+  </p>
 
-  <div class="hero-mockup">
-    <div class="mockup-header">
-      <span class="mockup-dot r"></span>
-      <span class="mockup-dot y"></span>
-      <span class="mockup-dot g"></span>
-      <span class="mockup-title">Right-Stuff Agent IDE — src/components/AgentPanel.tsx</span>
+  <figure class="hero-shot">
+    <div class="window">
+      <div class="window-bar">
+        <span class="window-dots"><i></i><i></i><i></i></span>
+        <span class="window-url">right-stuff-agent-ide.vercel.app/app/</span>
+      </div>
+      <img
+        src="/screenshots/editor.webp"
+        alt="Right-Stuff Agent IDE のブラウザデモ。左にファイルツリー、中央に README.md の Monaco エディタ、右にエージェントパネルが並ぶ。"
+        width="1440"
+        height="960"
+        fetchpriority="high"
+        decoding="async"
+      >
     </div>
-    <div class="mockup-body">
-      <div class="mockup-sidebar">
-        <div class="tree-line"><span class="tree-caret">▾</span> src/</div>
-        <div class="tree-line indent"><span class="tree-caret">▾</span> components/</div>
-        <div class="tree-line indent-2 active">├─ AgentPanel.tsx</div>
-        <div class="tree-line indent-2">├─ StatusBar.tsx</div>
-        <div class="tree-line indent-2">└─ FileTree.tsx</div>
-        <div class="tree-line indent"><span class="tree-caret">▾</span> stores/</div>
-        <div class="tree-line indent-2">├─ agentStore.ts</div>
-        <div class="tree-line indent-2">└─ editorStore.ts</div>
-        <div class="tree-line indent">└─ App.tsx</div>
-        <div class="tree-line">package.json</div>
-        <div class="tree-line">tauri.conf.json</div>
-      </div>
-      <div class="mockup-editor">
-        <div><span class="keyword">import</span> { useState } <span class="keyword">from</span> <span class="string">"react"</span>;</div>
-        <div><span class="keyword">import</span> { agentSnapshot } <span class="keyword">from</span> <span class="string">"../lib/api"</span>;</div>
-        <div class="comment">// エージェントが UI を直接操作</div>
-        <div><span class="keyword">export function</span> <span class="func">AgentPanel</span>() {</div>
-        <div style="padding-left:1.2em"> <span class="keyword">const</span> [mode, setMode] = <span class="func">useState</span>(<span class="string">"assistive"</span>);</div>
-        <div style="padding-left:1.2em"> <span class="comment">// snapshot -&gt; action -&gt; verify loop</span></div>
-        <div style="padding-left:1.2em"> <span class="keyword">return</span> &lt;Panel&gt;<span class="comment">{/* ... */}</span>&lt;/Panel&gt;;</div>
-        <div>}</div>
-      </div>
-      <div class="mockup-right">
-        <div style="font-size:0.75rem;color:var(--ink);margin-bottom:0.8em;font-weight:600;">Agent</div>
-        <div class="chat-bubble agent">ファイルを保存しました。次に Git コミットを実行しますか？</div>
-        <div class="chat-bubble" style="border-left:2px solid var(--accent)">はい、コミットしてください</div>
-        <div class="chat-bubble agent" style="color:var(--accent2)">git commit -m "feat: add agent chat panel" を実行しました。</div>
-      </div>
-    </div>
+    <figcaption><strong>実際のブラウザデモの画面です。</strong>モックアップではなく、動いている画面をそのまま撮影しています。エディタ・プレビュー・スキル・計画の実画面を下に掲載しています。</figcaption>
+  </figure>
+
+  <div class="facts">
+    <div><b>8 タブ</b><span>Chat / Plan / Skills / Git / Debug / Deploy / Audit / Runtime</span></div>
+    <div><b>3 モード</b><span>Passive / Assistive / Autonomous</span></div>
+    <div><b>100 版</b><span>ファイルごとのローカル履歴</span></div>
+    <div><b>0 テレメトリ</b><span>アカウント・クラウド同期なし</span></div>
   </div>
-  <p class="hero-mockup-note"><strong>※ 画面はシミュレーションです。</strong> ブラウザデモでは LLM を利用できません。Tauri 版では設定画面から OpenAI 互換 API に接続し、ストリーミングチャットを使えます。実際の UI は <a href="/app/">ブラウザデモ</a> で操作できます。</p>
 </header>
 
 <main>
 
+<section id="about">
+  <div class="about-grid">
+    <div>
+      <p class="section-label">About</p>
+      <h2>製品ではなく、<br>自分用の道具です。</h2>
+      <p>
+        これは、自分がコードを書き、エージェントに作業を任せ、その結果を実機で確かめるために作っている macOS アプリです。エディタとエージェントが別々の画面にあると、書いた仕様を渡し、実行結果を確認し、また戻って直す。その往復が増えていきます。このアプリは、その往復を同じワークスペースにまとめる試みです。
+      </p>
+      <p>
+        商用製品のようなサポートや完成度はありません。テストが足りないところも、設計を変えたいところもあります。それでも、<strong>自分自身にとって使い勝手がよいこと</strong>を優先して、少しずつ直しています。合わないところはフォークして、自分の道具にしてください。
+      </p>
+      <blockquote>
+        <p>これは製品ではなく、自分が使うための道具です。ブラウザとアプリを行き来し、ボタンを押し、ログを確認する。その往復をなくしたくて作りました。</p>
+        <p>— 作者より</p>
+      </blockquote>
+    </div>
+    <aside class="note-card">
+      <h3>正直なところ</h3>
+      <ul>
+        <li><strong>macOS 専用です。</strong>macOS 11 以降の Apple Silicon / Intel に対応し、Windows / Linux 版はありません。</li>
+        <li><strong>DMG は Apple Developer ID の署名・公証を受けていません。</strong>初回起動時に警告が出た場合は、右クリック →「開く」で起動してください。</li>
+        <li><strong>LLM は OpenAI 互換 API のみ。</strong>Anthropic 固有 API は未対応です。API キーは OS キーチェーンに保存します。</li>
+        <li><strong>Agent Desktop は別途インストール。</strong>OS 操作を使う場合だけ必要です。同梱していません。</li>
+        <li><strong>自動更新はありません。</strong>新しい版は GitHub Releases から手動で入手してください。</li>
+        <li><strong>共同編集・クラウド同期はありません。</strong>その代わり、原稿と履歴は端末内に残ります。</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<section id="basics">
+  <div class="section-header">
+    <p class="section-label">Three minutes</p>
+    <h2>3 分でわかる、このアプリの使い方。</h2>
+    <p class="section-desc">「書く」「任せる」「確かめる」の 3 つが、1 つの画面に収まっています。LLM と Agent Desktop を使う機能は Tauri 版のみです。</p>
+  </div>
+  <div class="step-grid">
+    <article class="step-card">
+      <div class="num">01 / WRITE</div>
+      <h3>書く</h3>
+      <p>フォルダを開き、Monaco で Markdown やコードを編集します。原稿はアプリのデータベースではなく、選んだフォルダのファイルに直接保存します。</p>
+      <ul>
+        <li>タブ・未保存表示・<code>⌘S</code> / <code>⌘⇧S</code></li>
+        <li>GFM の分割プレビュー</li>
+        <li>保存ごとのローカル履歴（100 版 / ファイル）</li>
+      </ul>
+    </article>
+    <article class="step-card">
+      <div class="num">02 / DELEGATE</div>
+      <h3>任せる</h3>
+      <p>Chat で相談し、Plan で意図を実行計画に変えます。計画は許可された操作だけで組み立てられ、承認するまで実行されません。</p>
+      <ul>
+        <li>OpenAI 互換 API のストリーミングチャット</li>
+        <li>計画単位の承認と手順ごとの実行</li>
+        <li>スキル実行（エディタ / Git / ターミナル / デバッグ）</li>
+      </ul>
+    </article>
+    <article class="step-card">
+      <div class="num">03 / VERIFY</div>
+      <h3>確かめる</h3>
+      <p>変更後は typecheck / lint / test を実行し、必要なら実機の画面をアクセシビリティツリーで読み取ります。結果は監査ログと HTML レポートに残ります。</p>
+      <ul>
+        <li>検証ループと実行の停止</li>
+        <li>Agent Desktop による実機の確認・操作</li>
+        <li>自己完結 HTML レポート</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section id="difference">
+  <div class="section-header">
+    <p class="section-label">Difference</p>
+    <h2>何が違うのか、正直に。</h2>
+    <p class="section-desc">汎用の AI エディタやクラウド型エージェントの代替ではありません。このアプリは「実機の画面まで確かめたい」「操作をローカルに記録したい」「自分で直したい」という用途に寄せています。</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <caption>一般的な傾向としての比較です。各製品の最新仕様は、それぞれの公式情報を確認してください。</caption>
+      <thead>
+        <tr>
+          <th scope="col">観点</th>
+          <th scope="col">Right-Stuff Agent IDE</th>
+          <th scope="col">汎用の AI エディタ</th>
+          <th scope="col">クラウド型エージェント</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>主な用途</strong></td>
+          <td>実機画面を含む確認と記録</td>
+          <td>コード編集の支援</td>
+          <td>汎用タスクの代行</td>
+        </tr>
+        <tr>
+          <td><strong>実機アプリの画面確認</strong></td>
+          <td class="yes">対応（Agent Desktop）</td>
+          <td class="maybe">拡張次第</td>
+          <td class="no">対象外が多い</td>
+        </tr>
+        <tr>
+          <td><strong>ローカルの監査ログ</strong></td>
+          <td class="yes">SQLite に記録</td>
+          <td class="maybe">製品による</td>
+          <td class="no">クラウド側が多い</td>
+        </tr>
+        <tr>
+          <td><strong>自分のワークフローに合わせて fork</strong></td>
+          <td class="yes">MIT・歓迎</td>
+          <td class="no">不可</td>
+          <td class="no">不可</td>
+        </tr>
+        <tr>
+          <td><strong>完成度・サポート</strong></td>
+          <td class="no">低い（個人開発）</td>
+          <td class="yes">高い</td>
+          <td class="yes">高い</td>
+        </tr>
+        <tr>
+          <td><strong>料金</strong></td>
+          <td class="yes">無料（MIT）</td>
+          <td class="maybe">サブスクが多い</td>
+          <td class="maybe">従量課金が多い</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="fit-grid">
+    <div class="fit-card good">
+      <h3>向いている人</h3>
+      <ul>
+        <li>macOS を使っていて、実機の画面確認まで自動化したい</li>
+        <li>操作ログを手元に残したい、外部サービスに送りたくない</li>
+        <li>足りない機能は自分で直せる、または直す気がある</li>
+        <li>完成品より、自分のワークフローに合う道具が欲しい</li>
+      </ul>
+    </div>
+    <div class="fit-card bad">
+      <h3>向かない人</h3>
+      <ul>
+        <li>Windows / Linux で使いたい</li>
+        <li>手厚いサポートや安定した自動更新が必要</li>
+        <li>チームでの共同編集やクラウド同期が必須</li>
+        <li>署名・公証済みの配布物だけを入れたい</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <section id="features">
   <div class="section-header">
-    <div class="section-label">Sample Scope</div>
-    <h2>Tauri 版の構成と実装</h2>
-    <p class="section-desc">Tauri 版は GitHub Releases の DMG で配布中です。ブラウザデモは、インストールせずに UI を試すためのサンプルです。実装済みの範囲は README を参照してください。</p>
+    <p class="section-label">What works today</p>
+    <h2>いま、実際にできること。</h2>
+    <p class="section-desc">未実装のものは「これから」に分けています。ここには、いま動作する機能だけを書いています。</p>
   </div>
   <div class="feature-grid">
-    <div class="feature-card">
-      <div class="feature-icon">&#9998;</div>
-      <div class="feature-title">執筆体験の継承</div>
-      <div class="feature-desc">Monaco による Markdown / コード編集、タブ、未保存管理、ワークスペース管理。SQLite のバージョン履歴を Phase 0 から実装しています。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:var(--accent2-weak)">&#9670;</div>
-      <div class="feature-title">エージェントによる直接操作</div>
-      <div class="feature-desc">Agent Desktop の OS アクセシビリティツリー API を統合し、エディタ UI と外部アプリの両方をエージェントが操作できます。許可アクションと引数の検証、計画単位の承認、ネイティブ承認ダイアログを経て実行します。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#9881;</div>
-      <div class="feature-title">本格的 IDE 機能</div>
-      <div class="feature-desc">Monaco Editor を中心に、クイックオープン、Git 統合、統合ターミナル (PTY)、LSP（補完・定義ジャンプ・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索）、DAP デバッグ（lldb-dap / debugpy）を実装済みです。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">&#128274;</div>
-      <div class="feature-title">安全な承認フロー</div>
-      <div class="feature-desc">LLM が生成した計画は許可アクションと引数を検証した上で承認制で実行します。変更操作は計画承認後も、実行直前に OS のネイティブ承認ダイアログで確認します。承認履歴の監査ログはローカル SQLite に記録し、機密ウィンドウの自動マスクは今後追加します。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:var(--accent2-weak)">&#128260;</div>
-      <div class="feature-title">スキル実行</div>
-      <div class="feature-desc">エディタ、Git、ターミナル、デバッグを v1 マニフェストで宣言し、Rust の固定ハンドラだけが実行します。読み取りは承認なし、書き込みはネイティブ承認を挟み、結果は監査ログに残します。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#9881;</div>
-      <div class="feature-title">Git / ターミナル / デバッグ</div>
-      <div class="feature-desc">Git は状態・差分・ステージ・コミット、ターミナルは許可プログラムを <code>program + args</code> で直接実行、デバッグは DAP で Debug タブと同じセッションを操作します。シェル文字列は組み立てません。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon" style="background:var(--accent2-weak)">&#128196;</div>
-      <div class="feature-title">検証ループと HTML レポート</div>
-      <div class="feature-desc">書き込み後に typecheck / lint / test を実行し、結果を Skills タブへ表示。実行内容は承認 → 実行 → 検証 → 結果のフロー図、明暗テーマ、パラメータ、出力を含む自己完結 HTML としてプレビュー・保存できます。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">&#128274;</div>
-      <div class="feature-title">ローカルファースト</div>
-      <div class="feature-desc">設定・トークン・監査ログ・ターミナル / Git / LSP / DAP の活動は端末内に留まります。レポートはワークスペースの <code>.agents/reports/</code> に保存し、外部 CDN やテレメトリは使いません。</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">&#128421;</div>
-      <div class="feature-title">macOS ネイティブ</div>
-      <div class="feature-desc">macOS 専用のデスクトップアプリとして、Apple Silicon / Intel の DMG を配布しています。Intel x64 版（v0.3.8）は Intel Core i7 / macOS 15.8.3 の実機で起動を確認済みです。Overlay タイトルバー、Keychain、アクセシビリティ権限など macOS の機能に統合しています。</div>
-    </div>
+    <article class="feature-card">
+      <span class="tag">WORKSPACE</span>
+      <h3>フォルダをそのまま開く</h3>
+      <p>配下のファイルを再帰的に表示し、作成・名前変更・削除・再読み込みに対応します。前回のワークスペースは次回起動時に復元されます。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">EDITOR</span>
+      <h3>書くためのエディタ</h3>
+      <p>Monaco によるシンタックスハイライト、タブ、未保存インジケーター、一括保存。Markdown は GFM の分割プレビューで確認できます。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">HISTORY</span>
+      <h3>保存ごとの履歴</h3>
+      <p>保存のたびに SQLite へ記録し、ファイルごとに最新 100 版を保持します。過去の版をプレビューして、エディタへ復元できます。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">CHAT / PLAN</span>
+      <h3>相談して、計画する</h3>
+      <p>OpenAI 互換 API に接続し、ストリーミングで相談できます。意図を入力すると、許可された操作だけを使った実行計画を生成します。</p>
+      <span class="only">LLM は Tauri 版</span>
+    </article>
+    <article class="feature-card">
+      <span class="tag">APPROVAL</span>
+      <h3>承認するまで動かない</h3>
+      <p>計画は単位ごとに承認し、変更操作は実行のたびに macOS のネイティブ承認ダイアログで確認します。ポリシーで「許可」にすることはできません。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">AGENT DESKTOP</span>
+      <h3>実機の画面を読む・操作する</h3>
+      <p>アクセシビリティツリーでボタン名や有効 / 無効状態を読み取り、クリック・入力・値の設定を行います。スクリーンショットだけでは分かりにくい、文言の抜けや状態の不整合を確認できます。</p>
+      <span class="only">CLI を別途インストール</span>
+    </article>
+    <article class="feature-card">
+      <span class="tag">SKILLS</span>
+      <h3>宣言した操作だけを実行</h3>
+      <p>v1 マニフェストで宣言したエディタ・Git・ターミナル・デバッグの操作を、Rust の固定ハンドラで実行します。任意のシェル文字列は受け取りません。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">VERIFY</span>
+      <h3>変更後に検証する</h3>
+      <p>package.json や Cargo.toml から typecheck / lint / test を解決して実行し、結果を Skills タブに表示します。実行中の停止にも対応しています。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">IDE</span>
+      <h3>日常の IDE 機能</h3>
+      <p>クイックオープン、Git パネル、統合ターミナル (PTY)、LSP の補完・定義ジャンプ・診断・名前変更、DAP のブレークポイントと変数表示を備えます。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">AUDIT</span>
+      <h3>操作をローカルに記録</h3>
+      <p>計画の作成・承認・却下、実行・拒否・停止、ポリシー変更、デプロイを SQLite に記録します。監査ログは既定で 30 日、最新 5,000 件を保持します。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">REPORT</span>
+      <h3>結果を 1 枚の HTML に</h3>
+      <p>承認 → 実行 → 検証 → 結果の流れ、パラメータ、変更ファイル、標準出力をまとめた自己完結 HTML を生成します。外部 CDN は使いません。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">DEPLOY</span>
+      <h3>作ったものを届ける</h3>
+      <p>Openship の CLI を優先し、未検出のときだけセルフホスト REST にフォールバックします。デプロイとロールバックは承認を通り、履歴とログを確認できます。</p>
+    </article>
   </div>
 </section>
 
-<section id="openship">
+<section id="tour">
   <div class="section-header">
-    <div class="section-label">Local-first Deploy</div>
-    <h2>Openship 連携は端末内で完結</h2>
-    <p class="section-desc">Openship CLI を優先し、未検出のときだけセルフホスト API にフォールバックします。設定・PAT・監査ログは端末の外へ出ません。</p>
+    <p class="section-label">Screenshots</p>
+    <h2>実画面で見る。</h2>
+    <p class="section-desc">すべてブラウザデモの実際の画面です。タブを切り替えてください。画像は 2 倍解像度で撮影し、WebP に変換しています。</p>
   </div>
-  <figure class="diagram-figure">
-    <a href="/app/diagrams/openship-local-first.html" target="_blank" rel="noreferrer">
-      <img
-        src="/app/openship-local-first.png"
-        alt="Right-Stuff Agent IDE と Openship のローカルファースト構成図。エディタから Agent Panel、Rust、CLI、Openship へ至る経路と、SQLite・OS キーチェーン・監査ログが端末内に閉じる様子を示す。"
-        width="2048"
-        height="1320"
-        loading="lazy"
-      />
-    </a>
-    <figcaption class="diagram-caption">
-      <span><strong>CLI 優先 + REST フォールバック。</strong> deploy / rollback はネイティブ承認を通り、実行結果はローカルの監査ログに記録されます。</span>
-      <a href="/app/diagrams/openship-local-first.html" target="_blank" rel="noreferrer">インタラクティブ版を開く →</a>
-    </figcaption>
-  </figure>
-</section>
-
-<section id="use-cases">
-  <div class="section-header">
-    <div class="section-label">Integration Examples</div>
-    <h2>連携でできること</h2>
-    <p class="section-desc">Agent Desktop は「実機の画面を確かめる」、Openship は「作ったものを届ける」役割です。どちらも端末内の承認と監査ログを通ります。ここでは、実装済みの操作だけで構成した例を挙げます。</p>
-  </div>
-
-  <div class="usecase-flow" aria-label="連携の一連の流れ">
-    <span class="flow-node">計画</span><span class="flow-arrow">→</span>
-    <span class="flow-node">ネイティブ承認</span><span class="flow-arrow">→</span>
-    <span class="flow-node">Agent Desktop で実機操作</span><span class="flow-arrow">→</span>
-    <span class="flow-node">検証ループ</span><span class="flow-arrow">→</span>
-    <span class="flow-node">Openship でデプロイ</span><span class="flow-arrow">→</span>
-    <span class="flow-node">監査ログ / HTML レポート</span>
-  </div>
-
-  <div class="usecase-group">
-    <h3>Agent Desktop 連携 — 実機の画面を確認し、操作する</h3>
-    <p>Assistive / Autonomous では、アクセシビリティツリーを読む読み取り操作は承認なし、クリックや入力などの変更操作はネイティブ承認ダイアログを通ります。Passive ではエージェントの実行そのものを止めます。</p>
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon">&#128269;</div>
-        <div class="feature-title">修正後の画面を自動で点検</div>
-        <div class="feature-desc">変更を保存したあと <code>snapshot</code> で画面のアクセシビリティツリーを取得し、<code>click</code> / <code>type</code> / <code>set-value</code> で対象を操作、もう一度 <code>snapshot</code> で結果を確認します。スクリーンショットでは分かりにくい、ボタン名・ラベル・有効/無効状態まで確認できます。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:var(--accent2-weak)">&#128640;</div>
-        <div class="feature-title">リリース前の実機スモークテスト</div>
-        <div class="feature-desc"><code>launch</code> で対象アプリを起動し、<code>list-windows</code> / <code>focus-window</code> で目的のウィンドウを選び、<code>snapshot</code> でメニュー・ダイアログ・初期状態を確認します。最後に <code>close-app</code> で後片付けします。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#128276;</div>
-        <div class="feature-title">通知とクリップボードを含む確認</div>
-        <div class="feature-desc"><code>list-notifications</code> で通知の内容を読み取り、<code>dismiss-notification</code> で閉じます。<code>clipboard-get</code> / <code>clipboard-set</code> を使えばコピー内容の検証や受け渡しもできます。クリップボードへの書き込みは変更操作として承認されます。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">&#128421;</div>
-        <div class="feature-title">既存デスクトップツールの横断調査</div>
-        <div class="feature-desc"><code>list-apps</code> / <code>list-windows</code> で起動中のアプリとウィンドウを列挙し、<code>snapshot</code> で外部アプリの UI 文言や設定項目を読み取ります。ローカライズやアクセシビリティの抜けを、実機の表示から洗い出せます。</div>
-      </div>
+  <div class="tour">
+    <input type="radio" name="tour" id="tour-1" checked>
+    <input type="radio" name="tour" id="tour-2">
+    <input type="radio" name="tour" id="tour-3">
+    <input type="radio" name="tour" id="tour-4">
+    <div class="tour-tabs" role="tablist" aria-label="画面ツアー">
+      <label for="tour-1">エディタ</label>
+      <label for="tour-2">プレビュー</label>
+      <label for="tour-3">スキル</label>
+      <label for="tour-4">計画</label>
     </div>
-  </div>
-
-  <div class="usecase-group">
-    <h3>Openship 連携 — 作ったものを安全に届ける</h3>
-    <p>deploy / rollback は必ずネイティブ承認を通り、実行したコマンドと結果はローカルの監査ログに残ります。</p>
-    <div class="feature-grid">
-      <div class="feature-card">
-        <div class="feature-icon" style="background:var(--accent2-weak)">&#9889;</div>
-        <div class="feature-title">編集からデプロイまでを 1 画面で</div>
-        <div class="feature-desc">エディタで修正し、Skills タブの検証ループ（typecheck / lint / test）を通してから Deploy タブで承認します。CLI があれば <code>openship --json deploy --project &lt;id&gt; --branch &lt;branch&gt;</code>、未検出のときだけ REST の <code>POST /api/deployments</code> を使います。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:var(--accent2-weak)">&#128203;</div>
-        <div class="feature-title">履歴とログで障害を切り分け</div>
-        <div class="feature-desc">Deploy タブの履歴から対象のデプロイを選び、<code>/logs</code> でログを表示します。CLI がエラーを stdout に返す場合も、内容を UI と監査ログに残すので原因を見失いません。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon" style="background:color-mix(in oklab, var(--accent3) 15%, var(--surface))">&#8634;</div>
-        <div class="feature-title">承認付きのロールバック</div>
-        <div class="feature-desc">問題が見つかったら <code>/rollback</code> で直前のデプロイへ戻します。現在の本番環境が置き換わる操作なので、ネイティブ承認ダイアログで内容を確認してから実行し、結果を監査ログに記録します。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">&#128274;</div>
-        <div class="feature-title">セルフホストのまま運用</div>
-        <div class="feature-desc">Base URL と PAT を設定すれば、ローカルの Openship に直接接続できます。末尾の <code>/api</code> は自動で正規化し、PAT は OS キーチェーンに保存します。CLI 優先・未検出時のみ REST なので、CLI 失敗時に二重デプロイしません。</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="evaluation">
-  <div class="section-header">
-    <div class="section-label">Evaluation</div>
-    <h2>特徴・良い点・注意点</h2>
-    <p class="section-desc">現在の実装を現時点で評価したものです。機能の全体像は上の「Tauri 版の構成と実装」に、実装済みの範囲は README にまとめています。</p>
-  </div>
-  <div class="eval-grid">
-    <div class="eval-card good">
-      <h3>良い点</h3>
-      <ul>
-        <li><strong>Tauri 2.0 のネイティブアプリ</strong> — Electron より軽量で、macOS のウィンドウと統合しやすい</li>
-        <li><strong>ファイルが主役</strong> — ワークスペースの Markdown を直接編集。Finder や Git とそのまま併用できる</li>
-        <li><strong>書き味を重視</strong> — Monaco、タブ、未保存管理、GFM の分割プレビュー</li>
-        <li><strong>履歴と安全性</strong> — 保存ごとの SQLite 履歴、atomic write、ゴミ箱へのソフトデリート、パス検証</li>
-        <li><strong>操作が見える</strong> — エージェントのコマンド、stdout / stderr、終了コード、検証結果を UI に表示。実行内容は HTML レポートとして保存できる</li>
-        <li><strong>スキルを安全に実行</strong> — マニフェストは宣言のみ。Git / ターミナル / デバッグは Rust の固定ハンドラと許可リストで実行し、書き込みは承認を挟む</li>
-        <li><strong>ローカルファースト</strong> — 設定・トークン・監査ログ・レポートは端末内に留まり、テレメトリやクラウド同期はない</li>
-        <li><strong>MIT の参考実装</strong> — 自分の IDE を作るための出発点として利用できる</li>
-      </ul>
-    </div>
-    <div class="eval-card bad">
-      <h3>注意点</h3>
-      <ul>
-        <li><strong>LLM は OpenAI 互換 API に対応</strong> — Tauri 版では OpenAI / Ollama / LM Studio / OpenRouter などに接続できます。ブラウザデモでは利用できません。Anthropic 固有 API は今後対応</li>
-        <li><strong>Agent Desktop が別途必要</strong> — CLI は同梱していない。PATH か環境変数 <code>AGENT_DESKTOP_BIN</code> で指定する</li>
-        <li><strong>計画の実行範囲は限定的</strong> — LLM の計画立案、計画単位の承認、実行結果の監査ログは実装済みです。実行できるのは Agent Desktop の許可アクションと、マニフェストで宣言したスキルに限られます</li>
-        <li><strong>スキルの制約</strong> — ターミナルは許可リストのプログラムのみ、デバッグは <code>lldb-dap</code> / <code>debugpy</code> のみ。スキルからの PTY 直接入力や任意アダプターの追加はできません</li>
-        <li><strong>macOS 専用</strong> — 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません。配布用 DMG は Developer ID 署名・公証なしですが、Intel x64 版（v0.3.8）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合してインストール・起動を確認済みです。v0.3.8 では起動時にプライマリモニタ中央へ配置し、画面外に復元された場合はタイトルバーが見える位置へ補正します</li>
-        <li><strong>デモは永続化しない</strong> — /app/ の変更はメモリ上のみ。再読み込みでリセット</li>
-        <li><strong>バイナリは Developer ID 未署名</strong> — Apple Silicon / Intel 向け DMG を GitHub Releases で公開中。CSP とセキュリティヘッダーは Tauri / Vercel とも設定済み。API キーは OS キーチェーンに保存します。署名・公証は先送り</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<section id="roadmap">
-  <div class="section-header">
-    <div class="section-label">Roadmap</div>
-    <h2>実装ロードマップ</h2>
-    <p class="section-desc">Phase 0 から Phase 3 まで完了済みです。以降の期間・優先度・内容は実装設計書に基づく目安で、進捗に応じて更新します。</p>
-  </div>
-  <div class="roadmap-grid">
-    <div class="roadmap-item done">
-      <div class="roadmap-phase">Phase 0</div>
-      <div class="roadmap-title">基盤構築 <span class="roadmap-status">完了</span></div>
-      <div class="roadmap-meta">2週間 / 優先度: 最高</div>
-      <p>Tauri 2.0 + React 18、Monaco、ワークスペース、SQLite 履歴、Agent Desktop ブリッジ。</p>
-    </div>
-    <div class="roadmap-item done">
-      <div class="roadmap-phase">Phase 1</div>
-      <div class="roadmap-title">Agent Desktop 統合基盤 <span class="roadmap-status">完了</span></div>
-      <div class="roadmap-meta">3週間 / 優先度: 最高</div>
-      <p>OpenAI 互換 LLM 接続、ストリーミングチャット、API キーのキーチェーン保存、計画立案、計画単位の承認フロー、エージェントポリシー、監査ログを実装済み。</p>
-    </div>
-    <div class="roadmap-item done">
-      <div class="roadmap-phase">v0.2.0</div>
-      <div class="roadmap-title">Openship 連携 <span class="roadmap-status">完了</span></div>
-      <div class="roadmap-meta">ローカルファースト / 優先度: 高</div>
-      <p>Deploy タブ、CLI 検出と REST フォールバック、デプロイ履歴・ログ・ロールバック、PAT のキーチェーン保存、変更操作のネイティブ承認、監査ログ記録。</p>
-    </div>
-    <div class="roadmap-item done">
-      <div class="roadmap-phase">Phase 2</div>
-      <div class="roadmap-title">IDE コア機能 <span class="roadmap-status">完了</span></div>
-      <div class="roadmap-meta">4週間 / 優先度: 高</div>
-      <p>クイックオープン、Git 統合、統合ターミナル (PTY)、ファイル検索、LSP（補完・定義・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索）、DAP デバッグを実装済み。</p>
-    </div>
-    <div class="roadmap-item done">
-      <div class="roadmap-phase">Phase 3</div>
-      <div class="roadmap-title">エージェントスキルシステム <span class="roadmap-status">完了</span></div>
-      <div class="roadmap-meta">3週間 / 優先度: 高</div>
-      <p>v1 マニフェスト、スキルローダー、承認ポリシー、監査ログ、検証ループを実装。v0.3.6 で Git・ターミナル・デバッグのハンドラを、v0.3.7 で実行内容をまとめる自己完結 HTML レポートを追加しました。</p>
-    </div>
-    <div class="roadmap-item">
-      <div class="roadmap-phase">Phase 4</div>
-      <div class="roadmap-title">署名・公証（先送り）</div>
-      <div class="roadmap-meta">保留 / 優先度: 低</div>
-      <p>Developer ID 署名と公証は先送りし、当面は未署名・未公証の DMG を配布します。</p>
-    </div>
-  </div>
-</section>
-
-<section id="tutorial">
-  <div class="section-header">
-    <div class="section-label">Try the Sample</div>
-    <h2>サンプルの動かし方</h2>
-    <p class="section-desc">ブラウザデモで UI を確認し、Tauri 版をソースから起動して実際のファイル操作を試せます。</p>
-  </div>
-  <div class="notice-box" role="note">
-    <div class="notice-title">始める前に確認</div>
-    <ul>
-      <li><strong>対応 OS は macOS 11 以降のみ</strong> — 本アプリは macOS 専用です。Windows / Linux 版は提供していません。</li>
-      <li><strong>ブラウザデモは保存されません</strong> — 変更はメモリ上のみで、再読み込みすると初期状態に戻ります。</li>
-      <li><strong>LLM は Tauri 版で利用可能</strong> — ブラウザデモでは利用できません。エージェントパネル右上の歯車アイコンから設定します。</li>
-      <li><strong>Agent Desktop CLI は別途必要</strong> — 同梱していません。次の手順でインストールします。</li>
-    </ul>
-  </div>
-  <div class="tutorial-steps">
-    <div class="tutorial-step">
-      <div class="step-num">01</div>
-      <div class="step-content">
-        <div class="step-title">ブラウザデモを開く</div>
-        <div class="step-desc">Tauri を入れずに UI を確認できます。ワークスペースはメモリ上に再現され、変更は保存されません。</div>
-        <pre>/app/ を開く
-# デモ用の仮想ワークスペースが読み込まれます</pre>
-      </div>
-    </div>
-    <div class="tutorial-step">
-      <div class="step-num">02</div>
-      <div class="step-content">
-        <div class="step-title">ソースを取得</div>
-        <div class="step-desc">Tauri 版は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）からインストールするか、このリポジトリからビルドします。DMG は未署名・未公証です。対象 OS は macOS 11 以降で、ビルドには Node.js 20.19 以上（または 22.12 以上）と Rust 1.88 以上が必要です。</div>
-        <pre>git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
-cd right-stuff-agent-ide
-npm ci</pre>
-      </div>
-    </div>
-    <div class="tutorial-step">
-      <div class="step-num">03</div>
-      <div class="step-content">
-        <div class="step-title">Tauri 版を起動</div>
-        <div class="step-desc">ネイティブウィンドウで起動します。前回のワークスペースは次回起動時に復元されます。</div>
-        <pre>npm run tauri dev</pre>
-      </div>
-    </div>
-    <div class="tutorial-step">
-      <div class="step-num">04</div>
-      <div class="step-content">
-        <div class="step-title">ワークスペースを開く</div>
-        <div class="step-desc">フォルダを選択するとファイルツリーが表示されます。Markdown は Monaco で編集し、分割プレビューで確認できます。</div>
-        <pre># GUI の「フォルダを開く」から選択
-# 保存: ⌘S
-# コマンドパレット: ⌘K</pre>
-      </div>
-    </div>
-    <div class="tutorial-step">
-      <div class="step-num">05</div>
-      <div class="step-content">
-        <div class="step-title">Agent Desktop CLI をインストール</div>
-        <div class="step-desc">
-          Agent Desktop は Vercel Labs が公開する Apache-2.0 の OS 操作 CLI です。npm で最新版をインストールし、macOS ではアクセシビリティ権限を付与してください。特定のバージョン固定要件はありません。
-          <a href="https://github.com/vercel-labs/agent-desktop" style="color:var(--accent);">公式リポジトリ</a>も参照してください。
+    <div class="tour-panels">
+      <figure class="tour-panel" id="tour-panel-1">
+        <div class="window">
+          <img src="/screenshots/editor.webp" alt="ファイルツリー、Monaco エディタ、エージェントパネルが 1 画面に並ぶエディタ画面。" width="1440" height="960" loading="lazy" decoding="async">
         </div>
-        <pre>npm install -g agent-desktop
-agent-desktop version
-agent-desktop permissions --guide</pre>
-      </div>
+        <figcaption class="tour-caption">
+          <span><strong>エディタ。</strong>左にファイルツリー、中央に Monaco、右にエージェントパネル。ワークスペースを開いた直後の状態です。</span>
+          <span class="hint">ブラウザデモの実画面</span>
+        </figcaption>
+      </figure>
+      <figure class="tour-panel" id="tour-panel-2">
+        <div class="window">
+          <img src="/screenshots/preview.webp" alt="Markdown の分割プレビュー。左にソース、右に GFM で描画されたプレビュー。" width="1440" height="960" loading="lazy" decoding="async">
+        </div>
+        <figcaption class="tour-caption">
+          <span><strong>Markdown プレビュー。</strong>GFM のチェックリストやコードブロックを、編集しながらその場で確認できます。</span>
+          <span class="hint">ブラウザデモの実画面</span>
+        </figcaption>
+      </figure>
+      <figure class="tour-panel" id="tour-panel-3">
+        <div class="window">
+          <img src="/screenshots/skills.webp" alt="Skills タブ。スキルカタログと、読み取り・変更のリスク表示付きのアクション一覧。" width="1440" height="960" loading="lazy" decoding="async">
+        </div>
+        <figcaption class="tour-caption">
+          <span><strong>Skills タブ。</strong>マニフェストで宣言した操作だけを、読み取り / 変更のリスク表示付きで実行します。変更操作は承認が必要です。</span>
+          <span class="hint">ブラウザデモの実画面</span>
+        </figcaption>
+      </figure>
+      <figure class="tour-panel" id="tour-panel-4">
+        <div class="window">
+          <img src="/screenshots/plan.webp" alt="Plan タブ。計画の目的を入力する欄と、計画の仕組みを説明するカード。" width="1440" height="960" loading="lazy" decoding="async">
+        </div>
+        <figcaption class="tour-caption">
+          <span><strong>Plan タブ。</strong>意図を入力し、LLM が作った計画を確認してから実行します。ブラウザデモでは LLM を設定できないため、未設定時の表示です。</span>
+          <span class="hint">LLM の設定は Tauri 版</span>
+        </figcaption>
+      </figure>
     </div>
-    <div class="tutorial-step">
-      <div class="step-num">06</div>
-      <div class="step-content">
-        <div class="step-title">エージェントの状態を確認</div>
-        <div class="step-desc">エージェントパネルで /status を実行すると Agent Desktop CLI の検出状態を確認できます。LLM チャットは次の手順で設定します。</div>
-        <pre>/status
-/snapshot
+  </div>
+</section>
 
-# Agent Desktop が PATH にない場合:
-AGENT_DESKTOP_BIN=/path/to/agent-desktop npm run tauri dev</pre>
-      </div>
+<section id="flow">
+  <div class="section-header">
+    <p class="section-label">Workflow</p>
+    <h2>計画 → 承認 → 実行 → 検証 → 記録。</h2>
+    <p class="section-desc">エージェントに任せる部分と、人間が決める部分を分けています。計画の承認と変更操作の承認は、別々のタイミングで入ります。</p>
+  </div>
+  <div class="flow" aria-label="実行の流れ">
+    <div class="flow-step human"><b>意図を書く</b><span>Chat または Plan に入力</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step auto"><b>計画を作る</b><span>許可アクションだけで構成</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step human"><b>計画を承認</b><span>引数とリスクを確認</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step auto"><b>実行する</b><span>変更操作は都度ネイティブ承認</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step auto"><b>検証する</b><span>typecheck / lint / test</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step record"><b>記録する</b><span>監査ログ / HTML レポート</span></div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="section-header">
+    <p class="section-label">Safety</p>
+    <h2>何を許して、何を止めるか。</h2>
+    <p class="section-desc">エージェントに OS を操作させる以上、権限の設計を曖昧にしたくありません。実装している制約を、そのまま書きます。</p>
+  </div>
+  <div class="safety-grid">
+    <div class="table-wrap">
+      <table class="safety-table">
+        <caption>エージェント / スキルが実行する操作の扱い</caption>
+        <colgroup>
+          <col class="col-kind">
+          <col class="col-example">
+          <col class="col-treatment">
+        </colgroup>
+        <thead>
+          <tr><th scope="col">種類</th><th scope="col">例</th><th scope="col">既定の扱い</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>読み取り</strong></td>
+            <td>画面のスナップショット、ウィンドウ一覧、Git の状態</td>
+            <td class="yes">許可（ポリシーで確認 / 禁止に変更可）</td>
+          </tr>
+          <tr>
+            <td><strong>変更</strong></td>
+            <td>クリック、入力、値の設定、スキルによるファイル書き込み、コミット、デプロイ</td>
+            <td class="maybe">実行のたびにネイティブ承認</td>
+          </tr>
+          <tr>
+            <td><strong>禁止</strong></td>
+            <td>許可リスト外の操作、ワークスペース外のパス、任意のシェル文字列</td>
+            <td class="no">Rust 側で拒否</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <div class="tutorial-step">
-      <div class="step-num">07</div>
-      <div class="step-content">
-        <div class="step-title">LLM に接続</div>
-        <div class="step-desc">エージェントパネル右上の歯車アイコンから「LLM 設定」を開きます。プロバイダー・Base URL・モデルを選び、必要なら API キーを保存して「保存して接続テスト」を実行してください。API キーは OS キーチェーンにのみ保存されます。</div>
-        <pre># 設定例
-プロバイダー: OpenAI
-Base URL: https://api.openai.com/v1
-モデル: gpt-4o-mini
-
-# ローカル LLM の場合
-プロバイダー: Ollama
-Base URL: http://localhost:11434/v1
-モデル: llama3.2</pre>
-      </div>
-    </div>
-    <div class="tutorial-step">
-      <div class="step-num">08</div>
-      <div class="step-content">
-        <div class="step-title">スキルを実行</div>
-        <div class="step-desc">エージェントパネルの Skills タブでアクションを選び、パラメータを入力して実行します。読み取り系はそのまま、書き込み系はネイティブ承認ダイアログを経由します。Git は状態・差分・ステージ・コミット、ターミナルは許可プログラム、デバッグは DAP の操作に対応しています。</div>
-        <pre># 実行例
-git.status
-git.diff  path=src/App.tsx
-terminal.run  program=npm  args=["test"]
-debug.start  adapter=lldb-dap  program=target/debug/app
-
-# 書き込み後に typecheck / lint / test が走ります
-# 結果は Skills タブと監査ログに記録されます</pre>
-      </div>
-    </div>
-    <div class="tutorial-step">
-      <div class="step-num">09</div>
-      <div class="step-content">
-        <div class="step-title">HTML レポートを出力</div>
-        <div class="step-desc">実行結果の「HTML レポート」を押すと、承認 → 実行 → 検証 → 結果のフロー図、パラメータ、変更ファイル、stdout / stderr、検証結果をまとめた自己完結 HTML をプレビューします。「保存」でワークスペースの <code>.agents/reports/</code> に <code>&lt;run-id&gt;.html</code> として保存されます。外部 CDN やテレメトリは使いません。</div>
-        <pre># 保存先
-.agents/reports/&lt;run-id&gt;.html
-
-# ブラウザデモではダウンロードになります</pre>
-      </div>
+    <div class="notice">
+      <h3>配布物について</h3>
+      <p>DMG は Apple Developer ID の署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に Gatekeeper の警告が出た場合は、アプリを右クリック →「開く」を選択してください。</p>
+      <p>Intel x64 版（v0.3.8）は、Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認しています。署名・公証は先送りにしています。</p>
+      <p>自動更新はありません。新しい版は GitHub Releases から手動で入手してください。</p>
     </div>
   </div>
 
-  <table class="shortcut-table">
-    <thead>
-      <tr><th>操作</th><th>キー</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>保存</td><td><kbd>⌘</kbd> <kbd>S</kbd></td></tr>
-      <tr><td>すべて保存</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>S</kbd></td></tr>
-      <tr><td>コマンドパレット</td><td><kbd>⌘</kbd> <kbd>K</kbd></td></tr>
-      <tr><td>コマンドパレット（代替）</td><td><kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd></td></tr>
-    </tbody>
-  </table>
+  <div class="table-wrap" style="margin-top:1em;">
+    <table>
+      <caption>データの保存場所</caption>
+      <thead>
+        <tr><th scope="col">データ</th><th scope="col">保存先</th><th scope="col">外部送信</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>原稿・コード</strong></td><td>選んだフォルダのファイル</td><td class="yes">なし</td></tr>
+        <tr><td><strong>バージョン履歴・設定・監査ログ</strong></td><td>端末内の SQLite（WAL）</td><td class="yes">なし</td></tr>
+        <tr><td><strong>API キー・Openship PAT</strong></td><td>OS キーチェーン</td><td class="yes">なし</td></tr>
+        <tr><td><strong>画面スナップショット</strong></td><td>メモリ上のみ（再起動で消える）</td><td class="yes">なし</td></tr>
+        <tr><td><strong>ブラウザデモの編集内容</strong></td><td>このブラウザの localStorage</td><td class="yes">なし</td></tr>
+        <tr><td><strong>LLM / Openship へのリクエスト</strong></td><td>設定した API へ Rust から送信</td><td class="maybe">設定先のみ</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="section-desc" style="margin-top:0.8em;font-size:0.86rem;">
+    補足: ファイル操作は絶対パス・<code>..</code>・ワークスペース外への書き込みを拒否します。シンボリックリンクはツリーに列挙しません。書き込みは一時ファイル + rename、削除はワークスペース内のゴミ箱へ退避します。Git 操作とターミナルスキルはシェル文字列を組み立てません。LSP / DAP は固定レジストリの実行ファイルだけを起動します。CSP は Tauri と Vercel の両方に設定しています。
+  </p>
 </section>
 
 <section id="modes">
   <div class="section-header">
-    <div class="section-label">Agent Modes</div>
-    <h2>3 段階のエージェントモード</h2>
-    <p class="section-desc">用途に応じてモードを切り替える権限設計です。計画は LLM が生成し、承認するまで実行されません。</p>
+    <p class="section-label">Agent modes</p>
+    <h2>自律性は、段階的に。</h2>
+    <p class="section-desc">モードは「どこまで任せるか」の切り替えです。どのモードでも、変更操作のネイティブ承認は省略できません。</p>
   </div>
   <div class="mode-grid">
-    <div class="mode-card passive">
-      <span class="mode-tag">Passive / 受動</span>
-      <div class="mode-title">受動的支援</div>
-      <div class="mode-desc">読み取り専用。チャット入力とエージェントによる UI 操作は無効です。</div>
-    </div>
-    <div class="mode-card assistive">
-      <span class="mode-tag">Assistive / 支援</span>
-      <div class="mode-title">能動的支援</div>
-      <div class="mode-desc">チャット応答とファイル編集を支援します。計画は手順ごとに実行し、Agent Desktop の変更操作はネイティブ承認ダイアログを経由します。</div>
-    </div>
-    <div class="mode-card autonomous">
-      <span class="mode-tag">Autonomous / 自律</span>
-      <div class="mode-title">自律実行</div>
-      <div class="mode-desc">承認した計画を複数ステップで連続実行します。失敗した時点で停止し、変更操作には実行のたびにネイティブ承認ダイアログを表示します。</div>
-    </div>
+    <article class="mode-card passive">
+      <span class="mode-tag">Passive</span>
+      <h3>見るだけ</h3>
+      <p>読み取り専用。チャット入力とエージェントによる操作は無効です。実装の確認や、誤操作を避けたいときに使います。</p>
+    </article>
+    <article class="mode-card assistive">
+      <span class="mode-tag">Assistive</span>
+      <h3>手順ごとに任せる</h3>
+      <p>チャットとファイル編集が使えます。計画は手順ごとに実行し、変更操作のたびに承認ダイアログを表示します。</p>
+    </article>
+    <article class="mode-card autonomous">
+      <span class="mode-tag">Autonomous</span>
+      <h3>承認済みの計画を連続実行</h3>
+      <p>承認した計画を複数ステップで実行します。失敗した時点で停止し、変更操作には実行のたびに承認ダイアログを表示します。</p>
+    </article>
   </div>
 </section>
 
-<section id="tech">
+<section id="use-cases">
   <div class="section-header">
-    <div class="section-label">Technology</div>
-    <h2>技術スタック</h2>
-    <p class="section-desc">成熟した技術を組み合わせ、堅牢で拡張性の高いアーキテクチャを実現します。</p>
+    <p class="section-label">Use cases</p>
+    <h2>こんなことに使っています。</h2>
+    <p class="section-desc">実装済みの操作だけで構成した例です。すべての操作が、承認と監査ログを通ります。</p>
   </div>
-  <div class="tech-grid">
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">Tauri 2.0</div>
-        <div class="tech-role">デスクトップ基盤 (Rust)</div>
-      </div>
-      <span class="tech-phase">Phase 0</span>
-    </div>
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">React 18</div>
-        <div class="tech-role">UI フレームワーク</div>
-      </div>
-      <span class="tech-phase">Phase 0</span>
-    </div>
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">Vite</div>
-        <div class="tech-role">ビルドツール</div>
-      </div>
-      <span class="tech-phase">Phase 0</span>
-    </div>
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">Zustand</div>
-        <div class="tech-role">状態管理</div>
-      </div>
-      <span class="tech-phase">Phase 0</span>
-    </div>
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">Monaco Editor</div>
-        <div class="tech-role">コードエディタ</div>
-      </div>
-      <span class="tech-phase">Phase 0</span>
-    </div>
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">Agent Desktop</div>
-        <div class="tech-role">OS アクセシビリティ操作</div>
-      </div>
-      <span class="tech-phase">Phase 0 / 1</span>
-    </div>
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">SQLite</div>
-        <div class="tech-role">ローカルデータベース</div>
-      </div>
-      <span class="tech-phase">Phase 0</span>
-    </div>
-    <div class="tech-item">
-      <div>
-        <div class="tech-name">Rust</div>
-        <div class="tech-role">バックエンド / ファイル I/O</div>
-      </div>
-      <span class="tech-phase">Phase 0</span>
-    </div>
+  <div class="usecase-grid">
+    <article class="usecase-card">
+      <span class="tag">SMOKE TEST</span>
+      <h3>リリース前の実機確認</h3>
+      <p><code>launch</code> でアプリを起動し、<code>list-windows</code> / <code>focus-window</code> で対象を選び、<code>snapshot</code> でメニューや初期状態を確認します。最後に <code>close-app</code> で後片付けします。</p>
+    </article>
+    <article class="usecase-card">
+      <span class="tag">COPY CHECK</span>
+      <h3>UI 文言とローカライズの確認</h3>
+      <p>アクセシビリティツリーからボタン名・ラベル・有効 / 無効状態を読み取ります。画面の見た目だけでは拾いにくい、文言の抜けや不整合を確認できます。</p>
+    </article>
+    <article class="usecase-card">
+      <span class="tag">EDIT &amp; VERIFY</span>
+      <h3>編集 → 検証 → レポート</h3>
+      <p>エディタで修正し、Skills タブの検証ループを通してから、結果を HTML レポートに保存します。何を変えて、何を確認したかを 1 枚に残せます。</p>
+    </article>
+    <article class="usecase-card">
+      <span class="tag">SHIP</span>
+      <h3>修正をそのまま届ける</h3>
+      <p>検証が通ったら Deploy タブから承認付きでデプロイします。履歴・ログ・ロールバックも同じ画面で扱えます。CLI がなければセルフホスト REST に切り替わります。</p>
+    </article>
   </div>
 </section>
 
-<section id="install">
+<section id="start">
   <div class="section-header">
-    <div class="section-label">About this sample</div>
-    <h2>このサイトについて</h2>
-    <p class="section-desc">Vercel の LP とブラウザデモは、インストールせずに UI を試すためのサンプルです。製品版は GitHub Releases の DMG で配布しています。</p>
+    <p class="section-label">Getting started</p>
+    <h2>はじめ方。</h2>
+    <p class="section-desc">まずブラウザで触り、必要なら DMG を入れてください。LLM と OS 操作は、インストール後の Tauri 版で有効になります。</p>
   </div>
-  <div class="install-box">
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">対応 OS:</strong> macOS 11 以降（Apple Silicon / Intel）のみ。Windows / Linux 版は提供していません。</p>
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;"><strong style="color:var(--ink);">配布版:</strong> <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" style="color:var(--accent);">GitHub Releases</a> の DMG（Apple Silicon / Intel）。未署名・未公証のため、初回起動時に警告が出た場合は右クリック →「開く」を選択してください。Intel x64 版は Intel Core i7 / macOS 15.8.3 で起動確認済みです。</p>
-    <p style="color:var(--ink-muted);margin-bottom:0.5em;">ソースからビルドする場合</p>
-    <pre>npm ci
-npm run tauri build
-open "src-tauri/target/release/bundle/macos/Right-Stuff Agent IDE.app"</pre>
-    <p style="color:var(--ink-muted);margin-top:1.2em;margin-bottom:0.5em;">Agent Desktop CLI（OS 操作を使う場合）</p>
-    <pre>npm install -g agent-desktop
-agent-desktop version
-agent-desktop permissions --guide</pre>
-    <p style="color:var(--ink-muted);margin-top:1.2em;font-size:0.85em;">
-      ブラウザデモは <a href="/app/" style="color:var(--accent);">/app/</a> で確認できます。データはメモリ上のみで、再読み込みすると失われます。<br>
-      Agent Desktop CLI は同梱していません。PATH に通すか、必要に応じて <code>AGENT_DESKTOP_BIN</code> を指定してください。
-    </p>
-    <p style="color:var(--ink-muted);margin-top:0.8em;font-size:0.85em;">
-      <strong style="color:var(--ink);">プライバシー:</strong> この LP とブラウザデモは、入力内容をサーバーへ送信しません。アカウント登録・テレメトリ・クラウド同期もありません。Tauri 版の原稿は、選んだフォルダのファイルとして端末内に保存されます。
-    </p>
+  <div class="start-grid">
+    <article class="start-card">
+      <div class="num">STEP 01</div>
+      <h3>ブラウザで触る</h3>
+      <p>インストール不要です。デモ用のワークスペースが開き、編集内容はこのブラウザの localStorage に保存されます。「初期状態に戻す」ボタンでいつでもリセットできます。</p>
+      <pre><span class="prompt">→</span> /app/ を開く
+<span class="comment"># LLM・Git・ターミナル・OS 操作は動きません</span></pre>
+    </article>
+    <article class="start-card">
+      <div class="num">STEP 02</div>
+      <h3>DMG を入れる</h3>
+      <p>GitHub Releases から Apple Silicon / Intel の DMG を入手します。未署名のため、初回は右クリック →「開く」で起動してください。対応 OS は macOS 11 以降です。</p>
+      <pre><span class="prompt">→</span> releases/latest
+<span class="comment"># v0.3.8 / aarch64 または x64</span></pre>
+    </article>
+    <article class="start-card">
+      <div class="num">STEP 03</div>
+      <h3>フォルダを開く</h3>
+      <p>起動後、サイドバーから作業したいフォルダを選びます。前回のフォルダは次回起動時に復元されます。原稿はそのフォルダのファイルとして保存されます。</p>
+      <pre><span class="prompt">→</span> フォルダを開く
+<span class="comment"># 保存: ⌘S / 全保存: ⌘⇧S</span>
+<span class="comment"># コマンドパレット: ⌘K</span></pre>
+    </article>
+    <article class="start-card">
+      <div class="num">STEP 04</div>
+      <h3>LLM と Agent Desktop を設定する</h3>
+      <p>LLM はエージェントパネル右上の歯車から、OpenAI 互換 API を設定します。OS 操作を使う場合だけ、Agent Desktop CLI を別途インストールし、macOS のアクセシビリティ権限を付与します。</p>
+      <pre><span class="prompt">→</span> npm install -g agent-desktop
+<span class="comment"># PATH にない場合:</span>
+<span class="prompt">→</span> AGENT_DESKTOP_BIN=/path/to/bin</pre>
+    </article>
   </div>
+  <details style="margin-top:1em;">
+    <summary>ソースからビルドする場合</summary>
+    <div class="details-body">
+      <p>Node.js <code>^20.19.0 || &gt;=22.12.0</code>、Rust 1.88 以上、Xcode Command Line Tools が必要です。</p>
+      <pre><span class="prompt">$</span> git clone https://github.com/watanabe3tipapa/right-stuff-agent-ide.git
+<span class="prompt">$</span> cd right-stuff-agent-ide
+<span class="prompt">$</span> npm ci
+<span class="prompt">$</span> npm run tauri dev</pre>
+      <p>配布用にビルドする場合は <code>npm run tauri build</code> を実行します。生成物は <code>src-tauri/target/release/bundle/</code> に出力されます。</p>
+    </div>
+  </details>
+</section>
+
+<section id="limits">
+  <div class="section-header">
+    <p class="section-label">Limitations &amp; next</p>
+    <h2>できないことと、これから。</h2>
+    <p class="section-desc">「できる」と書いた範囲は動作します。それ以外は、まだできません。ロードマップは約束ではなく、優先順位のメモです。</p>
+  </div>
+  <div class="limits-grid">
+    <article class="limit-card now">
+      <h3>いま、できないこと</h3>
+      <ul>
+        <li><strong>Windows / Linux 版はありません。</strong>macOS 11 以降の Apple Silicon / Intel のみです。</li>
+        <li><strong>LLM は OpenAI 互換 API のみ。</strong>Anthropic 固有 API、画像生成、音声入力は未対応です。</li>
+        <li><strong>DAP は attach と条件付きブレークポイントが未対応。</strong>起動・停止・ステップ実行・ブレークポイント・変数表示までです。</li>
+        <li><strong>LSP はシグネチャヘルプ、セマンティックトークン、フォーマット、ファイル作成 / 削除を伴うリファクタリングが未対応。</strong>補完・定義・ホバー・診断・名前変更・参照検索・コードアクションまでです。</li>
+        <li><strong>Git はマージ・リベース・プッシュが未対応。</strong>状態・差分・ステージ・コミット・履歴までです。</li>
+        <li><strong>計画とスナップショットは再起動で消えます。</strong>監査ログとレポートは残ります。</li>
+        <li><strong>共同編集・クラウド同期・自動更新はありません。</strong></li>
+        <li><strong>DMG は Apple Developer ID の署名・公証を受けていません。</strong>Gatekeeper の警告が出ます。</li>
+      </ul>
+    </article>
+    <article class="limit-card next">
+      <h3>次にやること</h3>
+      <ul>
+        <li><strong>Anthropic API への対応</strong> — 現在は OpenAI 互換 API のみです。</li>
+        <li><strong>DAP の attach と条件付きブレークポイント</strong> — 実機プロセスへの接続を試したい。</li>
+        <li><strong>署名と公証</strong> — Gatekeeper の警告をなくす。先送り中です。</li>
+        <li><strong>自動更新</strong> — 手動ダウンロードの負担を減らす。</li>
+        <li><strong>テストと UI の磨き込み</strong> — 個人開発の範囲で、壊れにくさを優先します。</li>
+        <li><strong>ドキュメントの拡充</strong> — 使い方と設計判断を、実装と同じ速さで更新します。</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section id="developers">
+  <div class="section-header">
+    <p class="section-label">For developers</p>
+    <h2>中身と、開発の入口。</h2>
+    <p class="section-desc">技術スタックは普段の説明から外しました。必要な人だけ、ここを開いてください。</p>
+  </div>
+  <details>
+    <summary>技術スタックと構成</summary>
+    <div class="details-body">
+      <ul class="tech-list">
+        <li>Tauri 2.0</li>
+        <li>Rust 2024 edition</li>
+        <li>React 18</li>
+        <li>TypeScript</li>
+        <li>Vite 8</li>
+        <li>Monaco Editor</li>
+        <li>Zustand</li>
+        <li>SQLite (WAL)</li>
+        <li>portable-pty / xterm.js</li>
+        <li>LSP / DAP</li>
+        <li>Agent Desktop</li>
+      </ul>
+      <p>フロントエンドは Tauri コマンドを薄くラップし、ブラウザでは <code>src/lib/demo.ts</code> のデモ用ワークスペースにフォールバックします。原稿はワークスペースのファイル、履歴・設定・監査ログは SQLite、API キーと PAT は OS キーチェーンに保存します。LSP / DAP は共通の JSON-RPC トランスポートを使い、固定レジストリの実行ファイルだけを起動します。</p>
+      <p>リポジトリ: <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" target="_blank" rel="noreferrer">github.com/watanabe3tipapa/right-stuff-agent-ide</a></p>
+      <p>ドキュメント: <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noreferrer">ARCHITECTURE</a> / <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/docs/SKILLS.md" target="_blank" rel="noreferrer">SKILLS</a> / <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/docs/API.md" target="_blank" rel="noreferrer">API</a> / <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/docs/SECURITY.md" target="_blank" rel="noreferrer">SECURITY</a></p>
+    </div>
+  </details>
+  <details>
+    <summary>開発コマンド</summary>
+    <div class="details-body">
+      <pre><span class="prompt">$</span> npm run tauri dev   <span class="comment"># ネイティブウィンドウで起動</span>
+<span class="prompt">$</span> npm run dev         <span class="comment"># ブラウザデモ (Vite)</span>
+<span class="prompt">$</span> npm run build       <span class="comment"># 型検査 + フロントエンド</span>
+<span class="prompt">$</span> npm run typecheck   <span class="comment"># TypeScript の型検査</span>
+<span class="prompt">$</span> npm run lint        <span class="comment"># ESLint</span>
+<span class="prompt">$</span> npm test            <span class="comment"># Vitest</span>
+<span class="prompt">$</span> npm run tauri build <span class="comment"># .app / .dmg</span></pre>
+      <p style="margin-top:0.7em;">ライセンスは MIT です。Issue と Pull Request は GitHub で受け付けています。脆弱性は公開 Issue ではなく <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/SECURITY.md" target="_blank" rel="noreferrer">SECURITY.md</a> の非公開フォームから報告してください。</p>
+    </div>
+  </details>
 </section>
 
 <section id="faq">
   <div class="section-header">
-    <div class="section-label">FAQ</div>
-    <h2>よくある質問</h2>
+    <p class="section-label">FAQ</p>
+    <h2>よくある質問。</h2>
   </div>
+
   <details class="faq-item">
-    <summary>このサイトは製品版ですか？</summary>
+    <summary>これは製品ですか？</summary>
     <div class="faq-answer">
-      このページは Web 上で UI を試すためのサンプルです。製品版は macOS 専用の Tauri アプリで、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/tag/v0.3.8" style="color:var(--accent);">GitHub Releases</a> の DMG からインストールできます。
+      <p>いいえ。個人が自分用に作っている Hobby project で、Early Access の位置付けです。商用サポートや SLA はありません。動く範囲は公開していますが、完成品として提供しているものではありません。</p>
     </div>
   </details>
+
   <details class="faq-item">
-    <summary>Intel Mac でも利用できますか？</summary>
+    <summary>Cursor や他の AI エディタと何が違いますか？</summary>
     <div class="faq-answer">
-      利用できます。対応 OS は macOS 11 以降で、Apple Silicon 版と Intel (x86_64) 版の DMG を配布しています。Intel x64 版（v0.3.8）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。x64 版は未署名のため、初回起動時に Gatekeeper の警告が出る場合は右クリック →「開く」を選択してください。
+      <p>コード編集の支援だけではなく、macOS の実機アプリをアクセシビリティツリー経由で確認・操作する点に重きを置いています。操作は許可リストと承認を通り、結果はローカルの監査ログと HTML レポートに残ります。MIT なので、自分のワークフローに合わせてフォークできます。一方で、完成度・サポート・対応 OS では及びません。</p>
     </div>
   </details>
+
   <details class="faq-item">
     <summary>ブラウザデモの変更は保存されますか？</summary>
     <div class="faq-answer">
-      保存されません。デモは <code>src/lib/demo.ts</code> のインメモリ・ワークスペースで動作し、ページを再読み込みすると初期状態に戻ります。
+      <p>保存されます。デモのワークスペース、編集履歴、スキルポリシーは、このブラウザの localStorage に保存されます。サーバーには送信しません。デモバナーの「初期状態に戻す」から、いつでも削除できます。localStorage が使えない環境では、変更はページの再読み込みで失われます。</p>
     </div>
   </details>
+
   <details class="faq-item">
-    <summary>どの機能が実装済みですか？</summary>
+    <summary>LLM は使えますか？</summary>
     <div class="faq-answer">
-      ワークスペース、Monaco エディタ、GFM プレビュー、SQLite のバージョン履歴、Agent Desktop ブリッジ、コマンドパレット、OpenAI 互換 LLM への接続、ストリーミングチャット、計画立案と計画単位の承認、エージェントポリシー、監査ログが動作します。クイックオープン、Git パネル、統合ターミナル (PTY)、LSP（補完・定義・ホバー・診断・名前変更・参照検索・コードアクション・シンボル検索）、DAP デバッグ、スキルライブラリ、検証ループ、Git・ターミナル・デバッグのスキル実行、HTML レポートにも対応しています。詳細は <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" style="color:var(--accent);">README</a> の「既知の制約」と、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/DEV-MEMO.md" style="color:var(--accent);">DEV-MEMO.md</a> のリリース履歴を参照してください。
+      <p>Tauri 版では、OpenAI / Ollama / LM Studio / OpenRouter などの OpenAI 互換 API に接続できます。ストリーミング表示、生成停止、接続テストに対応し、API キーは OS キーチェーンに保存します。ブラウザデモでは LLM を利用できません。Anthropic 固有 API は未対応です。</p>
     </div>
   </details>
+
   <details class="faq-item">
-    <summary>Agent Desktop は同梱されていますか？</summary>
+    <summary>Agent Desktop は必要ですか？</summary>
     <div class="faq-answer">
-      同梱していません。<a href="https://github.com/vercel-labs/agent-desktop" style="color:var(--accent);">Agent Desktop</a>（Apache-2.0）を <code>npm install -g agent-desktop</code> で別途インストールし、PATH に通すか環境変数 <code>AGENT_DESKTOP_BIN</code> で指定してください。macOS では <code>agent-desktop permissions --guide</code> でアクセシビリティ権限を付与します。バージョン固定の要件はありません。
+      <p>OS 操作を使う場合だけ必要です。アプリには同梱していません。<a href="https://github.com/vercel-labs/agent-desktop" target="_blank" rel="noreferrer">Agent Desktop</a>（Apache-2.0）を <code>npm install -g agent-desktop</code> で別途インストールし、PATH に通すか <code>AGENT_DESKTOP_BIN</code> で指定してください。macOS では <code>agent-desktop permissions --guide</code> でアクセシビリティ権限を付与します。エディタとスキル実行は、Agent Desktop なしでも使えます。</p>
     </div>
   </details>
+
   <details class="faq-item">
-    <summary>入力内容はサーバーに送信されますか？</summary>
+    <summary>Intel Mac でも使えますか？</summary>
     <div class="faq-answer">
-      送信されません。この LP とブラウザデモは静的サイトで、アカウント登録・テレメトリ・クラウド同期はありません。デモの編集内容はブラウザのメモリ上にのみ保持され、再読み込みすると失われます。Tauri 版の原稿も、選んだフォルダのファイルとして端末内に保存されます。
+      <p>使えます。macOS 11 以降の Apple Silicon / Intel 向けに DMG を配布しています。Intel x64 版（v0.3.8）は Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認しています。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。</p>
     </div>
   </details>
+
   <details class="faq-item">
-    <summary>LLM を使った操作はできますか？</summary>
+    <summary>DMG が未署名なのはなぜですか？</summary>
     <div class="faq-answer">
-      はい。Tauri 版では、エージェントパネル右上の歯車アイコンから OpenAI 互換 API（OpenAI / Ollama / LM Studio / OpenRouter / カスタム）に接続できます。API キーは OS キーチェーンに保存され、チャットはストリーミング表示・生成停止・接続テストに対応しています。Plan タブまたは <code>/plan</code> に意図を入力すると、LLM が許可アクションだけを使った実行計画を作成し、承認後に実行できます。ブラウザデモでは LLM を利用できません。
+      <p>Apple Developer ID の署名・公証を先送りしているためです。初回起動時に Gatekeeper の警告が出た場合は、アプリを右クリック →「開く」で起動してください。出所を確認したい場合は、GitHub Releases の SHA-256 と照合できます。署名・公証はロードマップにありますが、時期は決めていません。</p>
     </div>
   </details>
+
   <details class="faq-item">
-    <summary>スキルは何を実行できますか？</summary>
+    <summary>データはどこに保存されますか？</summary>
     <div class="faq-answer">
-      エージェントパネルの Skills タブと設定のスキルタブから、v1 マニフェストで宣言した操作を実行できます。対応するのはエディタ（読み取り・一意一致の置換・作成）、Git（状態・差分・ブランチ一覧・ステージ・コミット）、ターミナル（npm / pnpm / yarn / cargo / node / python3 / pytest / make を <code>program + args</code> で直接実行）、デバッグ（lldb-dap / debugpy の開始・停止・ステップ・ブレークポイント・式評価）です。マニフェストから任意のシェルコマンドは実行できず、実行は Rust の固定ハンドラだけが行います。
+      <p>原稿とコードは、選んだフォルダのファイルに保存されます。バージョン履歴・設定・監査ログは端末内の SQLite、API キーと Openship PAT は OS キーチェーンです。アカウント、テレメトリ、クラウド同期はありません。LLM と Openship へのリクエストだけは、設定した API へ Rust から送信します。</p>
     </div>
   </details>
+
   <details class="faq-item">
-    <summary>HTML レポートはどこに保存されますか？</summary>
+    <summary>不具合や要望はどこに送ればいいですか？</summary>
     <div class="faq-answer">
-      スキル実行結果の「HTML レポート」からプレビューし、ワークスペース内の <code>.agents/reports/&lt;run-id&gt;.html</code> に保存できます。レポートは承認 → 実行 → 検証 → 結果のフロー図、パラメータ、変更ファイル、stdout / stderr、検証結果を含む自己完結 HTML で、外部 CDN やテレメトリは使いません。ファイル名は Rust 側で検証され、<code>.html</code> とワークスペース内のパスだけが許可されます。ブラウザデモではワークスペースが無いためダウンロードになります。
-    </div>
-  </details>
-  <details class="faq-item">
-    <summary>自作 IDE の参考にできますか？</summary>
-    <div class="faq-answer">
-      はい。MIT ライセンスで公開しています。Tauri コマンド、パス検証、SQLite 履歴、Monaco と Zustand の構成を、自分の IDE の出発点として利用できます。
+      <p><a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues" target="_blank" rel="noreferrer">GitHub Issues</a> へお願いします。脆弱性は公開 Issue ではなく、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/SECURITY.md" target="_blank" rel="noreferrer">SECURITY.md</a> の非公開フォームから報告してください。個人開発のため、返信や修正には時間がかかることがあります。</p>
     </div>
   </details>
 </section>
 
 <div class="footer-cta">
-  <h2>サンプルから、<span class="highlight block-line" style="background: linear-gradient(90deg, var(--accent), var(--accent2));-webkit-background-clip: text;-webkit-text-fill-color: transparent;background-clip: text;">自分の IDE へ</span></h2>
-  <p>Tauri 版は GitHub Releases の DMG で配布中です。構成とソースは GitHub で公開しています。</p>
-  <div class="cta-group" style="justify-content:center;">
-    <a href="/app/" class="cta-btn cta-primary">ブラウザデモを試す</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary">GitHub を見る</a>
+  <h2>まずは、触ってみてください。</h2>
+  <p>ブラウザデモはインストール不要です。変更はこのブラウザに保存され、いつでも初期状態に戻せます。合わなければ、ソースをフォークして自分の道具にしてください。</p>
+  <div class="cta-group" style="margin:0;">
+    <a href="/app/" class="cta-btn cta-primary">ブラウザで試す</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">GitHub を見る</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">DMG をダウンロード</a>
   </div>
 </div>
 
@@ -1549,16 +1659,15 @@ agent-desktop permissions --guide</pre>
 
 <footer>
   <div class="footer-links">
-    <a href="https://github.com/watanabe3tipapa/right-stuff-editor-desktop">Right-Stuff Editor</a>
-    <a href="https://github.com/vercel-labs/agent-desktop">Agent Desktop</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide">GitHub</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md">README</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/LICENSE">License</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" target="_blank" rel="noreferrer">GitHub</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases" target="_blank" rel="noreferrer">Releases</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues" target="_blank" rel="noreferrer">Issues</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" target="_blank" rel="noreferrer">README</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/LICENSE" target="_blank" rel="noreferrer">License</a>
+    <a href="https://github.com/vercel-labs/agent-desktop" target="_blank" rel="noreferrer">Agent Desktop</a>
   </div>
-  <p>Right-Stuff Agent IDE — Sample Project — MIT License</p>
-  <p style="font-size:0.75rem;margin-top:0.5em;">
-    Built with Right-Stuff Editor and Agent Desktop. Not affiliated with Vercel.
-  </p>
+  <p>Right-Stuff Agent IDE — Hobby project — MIT License</p>
+  <p class="fine">Built with Tauri, React, and Agent Desktop. Not affiliated with Vercel. 最終更新: 2026-11-19</p>
 </footer>
 
 </body>

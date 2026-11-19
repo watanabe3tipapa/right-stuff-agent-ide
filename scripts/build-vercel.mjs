@@ -37,6 +37,10 @@ await cp(
   path.join(outDir, "rs-mark.svg"),
 );
 
+await cp(path.join(root, "public", "screenshots"), path.join(outDir, "screenshots"), {
+  recursive: true,
+});
+
 for (const file of ["robots.txt", "sitemap.xml", "404.html", "og-image.png"]) {
   await cp(path.join(root, "public", file), path.join(outDir, file));
 }

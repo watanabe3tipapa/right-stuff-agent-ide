@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the w
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.8-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.9-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Status](https://img.shields.io/badge/status-Early%20Access-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,16 +23,16 @@ right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the w
 
 ## Download
 
-v0.3.8 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.3.9 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.8_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.8_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.9_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
 > The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). If macOS warns on first launch, right-click the app and choose "Open". Running the x64 build on Apple Silicon requires Rosetta 2.
 >
-> The Intel x64 build (v0.3.8) has been installed and launched on an Intel Core i7 Mac running macOS 15.8.3, with its SHA-256 checksum verified.
+> The Intel x64 build was installed and launched on an Intel Core i7 Mac running macOS 15.8.3, with its SHA-256 checksum verified, in v0.3.8.
 
 ## Concept
 
@@ -271,7 +271,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.8 is available both as a DMG on GitHub Releases and as a build from source
+- v0.3.9 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 

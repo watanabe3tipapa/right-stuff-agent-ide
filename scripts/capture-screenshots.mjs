@@ -115,7 +115,7 @@ async function renderOgImage() {
     <div class="badge"><span class="dot"></span>HOBBY PROJECT / EARLY ACCESS</div>
     <h1>自分が使うために<br>作っている、<br><span>エージェント IDE</span>。</h1>
     <p>書く、任せる、実機で確かめる。macOS 専用・ローカルファースト・MIT。</p>
-    <div class="meta">macOS 11+ / v0.3.8 / right-stuff-agent-ide.vercel.app</div>
+    <div class="meta">macOS 11+ / v0.3.9 / right-stuff-agent-ide.vercel.app</div>
   </div>
   <div class="shot">
     <div class="bar"><i></i><i></i><i></i></div>

@@ -12,7 +12,7 @@ right-stuff-agent-ide は、エージェントとワークスペースを同じ�
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.8-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.3.9-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Status](https://img.shields.io/badge/status-Early%20Access-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,16 +23,16 @@ right-stuff-agent-ide は、エージェントとワークスペースを同じ�
 
 ## ダウンロード
 
-v0.3.8 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.3.9 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.8_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.8_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.9_x64.dmg`
 
 対応 OS は **macOS 11 以降（Apple Silicon / Intel）のみ**です。Windows / Linux 版は提供しません。
 
 > DMG は Apple Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に警告が出た場合は、アプリを右クリック →「開く」を選択してください。Apple Silicon で x64 版を使う場合は Rosetta 2 が必要です。
 >
-> Intel x64 版（v0.3.8）は、Intel Core i7 / macOS 15.8.3 の実機で SHA-256 を照合し、インストールと起動を確認済みです。
+> Intel x64 版は、v0.3.8 で Intel Core i7 / macOS 15.8.3 の実機による SHA-256 照合、インストール、起動を確認済みです。
 
 ## コンセプト
 
@@ -274,7 +274,7 @@ GUI から起動したアプリでは `PATH` が限られるため、検出時�
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.3.8 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
+- v0.3.9 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。署名・公証は先送りとし、当面はこの状態で配布します
 - 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません
 

@@ -1,4 +1,5 @@
 import type {
+  AutoFixAttempt,
   SkillAction,
   SkillManifest,
   SkillRunResult,
@@ -16,6 +17,7 @@ export interface SkillReportInput {
   params: Record<string, unknown>;
   result: SkillRunResult;
   verification: VerificationResult | null;
+  autoFixAttempts?: AutoFixAttempt[];
   generatedAt?: Date;
 }
 
@@ -195,6 +197,40 @@ function verificationRows(verification: VerificationResult | null): string {
 </table></div>`;
 }
 
+function autoFixRows(attempts: AutoFixAttempt[]): string {
+  if (attempts.length === 0) {
+    return "";
+  }
+
+  const rows = attempts
+    .map((attempt) => {
+      const files = attempt.steps
+        .map((step) => String(step.params?.path ?? ""))
+        .filter(Boolean)
+        .join(", ");
+      const verification = attempt.verification?.status ?? "—";
+      const diff = attempt.diff
+        ? `<details><summary>差分</summary><pre>${escapeHtml(attempt.diff)}</pre></details>`
+        : `<span class="muted">差分なし</span>`;
+      return `<tr>
+  <td>${attempt.attempt}</td>
+  <td><span class="status-pill" data-status="${escapeHtml(attempt.status)}">${escapeHtml(attempt.status)}</span></td>
+  <td>${escapeHtml(verification)}</td>
+  <td><code>${escapeHtml(files || "—")}</code>${attempt.error ? `<p class="muted">${escapeHtml(attempt.error)}</p>` : ""}</td>
+  <td>${diff}</td>
+</tr>`;
+    })
+    .join("\n");
+
+  return `<section class="panel">
+    <h2>自動修正の試行</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>試行</th><th>状態</th><th>再検証</th><th>対象</th><th>差分</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </section>`;
+}
+
 function changedFiles(result: SkillRunResult): string {
   if (result.changedFiles.length === 0) {
     return `<p class="muted">変更されたファイルはありません。</p>`;
@@ -211,6 +247,7 @@ function timestamp(value: Date): string {
 
 export function buildSkillReport(input: SkillReportInput): string {
   const { skill, action, params, result, verification } = input;
+  const autoFix = autoFixRows(input.autoFixAttempts ?? []);
   const generated = timestamp(input.generatedAt ?? new Date());
   const stderr = result.stderr.trim();
   const stdout = result.stdout.trim();
@@ -395,6 +432,8 @@ footer { color: var(--muted); font-size: 12px; text-align: center; margin-top: 2
     <h2>検証</h2>
     ${verificationRows(verification)}
   </section>
+
+  ${autoFix}
 
   <footer>
     このレポートは Right-Stuff Agent IDE がローカルで生成しました。外部への送信は行っていません。

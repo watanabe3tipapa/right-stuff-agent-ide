@@ -40,12 +40,12 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Workspace management, the Monaco editor, SQLite version history, the Agent Desktop bridge, LLM chat and planning, the Git panel, the integrated terminal, LSP, and DAP are implemented. Skill execution now covers the editor, Git, the terminal, and debugging, with a verification loop after writes and a self-contained HTML report that summarizes each run.
+Workspace management, the Monaco editor, SQLite version history, the Agent Desktop bridge, LLM chat and planning, the Git panel, the integrated terminal, LSP, and DAP are implemented. Skill execution now covers the editor, Git, the terminal, and debugging, with a verification loop after writes, an auto-fix loop for failed verification, and a self-contained HTML report that summarizes each run.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
 | Write | Monaco-based Markdown and code editing, tabs, dirty tracking |
-| Verify | Split GFM preview, command palette, verification loop (typecheck / lint / test), HTML reports |
+| Verify | Split GFM preview, command palette, verification loop (typecheck / lint / test), verification auto-fix, HTML reports |
 | Keep | Direct saves into the workspace, version history in SQLite |
 | Protect | Atomic writes, path validation, trash-based soft delete |
 | Connect | Agent Desktop CLI detection, snapshots, allowlisted actions |
@@ -88,6 +88,7 @@ Workspace management, the Monaco editor, SQLite version history, the Agent Deskt
 - **Git skills ** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` run through fixed handlers. Reads need no approval; writes pass through the native approval dialog and are recorded in the local audit log
 - **Terminal skill ** — `terminal.run` executes npm / pnpm / yarn / cargo / node / python3 / pytest / make as `program + args`, never as a shell string, with an isolated process group, timeout, and output cap
 - **Cancellation** — stop a running terminal skill or verification check from the Skills tab, or stop a running skill step from the Plan tab. Cancellation is delivered per `runId` to the process group and recorded as `cancelled` in the audit log
+- **Verification auto-fix** — when verification fails, send only the changed files and failure output to the configured LLM and propose `editor.replaceText` steps. Every write still goes through native approval; the loop stops on a pass, the attempt limit, a repeated failure signature, an invalid proposal, or cancellation. The default is manual, with automatic execution available in Autonomous mode
 - **Debug skills ** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` drive DAP request/response and share the Debug tab session. `debug.start` performs the initialize → launch → initialized → configurationDone handshake
 - **HTML reports ** — turn a skill run into a self-contained HTML report with an inline SVG approval → run → verify → result flow, light/dark themes, parameters, changed files, and verification output. Preview it in the app or save it under `.agents/reports/`; no CDN or telemetry
 - **Theme** — dark theme, overlay title bar, native macOS window

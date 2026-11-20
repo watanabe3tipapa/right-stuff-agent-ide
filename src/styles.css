@@ -5466,6 +5466,219 @@ html[data-shot="true"] .demo-banner {
   overflow-wrap: anywhere;
 }
 
+/* --- Verification auto-fix loop --- */
+.autofix-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in oklab, var(--accent) 35%, var(--line));
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--accent) 4%, var(--surface));
+}
+
+.autofix-card.passed {
+  border-color: color-mix(in oklab, var(--accent2) 45%, var(--line));
+}
+
+.autofix-card.failed,
+.autofix-card.cancelled {
+  border-color: color-mix(in oklab, var(--danger) 40%, var(--line));
+}
+
+.autofix-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.autofix-head h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.autofix-status {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 9px;
+  color: var(--ink-muted);
+}
+
+.autofix-status.proposed {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  background: var(--accent-weak);
+  color: var(--accent);
+}
+
+.autofix-status.passed {
+  border-color: color-mix(in oklab, var(--accent2) 45%, transparent);
+  background: var(--accent2-weak);
+  color: var(--accent2);
+}
+
+.autofix-status.failed,
+.autofix-status.cancelled {
+  border-color: color-mix(in oklab, var(--danger) 45%, transparent);
+  background: color-mix(in oklab, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.autofix-start {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.autofix-generating {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.autofix-raw {
+  width: 100%;
+  max-height: 180px;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--bg) 80%, transparent);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.autofix-attempts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.autofix-attempt {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+}
+
+.autofix-attempt.passed {
+  border-color: color-mix(in oklab, var(--accent2) 40%, transparent);
+}
+
+.autofix-attempt.failed,
+.autofix-attempt.cancelled,
+.autofix-attempt.blocked,
+.autofix-attempt.invalid {
+  border-color: color-mix(in oklab, var(--danger) 35%, transparent);
+}
+
+.autofix-attempt-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.autofix-attempt-no {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.autofix-attempt-status {
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-size: 9px;
+  color: var(--ink-muted);
+}
+
+.autofix-attempt-status.proposed {
+  border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+
+.autofix-attempt-status.passed {
+  border-color: color-mix(in oklab, var(--accent2) 45%, transparent);
+  color: var(--accent2);
+}
+
+.autofix-attempt-status.failed,
+.autofix-attempt-status.cancelled,
+.autofix-attempt-status.blocked,
+.autofix-attempt-status.invalid {
+  border-color: color-mix(in oklab, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+
+.autofix-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.autofix-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 10px;
+}
+
+.autofix-steps code {
+  overflow-wrap: anywhere;
+  color: var(--accent);
+}
+
+.autofix-step-index {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  color: var(--ink-muted);
+  font-size: 9px;
+  text-align: center;
+  line-height: 16px;
+}
+
+.autofix-diff summary {
+  cursor: pointer;
+  font-size: 10px;
+  color: var(--ink-muted);
+}
+
+.autofix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.autofix-passed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--accent2);
+}
+
 .skill-report-actions {
   display: flex;
   justify-content: flex-end;

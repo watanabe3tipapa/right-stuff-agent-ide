@@ -40,12 +40,12 @@ v0.3.9 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-ワークスペース、Monaco エディタ、SQLite のバージョン履歴、Agent Desktop ブリッジ、LLM チャットと計画立案、Git パネル、統合ターミナル、LSP、DAP を実装しています。スキル実行はエディタ・Git・ターミナル・デバッグに広がり、書き込み後の検証ループと、実行内容をまとめる自己完結 HTML レポートまで対応しています。
+ワークスペース、Monaco エディタ、SQLite のバージョン履歴、Agent Desktop ブリッジ、LLM チャットと計画立案、Git パネル、統合ターミナル、LSP、DAP を実装しています。スキル実行はエディタ・Git・ターミナル・デバッグに広がり、書き込み後の検証ループと検証の自動修正、実行内容をまとめる自己完結 HTML レポートまで対応しています。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
 | 書く | Monaco による Markdown / コード編集、タブ、未保存管理 |
-| 確かめる | GFM プレビュー、コマンドパレット、検証ループ（typecheck / lint / test）、HTML レポート |
+| 確かめる | GFM プレビュー、コマンドパレット、検証ループ（typecheck / lint / test）、検証の自動修正、HTML レポート |
 | 残す | ワークスペースへ直接保存、SQLite にバージョン履歴 |
 | 守る | atomic write、パス検証、ゴミ箱へのソフトデリート |
 | つなぐ | Agent Desktop CLI の検出、スナップショット、許可アクションの実行 |
@@ -86,6 +86,7 @@ v0.3.9 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 - **ブラウザデモ** — Tauri なしでも `npm run dev` でデモ用ワークスペースを操作可能。編集内容・履歴・スキルポリシーはそのブラウザの localStorage に保存され、デモバーの「初期状態に戻す」で削除できます。Vercel ではインストールせずに UI を試せます
 - **スキル実行** — `.agents/skills/*.json` の v1 マニフェストを読み込み・検証し、`editor.readFile` / `replaceText` / `createFile` をポリシーと承認付きで実行（Agent パネルの Skills タブと設定のスキルタブから操作）
 - **検証ループ** — スキル実行後に `package.json` / `Cargo.toml` から解決した typecheck・lint・test を実行し、結果と出力を Skills タブに表示。検証コマンドはワークスペース構成から決まり、マニフェストから任意のコマンドは受け取りません
+- **検証の自動修正** — 検証に失敗したとき、変更ファイルと失敗出力だけを LLM に渡して `editor.replaceText` の修正案を作ります。適用は毎回ネイティブ承認を通し、合格・最大試行回数・同じ失敗の再発・中止で停止します。既定は手動実行で、Autonomous モードでは自動実行も選べます
 - **実行の停止** — 実行中のターミナルスキルと検証チェックを、Skills タブの「停止」または Plan タブの「中止」から停止できます。停止は `runId` 単位でプロセスグループに伝わり、監査ログに `cancelled` として残ります
 - **Git スキル** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を固定ハンドラで実行。読み取り系は承認なし、書き込み系は承認ダイアログを挟み、結果はローカルの監査ログに残します
 - **ターミナルスキル** — `terminal.run` が npm / pnpm / yarn / cargo / node / python3 / pytest / make を `program + args` で直接実行。シェル文字列を組み立てず、独立プロセスグループ・タイムアウト・出力上限を適用します
@@ -337,6 +338,8 @@ src/
 │   ├── AgentPanel.tsx              # Chat / Plan / Skills / Git / Debug / Deploy / Audit / Runtime
 │   ├── PlanPanel.tsx               # 計画の生成・承認・実行
 │   ├── SkillsPanel.tsx             # スキル実行・検証・HTML レポート
+│   ├── AutoFixCard.tsx             # 検証失敗からの自動修正
+│   ├── VerificationDetails.tsx     # 検証チェックの表示
 │   ├── SkillLibrary.tsx            # スキルライブラリの別窓
 │   ├── GitPanel.tsx                # Git の状態・差分・コミット
 │   ├── DebugPanel.tsx              # DAP デバッグ
@@ -357,6 +360,7 @@ src/
 │   ├── demoStorage.ts              # デモの localStorage 保存・復元・検証
 │   ├── llm.ts                      # LLM プロンプト・リクエスト変換
 │   ├── plan.ts                     # 計画プロンプト・JSON 解析・引数検証
+│   ├── autofix.ts                  # 自動修正の文脈収集・プロンプト・検証
 │   ├── policy.ts                   # ポリシー既定値・表示ラベル
 │   ├── skillLibrary.ts             # スキルライブラリ定義
 │   ├── skillWindow.ts              # スキルライブラリの別窓

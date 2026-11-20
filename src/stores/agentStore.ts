@@ -20,6 +20,7 @@ import type {
   OpenShipStatus,
   SkillCatalog,
   SkillPolicy,
+  VerificationResult,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
 import { createRunId } from "../lib/skills";
@@ -118,6 +119,7 @@ interface AgentState {
   rejectPlan: () => void;
   resetPlan: () => void;
   runPlanStep: (stepId: string) => Promise<void>;
+  setStepVerification: (stepId: string, verification: VerificationResult) => void;
   cancelPlanStep: () => Promise<void>;
   executePlan: () => Promise<void>;
   refreshPolicy: () => Promise<void>;
@@ -799,7 +801,14 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         status: "running",
         steps: plan.steps.map((entry) =>
           entry.id === stepId
-            ? { ...entry, status: "running", output: undefined, error: undefined }
+            ? {
+                ...entry,
+                status: "running",
+                output: undefined,
+                error: undefined,
+                changedFiles: undefined,
+                verification: undefined,
+              }
             : entry,
         ),
       },
@@ -816,6 +825,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       let ok: boolean;
       let output: string;
       let errorText: string;
+      let changedFiles: string[] = [];
+      let verification: VerificationResult | undefined;
 
       if (step.kind === "skill") {
         if (!step.skillId || !step.skillActionId) {
@@ -850,6 +861,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
                         status: "cancelled" as const,
                         output: stdout || undefined,
                         error: undefined,
+                        changedFiles: result.changedFiles,
                       }
                     : entry,
                 ),
@@ -869,6 +881,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           return;
         }
         ok = result.status === "ok";
+        changedFiles = result.changedFiles;
         output = [
           result.stdout.trim(),
           result.changedFiles.length > 0
@@ -882,6 +895,73 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           ? ""
           : result.stderr.trim() ||
             `スキルを実行できませんでした (${result.status})`;
+
+        if (ok && changedFiles.length > 0) {
+          try {
+            const catalog = get().skills ?? (await api.skillsList());
+            const manifest = catalog.skills.find(
+              (entry) => entry.id === step.skillId,
+            );
+            if (manifest?.verification.mode === "auto") {
+              const verifyRunId = createRunId();
+              set({ executingRunId: verifyRunId });
+              verification = await api.skillVerify(
+                step.skillId,
+                step.skillActionId,
+                undefined,
+                verifyRunId,
+              );
+              if (verification.status === "cancelled") {
+                set((state) => {
+                  if (!state.plan) {
+                    return { executingStepId: null, executingRunId: null };
+                  }
+                  return {
+                    executingStepId: null,
+                    executingRunId: null,
+                    plan: {
+                      ...state.plan,
+                      status: "cancelled",
+                      steps: state.plan.steps.map((entry) =>
+                        entry.id === stepId
+                          ? {
+                              ...entry,
+                              status: "cancelled" as const,
+                              changedFiles,
+                              verification,
+                            }
+                          : entry,
+                      ),
+                    },
+                  };
+                });
+                logAudit({
+                  kind: "plan_cancelled",
+                  mode,
+                  planId: plan.id,
+                  stepId: step.id,
+                  title: step.title,
+                  outcome: "cancelled",
+                  detail: "実行中の検証をキャンセルしました",
+                });
+                appendLocal(set, "実行中の検証をキャンセルしました。");
+                return;
+              }
+              if (
+                verification.status === "failed" ||
+                verification.status === "timeout"
+              ) {
+                ok = false;
+                errorText = "検証に失敗しました。";
+              }
+            }
+          } catch (error) {
+            output = `${output}\n検証エラー: ${errorMessage(error)}`.slice(
+              0,
+              8_000,
+            );
+          }
+        }
       } else {
         const result = await api.agentRun(step.command, audit);
         ok = result.ok;
@@ -903,6 +983,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
                 status: ok ? ("done" as const) : ("failed" as const),
                 output,
                 error: errorText || undefined,
+                changedFiles,
+                verification,
               }
             : entry,
         );
@@ -944,6 +1026,33 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         };
       });
     }
+  },
+
+  setStepVerification(stepId, verification) {
+    set((state) => {
+      if (!state.plan || state.plan.status === "cancelled") return {};
+      const steps = state.plan.steps.map((entry) =>
+        entry.id === stepId
+          ? {
+              ...entry,
+              status: verification.status === "passed" ? ("done" as const) : entry.status,
+              error: verification.status === "passed" ? undefined : entry.error,
+              verification,
+            }
+          : entry,
+      );
+      const failed = steps.some((entry) => entry.status === "failed");
+      const remaining = steps.some(
+        (entry) => entry.status === "approved" || entry.status === "running",
+      );
+      return {
+        plan: {
+          ...state.plan,
+          steps,
+          status: failed ? "failed" : remaining ? "approved" : "completed",
+        },
+      };
+    });
   },
 
   async cancelPlanStep() {

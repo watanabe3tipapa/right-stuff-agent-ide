@@ -99,6 +99,7 @@ export type AuditKind =
   | "skill_blocked"
   | "skill_cancelled"
   | "verification_run"
+  | "verification_fix"
   | "skill_policy_updated";
 
 export type AuditOutcome = "ok" | "error" | "blocked" | "cancelled";
@@ -205,6 +206,8 @@ export interface SkillCatalog {
   warnings: SkillWarning[];
 }
 
+export type AutoFixMode = "off" | "manual" | "auto";
+
 export interface SkillPolicy {
   version: number;
   skills: Record<string, SkillDecision>;
@@ -212,6 +215,8 @@ export interface SkillPolicy {
   verification: {
     autoRun: boolean;
     allowChecks: ("typecheck" | "lint" | "test")[];
+    autoFix: AutoFixMode;
+    maxFixAttempts: number;
   };
   limits: {
     maxFiles: number;
@@ -328,6 +333,31 @@ export interface AgentPlanStep {
   status: PlanStepStatus;
   output?: string;
   error?: string;
+  /** Files changed by this skill step, used by the auto-fix loop. */
+  changedFiles?: string[];
+  /** Verification run after a skill step finishes. */
+  verification?: VerificationResult;
+}
+
+export type AutoFixAttemptStatus =
+  | "proposed"
+  | "applying"
+  | "verifying"
+  | "passed"
+  | "failed"
+  | "cancelled"
+  | "blocked"
+  | "invalid";
+
+export interface AutoFixAttempt {
+  id: string;
+  attempt: number;
+  status: AutoFixAttemptStatus;
+  steps: AgentPlanStep[];
+  diff: string;
+  verification?: VerificationResult;
+  error?: string;
+  createdAt: number;
 }
 
 export interface AgentPlan {

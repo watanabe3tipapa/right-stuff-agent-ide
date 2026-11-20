@@ -27,6 +27,7 @@ const AUDIT_KINDS: &[&str] = &[
     "skill_blocked",
     "skill_cancelled",
     "verification_run",
+    "verification_fix",
     "skill_policy_updated",
 ];
 

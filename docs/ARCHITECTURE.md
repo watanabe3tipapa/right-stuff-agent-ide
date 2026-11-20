@@ -222,6 +222,11 @@ v0.3.9 では、`skill_run` / `skill_verify` が UI 発行の `runId` を受け�
 `AppState::skill_runs` に登録した `CancelFlag` を `exec.rs` の待機ループで確認する
 協調的キャンセルを追加した。`skill_cancel` は指定した `runId`（省略時は全件）を
 停止し、ターミナルスキルと検証チェックのプロセスグループを終了する。
+v0.4.0 では、失敗した検証から修正案を作る自動修正ループを追加した。UI 側の
+`src/lib/autofix.ts` が変更ファイルと失敗出力だけを文脈にし、
+`src/components/AutoFixCard.tsx` が修正案の生成・差分確認・適用・再検証を進める。
+生成できる手順は `editor.replaceText` に限定し、適用は `skill_run` を通るため
+ネイティブ承認を省略できない。
 
 スキーマ、承認フロー、パス・コマンドの制限、監査項目、API、テスト計画は
 [SKILLS.md](./SKILLS.md) を参照。機械可読スキーマは
@@ -361,8 +366,8 @@ Skills タブの実行結果
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, SkillsPanel, SkillLibrary, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
-├── lib/{api,demo,llm,plan,policy,monaco,lsp,lspMapping,dap,skillLibrary,skillWindow,report}.ts
+├── components/ (AgentPanel, PlanPanel, SkillsPanel, SkillLibrary, AutoFixCard, VerificationDetails, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
+├── lib/{api,autofix,demo,llm,plan,policy,monaco,lsp,lspMapping,dap,skillLibrary,skillWindow,report}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent,git,lsp,dap}Store.ts
 src-tauri/src/

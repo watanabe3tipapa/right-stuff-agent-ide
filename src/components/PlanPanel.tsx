@@ -8,7 +8,9 @@ import type {
 import { MAX_PLAN_INTENT_CHARS } from "../lib/plan";
 import { skillRiskLabel } from "../lib/skills";
 import { useAgentStore } from "../stores/agentStore";
+import { AutoFixCard } from "./AutoFixCard";
 import { Icon } from "./Icon";
+import { VerificationDetails } from "./VerificationDetails";
 
 const planStatusCopy: Record<AgentPlanStatus, string> = {
   draft: "未承認",
@@ -36,6 +38,9 @@ function PlanCard({ plan }: { plan: AgentPlan }) {
   const rejectPlan = useAgentStore((state) => state.rejectPlan);
   const resetPlan = useAgentStore((state) => state.resetPlan);
   const runPlanStep = useAgentStore((state) => state.runPlanStep);
+  const setStepVerification = useAgentStore(
+    (state) => state.setStepVerification,
+  );
   const cancelPlanStep = useAgentStore((state) => state.cancelPlanStep);
   const executePlan = useAgentStore((state) => state.executePlan);
 
@@ -101,6 +106,32 @@ function PlanCard({ plan }: { plan: AgentPlan }) {
                   <pre>{step.output}</pre>
                 </details>
               )}
+
+              {step.verification && (
+                <VerificationDetails
+                  verification={step.verification}
+                  label="スキル後の検証"
+                />
+              )}
+
+              {step.verification &&
+                step.kind === "skill" &&
+                step.skillId &&
+                step.skillActionId && (
+                  <AutoFixCard
+                    skillId={step.skillId}
+                    actionId={step.skillActionId}
+                    params={step.params ?? {}}
+                    verification={step.verification}
+                    changedFiles={step.changedFiles ?? []}
+                    planId={plan.id}
+                    stepId={step.id}
+                    title={step.title}
+                    onPassed={(verification) =>
+                      setStepVerification(step.id, verification)
+                    }
+                  />
+                )}
 
               {canRun && (
                 <div className="plan-step-actions">

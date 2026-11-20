@@ -33,6 +33,7 @@ export const AUDIT_KIND_LABELS: Record<AuditKind, string> = {
   skill_blocked: "スキル拒否",
   skill_cancelled: "スキルキャンセル",
   verification_run: "検証実行",
+  verification_fix: "自動修正",
   skill_policy_updated: "スキルポリシー更新",
 };
 

@@ -15,12 +15,14 @@ import type {
  */
 
 export const DEFAULT_SKILL_POLICY = (): SkillPolicy => ({
-  version: 1,
+  version: 2,
   skills: {},
   actions: {},
   verification: {
     autoRun: false,
     allowChecks: ["typecheck", "lint"],
+    autoFix: "manual",
+    maxFixAttempts: 2,
   },
   limits: {
     maxFiles: 20,

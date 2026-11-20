@@ -259,7 +259,7 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "skills": {
     "code-edit": "ask",
     "git-operation": "ask",
@@ -271,7 +271,9 @@ Rust のローダーは JSON Schema に加えて次を検査する。
   },
   "verification": {
     "autoRun": false,
-    "allowChecks": ["typecheck", "lint"]
+    "allowChecks": ["typecheck", "lint"],
+    "autoFix": "manual",
+    "maxFixAttempts": 2
   },
   "limits": {
     "timeoutMs": 300000,
@@ -407,10 +409,30 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 
 - 各 check は `passed` / `failed` / `skipped` / `timeout` / `cancelled` を返す
 - 失敗した check がある場合、その手順を `failed` にし、既定では計画を停止する
-- 現状は自動修正しない。UI に「失敗した検証」と出力を表示し、ユーザーが次の計画を立てる
-- 検証出力は既定では LLM に送らない。送る場合はユーザーが明示的に選ぶ
+- 検証出力は既定では LLM に送らない。自動修正を選んだときだけ、対象ファイルと
+  失敗出力を設定済みプロバイダーへ送る
+- 自動修正は `off` / `manual` / `auto` の 3 段階で、既定は `manual`
+- `auto` は Autonomous モードでのみ動作し、それ以外では `manual` と同じになる
 
-### 9.4 実装メモ（v0.3.5）
+### 9.4 検証の自動修正（v0.4.0）
+
+Skills タブと Plan タブのスキル手順は、失敗した検証から修正案を作れる。
+自動修正は次の制約を守る。
+
+- 修正案に使えるのは `code-edit` の `editor.replaceText` だけ
+- 変更できるのは、その実行で変更したファイルと、失敗出力に現れたファイルだけ
+- `.env`、鍵、バイナリ、lockfile、`node_modules`、`target`、`.git` は文脈に含めない
+- 文脈は最大 8 ファイル / 60,000 文字、失敗出力は 20,000 文字で打ち切る
+- 書き込みのたびにネイティブ承認を求める。承認を省略する経路はない
+- 停止条件は、検証合格、最大試行回数、同じ失敗シグネチャの再発、無効な修正案、
+  ユーザーによる中止
+- 最大試行回数は 1〜3 回で、既定は 2 回
+- 監査ログには `verification_fix` として、試行回数・結果・拒否・中止を記録する
+
+`typecheck` / `lint` / `test` の失敗出力をそのままプロンプトへ埋め込むため、ファイル内容はデータとして
+扱い、ファイル内の指示には従わないようシステムプロンプトで明示する。
+
+### 9.5 実装メモ（v0.3.5）
 
 `src-tauri/src/skills/verify.rs` がコマンド解決と実行を担当する。
 
@@ -424,7 +446,7 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 - 結果は `passed` / `failed` / `skipped` / `timeout` / `cancelled` を返し、監査ログの
   `verification_run` に記録する。`cancelled` は v0.3.9 で追加した。
 
-### 9.5 実装メモ（v0.3.6）
+### 9.6 実装メモ（v0.3.6）
 
 Git / ターミナル / デバッグのハンドラは、マニフェストの `handler` 名から Rust の固定関数へ
 ディスパッチする。マニフェストから任意のコマンド文字列やシェルを受け取らない。
@@ -691,6 +713,7 @@ interface VerificationResult {
 | デバッグハンドラ | 実装済み（v0.3.6） | `src-tauri/src/skills/debug.rs` |
 | 共通プロセス実行 | 実装済み（v0.3.6） | `src-tauri/src/skills/exec.rs` |
 | `skill_cancel` / タイムアウト | 実装済み（v0.3.9、タイムアウトは v0.3.5） | `src-tauri/src/skills/exec.rs` / `src-tauri/src/commands/skills.rs` |
+| 検証の自動修正（Skills / Plan） | 実装済み（v0.4.0） | `src/lib/autofix.ts` / `src/components/AutoFixCard.tsx` / `src/stores/agentStore.ts` |
 | フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |
 | フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |
 | 人間向けスキルライブラリ / ショーケース窓（v0.3.4） | 実装済み | `src/lib/skillLibrary.ts` / `src/components/SkillLibrary.tsx` |

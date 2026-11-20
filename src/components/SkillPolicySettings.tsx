@@ -133,6 +133,27 @@ export function SkillPolicySettings() {
     setError(null);
   }
 
+  function setAutoFix(mode: SkillPolicy["verification"]["autoFix"]) {
+    setDraft((current) => ({
+      ...current,
+      verification: { ...current.verification, autoFix: mode },
+    }));
+    setNotice(null);
+    setError(null);
+  }
+
+  function setMaxFixAttempts(value: number) {
+    setDraft((current) => ({
+      ...current,
+      verification: {
+        ...current.verification,
+        maxFixAttempts: Math.min(3, Math.max(1, Math.round(value))),
+      },
+    }));
+    setNotice(null);
+    setError(null);
+  }
+
   async function save() {
     setSaving(true);
     setError(null);
@@ -194,10 +215,10 @@ export function SkillPolicySettings() {
 
             <section className="policy-group">
               <div className="policy-group-head">
-                <h4>検証ループ</h4>
+                <h4>検証と自動修正</h4>
                 <p>
-                  変更後の typecheck / lint / test の実行方法です。検証ループは
-                  v0.5 で実装します。
+                  変更後の typecheck / lint / test の実行方法と、失敗したときの
+                  自動修正の扱いです。
                 </p>
               </div>
               <div className="policy-audit">
@@ -215,6 +236,51 @@ export function SkillPolicySettings() {
                 自動実行の対象は typecheck と lint です。test
                 はプロジェクトのコードを実行するため、常に確認を挟みます。
               </p>
+              <div className="policy-row">
+                <label className="field-label" htmlFor="auto-fix-mode">
+                  自動修正
+                </label>
+                <select
+                  id="auto-fix-mode"
+                  className="policy-select"
+                  value={draft.verification.autoFix}
+                  onChange={(event) =>
+                    setAutoFix(
+                      event.target.value as SkillPolicy["verification"]["autoFix"],
+                    )
+                  }
+                  disabled={demo || saving || loading}
+                >
+                  <option value="off">無効</option>
+                  <option value="manual">ボタンから実行</option>
+                  <option value="auto">Autonomous で自動実行</option>
+                </select>
+                <span className="policy-help">
+                  修正案の生成時だけ、変更ファイルと失敗出力を設定済み LLM
+                  へ送信します。適用は毎回承認します。
+                </span>
+              </div>
+              <div className="policy-row">
+                <label className="field-label" htmlFor="max-fix-attempts">
+                  最大修正回数
+                </label>
+                <select
+                  id="max-fix-attempts"
+                  className="policy-select"
+                  value={draft.verification.maxFixAttempts}
+                  onChange={(event) =>
+                    setMaxFixAttempts(Number(event.target.value))
+                  }
+                  disabled={demo || saving || loading}
+                >
+                  <option value={1}>1 回</option>
+                  <option value={2}>2 回</option>
+                  <option value={3}>3 回</option>
+                </select>
+                <span className="policy-help">
+                  同じ失敗が続いた場合は、回数に達する前に停止します。
+                </span>
+              </div>
             </section>
 
             <div className="policy-reset">

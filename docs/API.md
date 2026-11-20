@@ -149,8 +149,10 @@ session, trace, --version, --help
 検証チェックが対象になる。
 
 `skill_policy_set` は保存前に `allow` の書き込みアクションを `ask` へ丸め、
-`test` を自動許可の対象から外す。`skill_decision` はポリシーとマニフェストの
-優先順位を Rust 側で解決して返す。
+`test` を自動許可の対象から外し、`maxFixAttempts` を 1〜3 に収める。
+`skill_decision` はポリシーとマニフェストの優先順位を Rust 側で解決して返す。
+既存の v1 ポリシーは読み込み時に `autoFix: "manual"` と `maxFixAttempts: 2` を
+補って v2 として保存する。
 
 ```ts
 interface SkillWarning {
@@ -159,12 +161,14 @@ interface SkillWarning {
 }
 
 interface SkillPolicy {
-  version: number;
+  version: 2;
   skills: Record<string, "allow" | "ask" | "block">;
   actions: Record<string, "allow" | "ask" | "block">;
   verification: {
     autoRun: boolean;
     allowChecks: ("typecheck" | "lint" | "test")[];
+    autoFix: "off" | "manual" | "auto";
+    maxFixAttempts: number; // 1 - 3
   };
   limits: {
     maxFiles: number;
@@ -325,7 +329,13 @@ type AuditKind =
   | "action_run"
   | "action_blocked"
   | "action_cancelled"
-  | "policy_updated";
+  | "policy_updated"
+  | "skill_run"
+  | "skill_blocked"
+  | "skill_cancelled"
+  | "verification_run"
+  | "verification_fix"
+  | "skill_policy_updated";
 
 type AuditOutcome = "ok" | "error" | "blocked" | "cancelled";
 
@@ -334,6 +344,8 @@ interface AuditInput {
   mode?: AgentMode | null;
   planId?: string | null;
   stepId?: string | null;
+  skillId?: string | null;
+  actionId?: string | null;
   title?: string | null;
   command?: string[] | null;
   outcome?: AuditOutcome | null;

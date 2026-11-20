@@ -12,7 +12,7 @@ use crate::error::AppResult;
 
 /// Settings key for the persisted skill policy.
 pub const SETTING_SKILL_POLICY: &str = "skill_policy";
-pub const SKILL_POLICY_VERSION: u32 = 1;
+pub const SKILL_POLICY_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields, default)]
@@ -36,11 +36,22 @@ impl Default for SkillPolicy {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum AutoFixMode {
+    Off,
+    #[default]
+    Manual,
+    Auto,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields, default)]
 pub struct VerificationPolicy {
     pub auto_run: bool,
     pub allow_checks: Vec<VerificationCheck>,
+    pub auto_fix: AutoFixMode,
+    pub max_fix_attempts: u32,
 }
 
 impl Default for VerificationPolicy {
@@ -49,6 +60,8 @@ impl Default for VerificationPolicy {
             auto_run: false,
             // `test` runs project code, so it always asks before running.
             allow_checks: vec![VerificationCheck::Typecheck, VerificationCheck::Lint],
+            auto_fix: AutoFixMode::Manual,
+            max_fix_attempts: 2,
         }
     }
 }
@@ -92,6 +105,9 @@ impl SkillPolicy {
         self.verification
             .allow_checks
             .retain(|check| *check != VerificationCheck::Test && seen.insert(*check));
+        if !(1..=3).contains(&self.verification.max_fix_attempts) {
+            self.verification.max_fix_attempts = VerificationPolicy::default().max_fix_attempts;
+        }
 
         self.limits = clamp_limits(self.limits);
         self
@@ -209,6 +225,35 @@ mod tests {
             policy.verification.allow_checks,
             vec![VerificationCheck::Typecheck, VerificationCheck::Lint]
         );
+        assert_eq!(policy.verification.auto_fix, AutoFixMode::Manual);
+        assert_eq!(policy.verification.max_fix_attempts, 2);
+    }
+
+    #[test]
+    fn normalization_clamps_fix_attempts() {
+        let mut policy = SkillPolicy::default();
+        policy.verification.max_fix_attempts = 0;
+        assert_eq!(policy.normalize(None).verification.max_fix_attempts, 2);
+
+        let mut policy = SkillPolicy::default();
+        policy.verification.max_fix_attempts = 9;
+        assert_eq!(policy.normalize(None).verification.max_fix_attempts, 2);
+
+        let mut policy = SkillPolicy::default();
+        policy.verification.max_fix_attempts = 3;
+        assert_eq!(policy.normalize(None).verification.max_fix_attempts, 3);
+    }
+
+    #[test]
+    fn loads_old_policy_with_fix_defaults() {
+        let conn = Connection::open_in_memory().expect("in-memory db");
+        crate::db::init(&conn).expect("init db");
+        let raw = r#"{"version":1,"skills":{},"actions":{},"verification":{"autoRun":false,"allowChecks":["lint"]},"limits":{}}"#;
+        db::set_setting(&conn, SETTING_SKILL_POLICY, raw).expect("store policy");
+        let policy = load_policy(&conn, None).expect("load policy");
+        assert_eq!(policy.version, SKILL_POLICY_VERSION);
+        assert_eq!(policy.verification.auto_fix, AutoFixMode::Manual);
+        assert_eq!(policy.verification.max_fix_attempts, 2);
     }
 
     #[test]

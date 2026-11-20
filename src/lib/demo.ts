@@ -86,7 +86,7 @@ npm run tauri dev
   "package.json": `{
   "name": "right-stuff-agent-ide",
   "private": true,
-  "version": "0.3.9",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -208,9 +208,19 @@ const modifiedAt = new Map<string, number>(
   ),
 );
 const deleted = new Map<string, string>();
-let demoSkillPolicy = loadedSnapshot?.skillPolicy
-  ? { ...DEFAULT_SKILL_POLICY(), ...loadedSnapshot.skillPolicy, version: 1 }
-  : DEFAULT_SKILL_POLICY();
+function mergeSkillPolicy(policy: SkillPolicy | null | undefined): SkillPolicy {
+  const defaults = DEFAULT_SKILL_POLICY();
+  if (!policy) return defaults;
+  return {
+    ...defaults,
+    ...policy,
+    version: defaults.version,
+    verification: { ...defaults.verification, ...policy.verification },
+    limits: { ...defaults.limits, ...policy.limits },
+  };
+}
+
+let demoSkillPolicy = mergeSkillPolicy(loadedSnapshot?.skillPolicy);
 let lastSaveOk = true;
 
 function persistDemoState(): void {
@@ -525,7 +535,7 @@ export const demoApi = {
   async appInfo(): Promise<AppInfo> {
     return {
       name: "Right-Stuff Agent IDE",
-      version: "0.3.9-demo",
+      version: "0.4.0-demo",
       tauriVersion: "browser",
       platform: "browser",
       arch: "web",
@@ -775,7 +785,7 @@ export const demoApi = {
   },
 
   async skillPolicySet(policy: SkillPolicy): Promise<SkillPolicy> {
-    demoSkillPolicy = { ...DEFAULT_SKILL_POLICY(), ...policy, version: 1 };
+    demoSkillPolicy = mergeSkillPolicy(policy);
     persistDemoState();
     return demoSkillPolicy;
   },

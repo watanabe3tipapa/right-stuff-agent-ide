@@ -1,7 +1,7 @@
 {
   "name": "right-stuff-agent-ide",
   "private": true,
-  "version": "0.3.9",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && cargo check --manifest-path src-tauri/Cargo.toml",
     "lint": "eslint src",
+    "glossary": "node scripts/check-glossary.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

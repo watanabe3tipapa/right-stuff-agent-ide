@@ -369,6 +369,7 @@ Rust のローダーは JSON Schema に加えて次を検査する。
 | `code-edit` | `editor.readFile` | read | 相対パスのファイルを読む |
 | `code-edit` | `editor.replaceText` | write | 一意に一致する文字列を置換し、保存する |
 | `code-edit` | `editor.createFile` | write | 存在しないファイルを作成する |
+| `japanese-text` | `editor.checkJapanese` | read | Markdown / テキストの日本語表記を検査する |
 | `git-operation` | `git.status` / `git.diff` / `git.branches` | read | 既存の Git コマンドを `*_at` ヘルパー経由で再利用 |
 | `git-operation` | `git.stage` / `git.stageAll` / `git.commit` | write | `git add` / `git commit` を固定引数で実行 |
 | `terminal-command` | `terminal.run` | write | 許可プログラムのみを `program + args` で直接実行 |
@@ -714,6 +715,8 @@ interface VerificationResult {
 | 共通プロセス実行 | 実装済み（v0.3.6） | `src-tauri/src/skills/exec.rs` |
 | `skill_cancel` / タイムアウト | 実装済み（v0.3.9、タイムアウトは v0.3.5） | `src-tauri/src/skills/exec.rs` / `src-tauri/src/commands/skills.rs` |
 | 検証の自動修正（Skills / Plan） | 実装済み（v0.4.0） | `src/lib/autofix.ts` / `src/components/AutoFixCard.tsx` / `src/stores/agentStore.ts` |
+| 日本語テキスト検査 | 実装済み（v0.4.0） | `src-tauri/src/skills/japanese.rs` / `.agents/skills/japanese-text.json` |
+| 用語集チェック | 実装済み（v0.4.0） | `docs/GLOSSARY.md` / `scripts/check-glossary.mjs` |
 | フロントエンドのスキルカタログ UI | 実装済み | `src/components/SkillsPanel.tsx` |
 | フロントエンドのスキルポリシー UI | 実装済み | `src/components/SkillPolicySettings.tsx` |
 | 人間向けスキルライブラリ / ショーケース窓（v0.3.4） | 実装済み | `src/lib/skillLibrary.ts` / `src/components/SkillLibrary.tsx` |

@@ -12,7 +12,7 @@ right-stuff-agent-ide は、エージェントとワークスペースを同じ�
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.9-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Status](https://img.shields.io/badge/status-Early%20Access-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide は、エージェントとワークスペースを同じ�
 
 ## ダウンロード
 
-v0.3.9 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.4.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.9_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.4.0_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.4.0_x64.dmg`
 
 対応 OS は **macOS 11 以降（Apple Silicon / Intel）のみ**です。Windows / Linux 版は提供しません。
 
@@ -40,7 +40,7 @@ v0.3.9 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 
 エディタとエージェントは、これまで別々の画面にありました。書いた仕様をエージェントへ渡し、その実行結果を確認するには、ウィンドウを何度も行き来する必要があります。Agent IDE はその境界を取り除き、**ワークスペースとエージェントの操作履歴を同じ画面**に置きました。
 
-ワークスペース、Monaco エディタ、SQLite のバージョン履歴、Agent Desktop ブリッジ、LLM チャットと計画立案、Git パネル、統合ターミナル、LSP、DAP を実装しています。スキル実行はエディタ・Git・ターミナル・デバッグに広がり、書き込み後の検証ループと検証の自動修正、実行内容をまとめる自己完結 HTML レポートまで対応しています。
+ワークスペース、Monaco エディタ、SQLite のバージョン履歴、Agent Desktop ブリッジ、LLM チャットと計画立案、Git パネル、統合ターミナル、LSP、DAP を実装しています。スキル実行はエディタ・Git・ターミナル・デバッグに広がり、書き込み後の検証ループと検証の自動修正、日本語表記の検査、実行内容をまとめる自己完結 HTML レポートまで対応しています。
 
 | 体験 | right-stuff-agent-ide の対応物 |
 |---|---|
@@ -84,9 +84,10 @@ v0.3.9 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agen
 - **コマンドパレット** — `⌘K` / `⌘⇧P` からワークスペース、エディタ、エージェント、Git、ターミナルの操作を検索して実行。`⌘P` はクイックオープン、`⌘J` はターミナルの表示切替
 - **ネイティブダイアログ** — 確認と入力はアプリ内モーダルで統一。ブラウザのブロッキングダイアログを使わない
 - **ブラウザデモ** — Tauri なしでも `npm run dev` でデモ用ワークスペースを操作可能。編集内容・履歴・スキルポリシーはそのブラウザの localStorage に保存され、デモバーの「初期状態に戻す」で削除できます。Vercel ではインストールせずに UI を試せます
-- **スキル実行** — `.agents/skills/*.json` の v1 マニフェストを読み込み・検証し、`editor.readFile` / `replaceText` / `createFile` をポリシーと承認付きで実行（Agent パネルの Skills タブと設定のスキルタブから操作）
+- **スキル実行** — `.agents/skills/*.json` の v1 マニフェストを読み込み・検証し、`editor.readFile` / `replaceText` / `createFile` / `checkJapanese` をポリシーと承認付きで実行（Agent パネルの Skills タブと設定のスキルタブから操作）
 - **検証ループ** — スキル実行後に `package.json` / `Cargo.toml` から解決した typecheck・lint・test を実行し、結果と出力を Skills タブに表示。検証コマンドはワークスペース構成から決まり、マニフェストから任意のコマンドは受け取りません
 - **検証の自動修正** — 検証に失敗したとき、変更ファイルと失敗出力だけを LLM に渡して `editor.replaceText` の修正案を作ります。適用は毎回ネイティブ承認を通し、合格・最大試行回数・同じ失敗の再発・中止で停止します。既定は手動実行で、Autonomous モードでは自動実行も選べます
+- **日本語品質** — `docs/GLOSSARY.md` の用語集と `npm run glossary` の CI チェック、読み取り専用の `japanese-text` スキル（全角英数字・半角カタカナ・句読点・表記ゆれ）、静的テンプレートを同梱します
 - **実行の停止** — 実行中のターミナルスキルと検証チェックを、Skills タブの「停止」または Plan タブの「中止」から停止できます。停止は `runId` 単位でプロセスグループに伝わり、監査ログに `cancelled` として残ります
 - **Git スキル** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` を固定ハンドラで実行。読み取り系は承認なし、書き込み系は承認ダイアログを挟み、結果はローカルの監査ログに残します
 - **ターミナルスキル** — `terminal.run` が npm / pnpm / yarn / cargo / node / python3 / pytest / make を `program + args` で直接実行。シェル文字列を組み立てず、独立プロセスグループ・タイムアウト・出力上限を適用します
@@ -275,7 +276,7 @@ GUI から起動したアプリでは `PATH` が限られるため、検出時�
 ## 配布
 
 - アプリ本体は Web 配信しません
-- v0.3.9 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
+- v0.4.0 は GitHub Releases の DMG とソースからのビルドの両方で利用できます
 - DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。署名・公証は先送りとし、当面はこの状態で配布します
 - 対応 OS は macOS 11 以降（Apple Silicon / Intel）のみです。Windows / Linux 版は提供しません
 
@@ -374,7 +375,7 @@ src/
 src-tauri/
 ├── src/
 │   ├── commands/                   # workspace / editor / agent / policy / llm / openship / git / terminal / lsp / dap / skills / report / settings / app
-│   ├── skills/                     # mod / editor / git / terminal / debug / exec / params / policy / verify
+│   ├── skills/                     # mod / editor / git / japanese / terminal / debug / exec / params / policy / verify
 │   ├── db.rs                       # SQLite (WAL) 履歴・設定・監査ログ
 │   ├── paths.rs                    # パス検証
 │   ├── rpc.rs                      # LSP / DAP の JSON-RPC トランスポート
@@ -385,8 +386,10 @@ src-tauri/
 
 .agents/skills/                     # スキル定義 (JSON)
 .agents/reports/                    # スキル実行の HTML レポート
-docs/                               # アーキテクチャ / API / スキル / セキュリティ
+docs/                               # アーキテクチャ / API / スキル / セキュリティ / 用語集
 docs/diagrams/                      # archify 構成図（JSON / HTML / PNG）
+scripts/check-glossary.mjs          # 用語集チェック
+templates/open-vibecoding-ja/       # 日本語テンプレート（静的）
 public/openship-local-first.png     # LP 用の構成図プレビュー
 public/diagrams/                    # 公開用のインタラクティブ構成図
 public/rs-mark.svg                  # アプリアイコン原画
@@ -403,11 +406,13 @@ DEV-MEMO.md                         # リリース履歴・開発手順
 4. [skills.schema.json](./docs/skills.schema.json) — スキルマニフェスト v1 の JSON Schema
 5. [API.md](./docs/API.md) — Tauri コマンドと型
 6. [docs/SECURITY.md](./docs/SECURITY.md) — パス検証、エージェント権限、保存データ
-7. [実装設計書](./right-stuff-agent-ide-implementation-plan.html) — 全体設計とロードマップ
-8. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
-9. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
-10. [README（English）](./README.en.md) — English overview
-11. [DEV-MEMO.md](./DEV-MEMO.md) — リリース履歴、開発コマンド、リリース手順、設計メモ
+7. [GLOSSARY.md](./docs/GLOSSARY.md) — 日本語表記の用語集と CI チェック
+8. [OPEN-VIBECODING-JA.md](./docs/OPEN-VIBECODING-JA.md) — 日本語版提案との対応
+9. [実装設計書](./right-stuff-agent-ide-implementation-plan.html) — 全体設計とロードマップ
+10. [Openship 構成図](./docs/diagrams/openship-local-first.html) — ローカルファーストのデプロイ経路（インタラクティブ）
+11. [ランディングページ](./right-stuff-agent-ide-lp.html) — プロダクト概要（静的モック）
+12. [README（English）](./README.en.md) — English overview
+13. [DEV-MEMO.md](./DEV-MEMO.md) — リリース履歴、開発コマンド、リリース手順、設計メモ
 
 ## ライセンス
 

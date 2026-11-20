@@ -1,0 +1,16 @@
+# UTF-8 / LF を明示する
+* text=auto eol=lf
+
+*.md text eol=lf
+*.mdx text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.css text eol=lf
+*.rs text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

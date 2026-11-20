@@ -5,6 +5,17 @@
 
 ## リリース履歴
 
+### v0.4.0
+
+- [x] 検証の自動修正 — Skills タブと Plan タブのスキル手順で、失敗した検証から `editor.replaceText` だけの修正案を生成。文脈は変更ファイルと失敗出力に限定し、8 ファイル / 60,000 文字で打ち切る
+- [x] 自動修正の安全策 — 書き込みは毎回ネイティブ承認、対象ファイルは変更ファイルと失敗出力内のパスだけ、`.env`・鍵・lockfile・`node_modules`・`target`・`.git` を除外。合格・最大試行・同一失敗・無効案・中止で停止
+- [x] スキルポリシー v2 — `verification.autoFix`（`off` / `manual` / `auto`）と `maxFixAttempts`（1〜3、既定 2）を追加。v1 設定は読み込み時に補完
+- [x] 監査 — `verification_fix` を追加し、修正案の生成・適用・拒否・中止・再検証を記録
+- [x] 日本語品質 — `docs/GLOSSARY.md`、`scripts/check-glossary.mjs`、`npm run glossary`、CI ステップを追加
+- [x] 日本語スキル — 読み取り専用の `japanese-text`（`editor.checkJapanese`）を追加。全角英数字・半角カタカナ・句読点・用語集の表記ゆれを検出
+- [x] テンプレート — `templates/open-vibecoding-ja/` に AGENTS.md、PRD、テストレポート、`.gitattributes` を追加
+- [x] ドキュメント — `docs/OPEN-VIBECODING-JA.md` に提案との対応と対象外を記録。README / API / SKILLS / リリースノートを更新
+
 ### v0.3.9
 
 - [x] スキルの停止 — 新コマンド `skill_cancel { runId? }` を追加し、UI が発行した `runId` で実行中のスキルを停止（`terminal.run` が対象）

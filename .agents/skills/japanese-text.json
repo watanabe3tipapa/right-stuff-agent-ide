@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "japanese-text",
+  "name": "Japanese Text",
+  "description": "日本語の表記ゆれ、全角英数字、半角カタカナ、句読点の位置を用語集に沿って検査する",
+  "version": "0.1.0",
+  "category": "editor",
+  "risk": "read",
+  "actions": [
+    {
+      "id": "editor.checkJapanese",
+      "handler": "editor.checkJapanese",
+      "description": "Markdown / テキストの日本語表記を検査する",
+      "risk": "read",
+      "params": {
+        "path": {
+          "type": "string",
+          "description": "ワークスペースからの相対パス (.md / .mdx / .txt)",
+          "required": true,
+          "maxLength": 1024
+        }
+      },
+      "timeoutMs": 10000
+    }
+  ],
+  "permissions": {
+    "paths": {
+      "read": ["**/*"],
+      "write": []
+    }
+  },
+  "verification": {
+    "mode": "none"
+  },
+  "limits": {
+    "maxFiles": 1,
+    "maxBytes": 1048576
+  }
+}

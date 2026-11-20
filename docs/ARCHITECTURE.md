@@ -226,7 +226,9 @@ v0.4.0 では、失敗した検証から修正案を作る自動修正ループ�
 `src/lib/autofix.ts` が変更ファイルと失敗出力だけを文脈にし、
 `src/components/AutoFixCard.tsx` が修正案の生成・差分確認・適用・再検証を進める。
 生成できる手順は `editor.replaceText` に限定し、適用は `skill_run` を通るため
-ネイティブ承認を省略できない。
+ネイティブ承認を省略できない。同じ版で、読み取り専用の `japanese-text`
+（`editor.checkJapanese`、`src-tauri/src/skills/japanese.rs`）と用語集
+（`docs/GLOSSARY.md`、`scripts/check-glossary.mjs`）を追加した。
 
 スキーマ、承認フロー、パス・コマンドの制限、監査項目、API、テスト計画は
 [SKILLS.md](./SKILLS.md) を参照。機械可読スキーマは
@@ -372,12 +374,14 @@ src/
 └── stores/{workspace,editor,agent,git,lsp,dap}Store.ts
 src-tauri/src/
 ├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,lsp,dap,skills,report,settings,app}.rs
-├── skills/{mod,editor,git,terminal,debug,exec,params,policy,verify}.rs
+├── skills/{mod,editor,git,japanese,terminal,debug,exec,params,policy,verify}.rs
 ├── db.rs
 ├── error.rs
 ├── paths.rs
 ├── rpc.rs
 └── state.rs
+scripts/check-glossary.mjs            # 用語集チェック
+templates/open-vibecoding-ja/         # 静的テンプレート
 ```
 
 ## 今後の分割

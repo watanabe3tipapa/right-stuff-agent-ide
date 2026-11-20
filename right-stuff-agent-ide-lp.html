@@ -964,7 +964,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   <span class="item">Early Access</span>
   <span class="item">macOS 11+</span>
   <span class="item">MIT</span>
-  <span class="item right">最新リリース <strong>v0.3.9</strong></span>
+  <span class="item right">最新リリース <strong>v0.4.0</strong></span>
 </div>
 
 <nav>
@@ -991,7 +991,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   </p>
   <div class="cta-group">
     <a href="/app/" class="cta-btn cta-primary">ブラウザで試す</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">DMG をダウンロード <small>v0.3.9</small></a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">DMG をダウンロード <small>v0.4.0</small></a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">GitHub</a>
   </div>
   <p class="honest-note">
@@ -1089,7 +1089,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
       <h3>確かめる</h3>
       <p>変更後は typecheck / lint / test を実行し、必要なら実機の画面をアクセシビリティツリーで読み取ります。結果は監査ログと HTML レポートに残ります。</p>
       <ul>
-        <li>検証ループと実行の停止</li>
+        <li>検証ループ・検証の自動修正・実行の停止</li>
         <li>Agent Desktop による実機の確認・操作</li>
         <li>自己完結 HTML レポート</li>
       </ul>
@@ -1222,8 +1222,13 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
     </article>
     <article class="feature-card">
       <span class="tag">VERIFY</span>
-      <h3>変更後に検証する</h3>
-      <p>package.json や Cargo.toml から typecheck / lint / test を解決して実行し、結果を Skills タブに表示します。実行中の停止にも対応しています。</p>
+      <h3>変更後に検証し、失敗を直す</h3>
+      <p>package.json や Cargo.toml から typecheck / lint / test を解決して実行し、結果を Skills タブに表示します。失敗したときは変更ファイルと失敗出力だけから <code>editor.replaceText</code> の修正案を作り、承認後に再検証します。実行中の停止にも対応しています。</p>
+    </article>
+    <article class="feature-card">
+      <span class="tag">JAPANESE</span>
+      <h3>日本語の表記をそろえる</h3>
+      <p>用語集と CI の表記チェック、読み取り専用の <code>japanese-text</code> スキル（全角英数字・半角カタカナ・句読点・表記ゆれ）を同梱します。日本語のテンプレートも静的ファイルとして用意しています。</p>
     </article>
     <article class="feature-card">
       <span class="tag">IDE</span>
@@ -1321,7 +1326,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
     <span class="flow-arrow">→</span>
     <div class="flow-step auto"><b>実行する</b><span>変更操作は都度ネイティブ承認</span></div>
     <span class="flow-arrow">→</span>
-    <div class="flow-step auto"><b>検証する</b><span>typecheck / lint / test</span></div>
+    <div class="flow-step auto"><b>検証する</b><span>失敗時は修正案 → 承認 → 再検証</span></div>
     <span class="flow-arrow">→</span>
     <div class="flow-step record"><b>記録する</b><span>監査ログ / HTML レポート</span></div>
   </div>
@@ -1437,8 +1442,8 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
     </article>
     <article class="usecase-card">
       <span class="tag">EDIT &amp; VERIFY</span>
-      <h3>編集 → 検証 → レポート</h3>
-      <p>エディタで修正し、Skills タブの検証ループを通してから、結果を HTML レポートに保存します。何を変えて、何を確認したかを 1 枚に残せます。</p>
+      <h3>編集 → 検証 → 自動修正 → レポート</h3>
+      <p>エディタで修正し、Skills タブの検証ループを通します。失敗したら修正案を承認して再検証し、結果を HTML レポートに保存します。何を変えて、何を確認したかを 1 枚に残せます。</p>
     </article>
     <article class="usecase-card">
       <span class="tag">SHIP</span>
@@ -1467,7 +1472,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
       <h3>DMG を入れる</h3>
       <p>GitHub Releases から Apple Silicon / Intel の DMG を入手します。未署名のため、初回は右クリック →「開く」で起動してください。対応 OS は macOS 11 以降です。</p>
       <pre><span class="prompt">→</span> releases/latest
-<span class="comment"># v0.3.9 / aarch64 または x64</span></pre>
+<span class="comment"># v0.4.0 / aarch64 または x64</span></pre>
     </article>
     <article class="start-card">
       <div class="num">STEP 03</div>

@@ -915,6 +915,17 @@ interface EditorStateUpdate {
       </p>
     </div>
     <div class="phase-item done">
+      <div class="phase-title">追加: 検証の自動修正 / 日本語品質 (v0.4.0)</div>
+      <div class="phase-meta">修正ループ / 日本語スキル / 用語集 / テンプレート</div>
+      <p>
+        検証に失敗したとき、変更ファイルと失敗出力だけを LLM に渡し、
+        <code>editor.replaceText</code> に限定した修正案を作る。適用は <code>skill_run</code> を通して毎回承認し、
+        合格・最大試行・同一失敗・中止で停止する。既定は <code>manual</code>、Autonomous では <code>auto</code> も選べる。
+        同じ版で、読み取り専用の <code>japanese-text</code> スキル、用語集と CI チェック、
+        日本語テンプレートを追加した。ワンクリック導入は v0.5.0 に回す。
+      </p>
+    </div>
+    <div class="phase-item done">
       <div class="phase-title">追加: スキルライブラリ (v0.3.4)</div>
       <div class="phase-meta">人間向けカタログ / ショーケース別窓 / マニフェスト書き出し</div>
       <p>
@@ -1231,7 +1242,7 @@ settings_get / settings_set</code></pre>
 </main>
 
 <footer>
-  <p>Right-Stuff Agent IDE — 実装設計書 v1.4（v0.3.9 反映）</p>
+  <p>Right-Stuff Agent IDE — 実装設計書 v1.5（v0.4.0 反映）</p>
   <p style="font-size:0.75rem; margin-top:0.5em;">
     Based on Right-Stuff Editor (MIT) and Agent Desktop by Vercel Labs
   </p>

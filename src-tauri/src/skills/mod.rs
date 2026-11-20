@@ -2,6 +2,7 @@ pub mod debug;
 pub mod editor;
 pub mod exec;
 pub mod git;
+pub mod japanese;
 pub mod params;
 pub mod policy;
 pub mod terminal;
@@ -27,6 +28,7 @@ pub const IMPLEMENTED_HANDLERS: &[&str] = &[
     "editor.readFile",
     "editor.replaceText",
     "editor.createFile",
+    "editor.checkJapanese",
     "git.status",
     "git.diff",
     "git.branches",

@@ -129,6 +129,37 @@ const codeEdit = buildManifest({
   },
 });
 
+const japaneseText = buildManifest({
+  id: "japanese-text",
+  name: "Japanese Text",
+  description:
+    "日本語の表記ゆれ、全角英数字、半角カタカナ、句読点の位置を用語集に沿って検査する",
+  version: "0.1.0",
+  category: "editor",
+  risk: "read",
+  actions: [
+    {
+      id: "editor.checkJapanese",
+      handler: "editor.checkJapanese",
+      description: "Markdown / テキストの日本語表記を検査する",
+      risk: "read",
+      params: { path: pathParam },
+      timeoutMs: 10_000,
+    },
+  ],
+  permissions: {
+    paths: { read: ["**/*"], write: [] },
+    commands: [],
+    env: [],
+  },
+  verification: {
+    mode: "none",
+    checks: [],
+    timeoutMs: 60_000,
+    stopOnFailure: true,
+  },
+});
+
 const docWriter = buildManifest({
   id: "doc-writer",
   name: "Doc Writer",
@@ -577,6 +608,32 @@ export const SKILL_LIBRARY: SkillLibraryEntry[] = [
       },
     ],
     manifest: codeEdit,
+  },
+  {
+    id: "japanese-text",
+    name: "Japanese Text",
+    tagline: "日本語の表記を、静かに整える",
+    description:
+      "Markdown とテキストの日本語表記を読み取り専用で検査します。全角英数字、半角カタカナ、行頭の閉じ括弧、行末の開き括弧、句読点の連続、用語集の表記ゆれを指摘し、コードブロックと frontmatter は対象外にします。",
+    category: "editor",
+    status: "ready",
+    tags: ["日本語", "表記ゆれ", "用語集", "読み取り専用"],
+    useCases: [
+      "ドキュメントの表記ゆれを公開前に確認する",
+      "用語集に沿ってサーバー / ユーザー表記を揃える",
+      "行頭・行末に落ちた句読点や括弧を見つける",
+    ],
+    examples: [
+      {
+        title: "README を検査",
+        prompt: "README.md の日本語表記をチェックして",
+      },
+      {
+        title: "リリースノートを検査",
+        prompt: "docs/releases/v0.4.0.md の表記ゆれを確認して",
+      },
+    ],
+    manifest: japaneseText,
   },
   {
     id: "doc-writer",

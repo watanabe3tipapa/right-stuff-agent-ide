@@ -873,6 +873,10 @@ fn execute_handler(
                 ..HandlerOutcome::default()
             })
         }
+        "editor.checkJapanese" => {
+            let path = params::string_param(params, "path")?;
+            skills::japanese::check(root, path, manifest.limits.max_bytes)
+        }
         handler if handler.starts_with("git.") => skills::git::run(root, handler, params),
         handler if handler.starts_with("terminal.") => {
             skills::terminal::run(root, handler, params, manifest, ctx.cancel)
@@ -913,6 +917,11 @@ fn preview_for(
             Ok(Some(editor::preview_create(
                 root, path, content, max_bytes,
             )?))
+        }
+        "editor.checkJapanese" => {
+            let path = params::string_param(params, "path")?;
+            let _ = skills::japanese::check(root, path, max_bytes)?;
+            Ok(None)
         }
         handler if handler.starts_with("git.") => {
             let _ = params;

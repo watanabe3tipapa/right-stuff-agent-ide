@@ -12,7 +12,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the w
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml/badge.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-v0.3.9-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
+[![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases)
 [![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)](https://tauri.app/)
 [![Status](https://img.shields.io/badge/status-Early%20Access-orange.svg)](https://github.com/watanabe3tipapa/right-stuff-agent-ide)
@@ -23,10 +23,10 @@ right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the w
 
 ## Download
 
-v0.3.9 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.4.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
-- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.3.9_aarch64.dmg`
-- Intel (x86_64): `Right-Stuff.Agent.IDE_0.3.9_x64.dmg`
+- Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.4.0_aarch64.dmg`
+- Intel (x86_64): `Right-Stuff.Agent.IDE_0.4.0_x64.dmg`
 
 The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Windows or Linux builds are provided.
 
@@ -40,7 +40,7 @@ The app supports **macOS 11 or later (Apple Silicon and Intel) only**. No Window
 
 Editors and agents have traditionally lived in separate windows. To hand a written spec to an agent and verify what it did, you had to switch back and forth repeatedly. The Agent IDE removes that boundary and puts **your workspace and the agent's action log on the same screen**.
 
-Workspace management, the Monaco editor, SQLite version history, the Agent Desktop bridge, LLM chat and planning, the Git panel, the integrated terminal, LSP, and DAP are implemented. Skill execution now covers the editor, Git, the terminal, and debugging, with a verification loop after writes, an auto-fix loop for failed verification, and a self-contained HTML report that summarizes each run.
+Workspace management, the Monaco editor, SQLite version history, the Agent Desktop bridge, LLM chat and planning, the Git panel, the integrated terminal, LSP, and DAP are implemented. Skill execution now covers the editor, Git, the terminal, and debugging, with a verification loop after writes, an auto-fix loop for failed verification, Japanese text checks, and a self-contained HTML report that summarizes each run.
 
 | Experience | What right-stuff-agent-ide provides |
 |---|---|
@@ -84,11 +84,12 @@ Workspace management, the Monaco editor, SQLite version history, the Agent Deskt
 - **Command palette** — `⌘K` / `⌘⇧P` to search and run workspace, editor, agent, Git, and terminal commands. `⌘P` opens Quick Open and `⌘J` toggles the terminal
 - **Native dialogs** — confirmations and text input use in-app modals instead of blocking browser dialogs
 - **Browser demo** — run the demo workspace with `npm run dev` without Tauri. Edits, history, and skill policies are saved in the browser's localStorage and can be cleared with the "初期状態に戻す" (Reset demo) button. On Vercel it lets you try the UI without installing the app
-- **Skill execution** — v1 manifests in `.agents/skills/*.json` are loaded and validated, and `editor.readFile` / `replaceText` / `createFile` run with policy and approval (from the Skills tab in the agent panel and the Skills tab in settings)
+- **Skill execution** — v1 manifests in `.agents/skills/*.json` are loaded and validated, and `editor.readFile` / `replaceText` / `createFile` / `checkJapanese` run with policy and approval (from the Skills tab in the agent panel and the Skills tab in settings)
 - **Git skills ** — `git.status` / `diff` / `branches` / `stage` / `stageAll` / `commit` run through fixed handlers. Reads need no approval; writes pass through the native approval dialog and are recorded in the local audit log
 - **Terminal skill ** — `terminal.run` executes npm / pnpm / yarn / cargo / node / python3 / pytest / make as `program + args`, never as a shell string, with an isolated process group, timeout, and output cap
 - **Cancellation** — stop a running terminal skill or verification check from the Skills tab, or stop a running skill step from the Plan tab. Cancellation is delivered per `runId` to the process group and recorded as `cancelled` in the audit log
 - **Verification auto-fix** — when verification fails, send only the changed files and failure output to the configured LLM and propose `editor.replaceText` steps. Every write still goes through native approval; the loop stops on a pass, the attempt limit, a repeated failure signature, an invalid proposal, or cancellation. The default is manual, with automatic execution available in Autonomous mode
+- **Japanese quality** — a glossary (`docs/GLOSSARY.md`) checked by `npm run glossary` in CI, a read-only `japanese-text` skill for full-width alphanumerics, half-width katakana, punctuation, and glossary variants, plus static Japanese templates
 - **Debug skills ** — `debug.start` / `stop` / `continue` / `next` / `stepIn` / `pause` / `setBreakpoint` / `evaluate` drive DAP request/response and share the Debug tab session. `debug.start` performs the initialize → launch → initialized → configurationDone handshake
 - **HTML reports ** — turn a skill run into a self-contained HTML report with an inline SVG approval → run → verify → result flow, light/dark themes, parameters, changed files, and verification output. Preview it in the app or save it under `.agents/reports/`; no CDN or telemetry
 - **Theme** — dark theme, overlay title bar, native macOS window
@@ -272,7 +273,7 @@ Apps launched from Finder see a limited `PATH`, so detection also checks `/opt/h
 ## Distribution
 
 - The app itself is not distributed over the web
-- v0.3.9 is available both as a DMG on GitHub Releases and as a build from source
+- v0.4.0 is available both as a DMG on GitHub Releases and as a build from source
 - The DMGs are not signed with an Apple Developer ID and are not notarized (arm64 is ad-hoc signed; x64 is unsigned). Signing and notarization are deferred; releases stay in this state for now
 - Supports macOS 11 or later (Apple Silicon and Intel) only. No Windows or Linux builds are provided
 
@@ -397,11 +398,13 @@ DEV-MEMO.md                         # Release history and development steps
 4. [skills.schema.json](./docs/skills.schema.json) — JSON Schema for skill manifest v1
 5. [API.md](./docs/API.md) — Tauri commands and types
 6. [docs/SECURITY.md](./docs/SECURITY.md) — path validation, agent permissions, stored data
-7. [Implementation plan (JA)](./right-stuff-agent-ide-implementation-plan.html) — overall design and roadmap
-8. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
-9. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
-10. [README (Japanese)](./README.md) — 日本語の概要
-11. [DEV-MEMO.md (JA)](./DEV-MEMO.md) — release history, development commands, release steps, design notes
+7. [GLOSSARY.md (JA)](./docs/GLOSSARY.md) — Japanese terminology and the CI check
+8. [OPEN-VIBECODING-JA.md (JA)](./docs/OPEN-VIBECODING-JA.md) — mapping to the Japanese localization proposal
+9. [Implementation plan (JA)](./right-stuff-agent-ide-implementation-plan.html) — overall design and roadmap
+10. [Openship architecture diagram](./docs/diagrams/openship-local-first.html) — local-first deployment path (interactive)
+11. [Landing page (JA)](./right-stuff-agent-ide-lp.html) — product overview (static mock)
+12. [README (Japanese)](./README.md) — 日本語の概要
+13. [DEV-MEMO.md (JA)](./DEV-MEMO.md) — release history, development commands, release steps, design notes
 
 ## License
 

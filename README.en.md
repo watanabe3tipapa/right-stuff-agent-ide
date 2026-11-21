@@ -8,6 +8,8 @@ right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the w
 
 > **Status:** This is a personal **hobby project (Early Access)**, not a commercial product. There is no commercial support or SLA. The Tauri 2.0 native app is the main development target and is available as a DMG on GitHub Releases. The landing page and browser demo on Vercel are for trying the UI without installing the app.
 
+> **The repository is private.** GitHub access is required to view the source, Releases, DMGs, and Issues. The landing page and browser demo are public.
+
 > **Files stay local. Actions stay visible.** Drafts remain in the folder you choose, and every command an agent runs is shown with its output in the UI. No accounts, telemetry, or cloud sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -23,7 +25,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the w
 
 ## Download
 
-v0.4.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
+v0.4.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. The repository and Releases are private, so GitHub access is required to obtain the DMG or the source. See "Install and build" for build instructions.
 
 - Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.4.0_aarch64.dmg`
 - Intel (x86_64): `Right-Stuff.Agent.IDE_0.4.0_x64.dmg`
@@ -300,6 +302,18 @@ vercel --prod          # Deploy to production
 ```
 
 `vercel.json` defines the build command and output directory. The demo runs in the browser, and edits, history, and skill policies are saved in that browser's localStorage. Nothing is sent to a server.
+
+### PWA (browser demo)
+
+The browser demo can be installed as a PWA. Vite copies `public/manifest.webmanifest`, `public/sw.js`, `public/offline.html`, and `public/icons/` under `/app/`, and `src/main.tsx` registers the service worker only in a production build outside Tauri.
+
+| Target | Strategy |
+|---|---|
+| Navigations (`/app/`) | Network-first, caching successful responses and falling back to the cache, then the offline page |
+| Hashed assets, icons, manifest | Cache-first after the first fetch |
+| Updates | A new service worker waits until existing tabs close. Cache names are versioned and old caches are deleted on activate |
+
+The Tauri build loads from a custom protocol and does not register a service worker. Offline support covers only the static assets of a browser demo that has already been loaded. LLM, Git, terminal, and OS control remain Tauri-only.
 
 ## Known limitations
 

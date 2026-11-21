@@ -277,6 +277,18 @@ nav {
   line-height: 1.7;
 }
 .hero .honest-note strong { color: var(--accent3); font-weight: 600; }
+.hero .private-note {
+  max-width: 64ch;
+  margin: 0.35em auto 0;
+  padding: 0.55em 0.85em;
+  border: 1px solid color-mix(in oklab, var(--accent3) 35%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--accent3) 5%, transparent);
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  line-height: 1.7;
+}
+.hero .private-note strong { color: var(--accent3); font-weight: 600; }
 
 /* Hero screenshot */
 .window {
@@ -977,7 +989,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
       <li><a href="#safety">安全性</a></li>
       <li><a href="#start">はじめ方</a></li>
       <li><a href="#faq">FAQ</a></li>
-      <li><a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" target="_blank" rel="noreferrer">GitHub</a></li>
+      <li><a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" target="_blank" rel="noreferrer">GitHub（非公開）</a></li>
     </ul>
     <a href="/app/" class="nav-cta">ブラウザで試す</a>
   </div>
@@ -991,9 +1003,12 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   </p>
   <div class="cta-group">
     <a href="/app/" class="cta-btn cta-primary">ブラウザで試す</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">DMG をダウンロード <small>v0.4.0</small></a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">GitHub</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">DMG をダウンロード <small>v0.4.0 / 関係者向け</small></a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">GitHub（非公開）</a>
   </div>
+  <p class="private-note">
+    <strong>リポジトリと Releases は非公開です。</strong>DMG の入手には GitHub のアクセス権が必要です。ブラウザデモとこのページは、どなたでも利用できます。
+  </p>
   <p class="honest-note">
     完成品ではありません。<strong>足りないところは自分で直しながら育てています。</strong>
     ブラウザデモの変更はこのブラウザに保存されます。LLM・Git・ターミナル・OS 操作は Tauri 版のみです。
@@ -1036,7 +1051,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
         これは、自分がコードを書き、エージェントに作業を任せ、その結果を実機で確かめるために作っている macOS アプリです。エディタとエージェントが別々の画面にあると、書いた仕様を渡し、実行結果を確認し、また戻って直す。その往復が増えていきます。このアプリは、その往復を同じワークスペースにまとめる試みです。
       </p>
       <p>
-        商用製品のようなサポートや完成度はありません。テストが足りないところも、設計を変えたいところもあります。それでも、<strong>自分自身にとって使い勝手がよいこと</strong>を優先して、少しずつ直しています。合わないところはフォークして、自分の道具にしてください。
+        商用製品のようなサポートや完成度はありません。テストが足りないところも、設計を変えたいところもあります。それでも、<strong>自分自身にとって使い勝手がよいこと</strong>を優先して、少しずつ直しています。アクセス権がある場合はフォークして、自分の道具にしてください。
       </p>
       <blockquote>
         <p>これは製品ではなく、自分が使うための道具です。ブラウザとアプリを行き来し、ボタンを押し、ログを確認する。その往復をなくしたくて作りました。</p>
@@ -1050,7 +1065,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
         <li><strong>DMG は Apple Developer ID の署名・公証を受けていません。</strong>初回起動時に警告が出た場合は、右クリック →「開く」で起動してください。</li>
         <li><strong>LLM は OpenAI 互換 API のみ。</strong>Anthropic 固有 API は未対応です。API キーは OS キーチェーンに保存します。</li>
         <li><strong>Agent Desktop は別途インストール。</strong>OS 操作を使う場合だけ必要です。同梱していません。</li>
-        <li><strong>自動更新はありません。</strong>新しい版は GitHub Releases から手動で入手してください。</li>
+        <li><strong>自動更新はありません。</strong>新しい版は、非公開の GitHub Releases からアクセス権を持つ方が手動で入手してください。</li>
         <li><strong>共同編集・クラウド同期はありません。</strong>その代わり、原稿と履歴は端末内に残ります。</li>
       </ul>
     </aside>
@@ -1373,7 +1388,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
       <h3>配布物について</h3>
       <p>DMG は Apple Developer ID の署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。初回起動時に Gatekeeper の警告が出た場合は、アプリを右クリック →「開く」を選択してください。</p>
       <p>Intel x64 版（v0.3.9）は、Intel Core i7 / macOS 15.8.4 の実機で SHA-256 を照合し、DMG からの起動を確認しています。署名・公証は先送りにしています。</p>
-      <p>自動更新はありません。新しい版は GitHub Releases から手動で入手してください。</p>
+      <p>自動更新はありません。新しい版は、アクセス権を持つ方が非公開の GitHub Releases から手動で入手してください。</p>
     </div>
   </div>
 
@@ -1463,14 +1478,14 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
     <article class="start-card">
       <div class="num">STEP 01</div>
       <h3>ブラウザで触る</h3>
-      <p>インストール不要です。デモ用のワークスペースが開き、編集内容はこのブラウザの localStorage に保存されます。「初期状態に戻す」ボタンでいつでもリセットできます。</p>
+      <p>インストール不要です。デモ用のワークスペースが開き、編集内容はこのブラウザの localStorage に保存されます。「初期状態に戻す」ボタンでいつでもリセットできます。PWA 対応のブラウザなら、ホーム画面や Dock にインストールしてオフラインでも起動できます。</p>
       <pre><span class="prompt">→</span> /app/ を開く
 <span class="comment"># LLM・Git・ターミナル・OS 操作は動きません</span></pre>
     </article>
     <article class="start-card">
       <div class="num">STEP 02</div>
       <h3>DMG を入れる</h3>
-      <p>GitHub Releases から Apple Silicon / Intel の DMG を入手します。未署名のため、初回は右クリック →「開く」で起動してください。対応 OS は macOS 11 以降です。</p>
+      <p>非公開の GitHub Releases から Apple Silicon / Intel の DMG を入手します（GitHub のアクセス権が必要です）。未署名のため、初回は右クリック →「開く」で起動してください。対応 OS は macOS 11 以降です。</p>
       <pre><span class="prompt">→</span> releases/latest
 <span class="comment"># v0.4.0 / aarch64 または x64</span></pre>
     </article>
@@ -1575,7 +1590,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
 <span class="prompt">$</span> npm run lint        <span class="comment"># ESLint</span>
 <span class="prompt">$</span> npm test            <span class="comment"># Vitest</span>
 <span class="prompt">$</span> npm run tauri build <span class="comment"># .app / .dmg</span></pre>
-      <p style="margin-top:0.7em;">ライセンスは MIT です。Issue と Pull Request は GitHub で受け付けています。脆弱性は公開 Issue ではなく <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/SECURITY.md" target="_blank" rel="noreferrer">SECURITY.md</a> の非公開フォームから報告してください。</p>
+      <p style="margin-top:0.7em;">ソースは非公開リポジトリで管理しており、ライセンスは MIT です。Issue と Pull Request はアクセス権を持つメンバー向けに GitHub で受け付けています。脆弱性は公開 Issue ではなく <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/SECURITY.md" target="_blank" rel="noreferrer">SECURITY.md</a> の非公開フォームから報告してください。</p>
     </div>
   </details>
 </section>
@@ -1596,7 +1611,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   <details class="faq-item">
     <summary>Cursor や他の AI エディタと何が違いますか？</summary>
     <div class="faq-answer">
-      <p>コード編集の支援だけではなく、macOS の実機アプリをアクセシビリティツリー経由で確認・操作する点に重きを置いています。操作は許可リストと承認を通り、結果はローカルの監査ログと HTML レポートに残ります。MIT なので、自分のワークフローに合わせてフォークできます。一方で、完成度・サポート・対応 OS では及びません。</p>
+      <p>コード編集の支援だけではなく、macOS の実機アプリをアクセシビリティツリー経由で確認・操作する点に重きを置いています。操作は許可リストと承認を通り、結果はローカルの監査ログと HTML レポートに残ります。MIT ライセンスで、アクセス権があれば自分のワークフローに合わせてフォークできます。一方で、完成度・サポート・対応 OS では及びません。</p>
     </div>
   </details>
 
@@ -1645,18 +1660,18 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   <details class="faq-item">
     <summary>不具合や要望はどこに送ればいいですか？</summary>
     <div class="faq-answer">
-      <p><a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues" target="_blank" rel="noreferrer">GitHub Issues</a> へお願いします。脆弱性は公開 Issue ではなく、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/SECURITY.md" target="_blank" rel="noreferrer">SECURITY.md</a> の非公開フォームから報告してください。個人開発のため、返信や修正には時間がかかることがあります。</p>
+      <p>アクセス権を持つ方は<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues" target="_blank" rel="noreferrer">GitHub Issues</a> へお願いします。脆弱性は公開 Issue ではなく、<a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/SECURITY.md" target="_blank" rel="noreferrer">SECURITY.md</a> の非公開フォームから報告してください。個人開発のため、返信や修正には時間がかかることがあります。</p>
     </div>
   </details>
 </section>
 
 <div class="footer-cta">
   <h2>まずは、触ってみてください。</h2>
-  <p>ブラウザデモはインストール不要です。変更はこのブラウザに保存され、いつでも初期状態に戻せます。合わなければ、ソースをフォークして自分の道具にしてください。</p>
+  <p>ブラウザデモはインストール不要です。変更はこのブラウザに保存され、いつでも初期状態に戻せます。アプリ本体のソースは非公開ですが、アクセス権があればフォークして自分の道具にできます。</p>
   <div class="cta-group" style="margin:0;">
     <a href="/app/" class="cta-btn cta-primary">ブラウザで試す</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">GitHub を見る</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">DMG をダウンロード</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">GitHub を見る（非公開）</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">DMG をダウンロード（関係者向け）</a>
   </div>
 </div>
 
@@ -1664,7 +1679,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
 
 <footer>
   <div class="footer-links">
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" target="_blank" rel="noreferrer">GitHub</a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" target="_blank" rel="noreferrer">GitHub（非公開）</a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases" target="_blank" rel="noreferrer">Releases</a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues" target="_blank" rel="noreferrer">Issues</a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/main/README.md" target="_blank" rel="noreferrer">README</a>
@@ -1672,7 +1687,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
     <a href="https://github.com/vercel-labs/agent-desktop" target="_blank" rel="noreferrer">Agent Desktop</a>
   </div>
   <p>Right-Stuff Agent IDE — Hobby project — MIT License</p>
-  <p class="fine">Built with Tauri, React, and Agent Desktop. Not affiliated with Vercel. 最終更新: 2026-11-19</p>
+  <p class="fine">GitHub のリポジトリ・Releases・Issues・README は非公開です。閲覧にはアクセス権が必要です。Built with Tauri, React, and Agent Desktop. Not affiliated with Vercel. 最終更新: 2026-11-20</p>
 </footer>
 
 </body>

@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "build:vercel": "node scripts/build-vercel.mjs",
     "screenshots": "node scripts/capture-screenshots.mjs",
+    "icons": "node scripts/build-pwa-icons.mjs",
     "preview": "vite preview",
     "tauri": "tauri",
     "typecheck": "tsc --noEmit",

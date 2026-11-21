@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d1117" />
+    <title>オフライン — Right-Stuff Agent IDE</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0d1117;
+        --surface: #161b22;
+        --line: #30363d;
+        --ink: #e6edf3;
+        --muted: #8b949e;
+        --accent: #58a6ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(circle at 20% 0%, #1f6feb22, transparent 45%), var(--bg);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+      }
+      main {
+        width: min(100%, 460px);
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--surface);
+      }
+      img { width: 48px; height: 48px; border-radius: 12px; }
+      h1 { margin: 18px 0 8px; font-size: 1.35rem; }
+      p { margin: 0; color: var(--muted); line-height: 1.8; }
+      a {
+        display: inline-flex;
+        margin-top: 20px;
+        padding: 10px 16px;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #06121f;
+        font-weight: 700;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="icons/icon-192.png" alt="" width="48" height="48" />
+      <h1>オフラインです</h1>
+      <p>
+        ネットワークに接続できませんでした。ブラウザデモの初回読み込みには接続が必要です。
+        一度読み込んだあとは、このページからアプリを開き直せます。
+      </p>
+      <a href="./">アプリを開く</a>
+    </main>
+  </body>
+</html>

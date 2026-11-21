@@ -35,6 +35,31 @@
 - `verification.maxFixAttempts`（1〜3、既定 2）を追加
 - ポリシーのバージョンを 2 に更新。v1 の設定は読み込み時に既定値を補完
 
+### ブラウザデモの PWA 対応
+
+- `/app/` のブラウザデモを PWA としてインストール可能に
+- `manifest.webmanifest`、192 / 512 / maskable アイコン、Apple Touch Icon を追加
+- service worker を追加。ナビゲーションは network-first、ハッシュ付きアセットは
+  cache-first。オフライン時は `offline.html` を表示
+- service worker は本番ビルドかつ Tauri 外のときだけ登録。Tauri 版の動作は変わりません
+
+### 非公開リポジトリの案内
+
+- リポジトリ、Releases、DMG、Issue は非公開のままです
+- LP、README、このリリースノートで、DMG の入手に GitHub のアクセス権が
+  必要であることを明記
+- 公開している LP とブラウザデモは、どなたでも利用できます
+
+## ダウンロード
+
+| プラットフォーム | ファイル | サイズ | SHA-256 |
+|---|---|---|---|
+| Apple Silicon (arm64) | `Right-Stuff.Agent.IDE_0.4.0_aarch64.dmg` | 8.9 MiB (9,335,924 bytes) | `db28ce5cad8990baffe2832e14fc9bef269fb2bc2eaff11e0108b344d9f4ac7e` |
+| Intel (x86_64) | `Right-Stuff.Agent.IDE_0.4.0_x64.dmg` | 9.4 MiB (9,897,466 bytes) | `38e3409b066ae47880b4f534bc7eb717045ecbc6bd935e4f631b51f2c4988eca` |
+
+DMG は Developer ID 署名・公証を受けていません（arm64 は ad-hoc 署名、x64 は未署名）。
+初回起動時に Gatekeeper の警告が出た場合は、右クリック →「開く」で起動してください。
+
 ## アップグレード
 
 - 既存のスキルポリシーは自動で v2 に移行します。`autoFix` は `manual`、

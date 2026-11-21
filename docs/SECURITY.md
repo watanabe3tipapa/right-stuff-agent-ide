@@ -154,6 +154,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - Tauri は本番用 `csp` と開発用 `devCsp` を分けて設定する。本番は `default-src 'self'` を基底とし、Monaco の worker 用に `worker-src 'self' blob:`、Google Fonts 用に `font-src`、Tauri IPC 用に `connect-src ipc: http://ipc.localhost` を許可する。
 - Vercel は `Content-Security-Policy`, `X-Frame-Options: DENY`, `Permissions-Policy`, `X-Content-Type-Options`, `Referrer-Policy` を全レスポンスへ付与する。
 - `frame-ancestors 'none'` と `X-Frame-Options: DENY` でクリックジャッキングを防ぐ。
+- ブラウザデモの service worker は同一オリジンの GET だけをキャッシュし、外部オリジンへは介入しない。Tauri 版では登録しない。オフラインキャッシュの対象は静的アセットと `/app/` のナビゲーションだけで、ワークスペースや API キーは含まない。
 
 ## スナップショットとプライバシー
 

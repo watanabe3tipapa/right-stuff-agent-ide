@@ -46,6 +46,16 @@
 
 Monaco の worker（editor / json / css / html / typescript）は Vite の `?worker` import で個別アセットになり、編集中の言語に応じて読み込まれる。これにより初期バンドルは数百 kB 程度に収まり、数 MB の Monaco 本体と言語 worker は必要になるまで転送されない。
 
+## PWA（ブラウザデモ）
+
+ブラウザデモは Vercel の `/app/` 配下で PWA として動作する。Tauri 版はカスタムプロトコルから読み込むため対象外とする。
+
+- `public/manifest.webmanifest` が名前、テーマ色、standalone 表示、192 / 512 / maskable アイコンを定義する。
+- `public/sw.js` は同一オリジンの GET だけを扱う。`/app/` のナビゲーションは network-first、ハッシュ付きアセットは cache-first とし、オフライン時は `public/offline.html` を返す。
+- `src/main.tsx` は `import.meta.env.PROD` かつ Tauri 外のときだけ service worker を登録する。開発サーバーと Tauri 版では登録しない。
+- キャッシュ名はアプリのバージョンを含み、activate 時に同じ接頭辞の古いキャッシュを削除する。新しい service worker は既存タブを閉じるまで待機する。
+- `vercel.json` は `sw.js` を `no-cache`、manifest を 1 時間、ハッシュ付きアセットを immutable で配信する。
+
 ## ウィンドウ配置
 
 メインウィンドウは `tauri.conf.json` の `center: true` でプライマリモニタの作業領域中央に開く。続いて Tauri の `setup` で `outer_position` / `outer_size` と、接続中モニタの `work_area` を比較する（`src-tauri/src/window_state.rs`）。タイトルバーが画面外に出ている場合は、プライマリモニタの作業領域中央へ移動する。macOS が切断済みディスプレイのフレームを復元しても、操作不能な位置にウィンドウが残らない。

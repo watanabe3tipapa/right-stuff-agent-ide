@@ -8,6 +8,8 @@ right-stuff-agent-ide は、エージェントとワークスペースを同じ�
 
 > **位置付け:** 個人が自分用に作っている **Hobby project（Early Access）** です。商用サポートや SLA はありません。開発の主力は Tauri 2.0 のネイティブアプリで、GitHub Releases の DMG からインストールできます。Vercel の LP とブラウザデモは、インストールせずに UI を試すためのものです。
 
+> **リポジトリは非公開です。** ソース、Releases、DMG、Issue の閲覧には GitHub のアクセス権が必要です。公開している LP とブラウザデモは、どなたでも利用できます。
+
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -23,7 +25,7 @@ right-stuff-agent-ide は、エージェントとワークスペースを同じ�
 
 ## ダウンロード
 
-v0.4.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.4.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。リポジトリと Releases は非公開のため、DMG とソースの入手には GitHub のアクセス権が必要です。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
 - Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.4.0_aarch64.dmg`
 - Intel (x86_64): `Right-Stuff.Agent.IDE_0.4.0_x64.dmg`
@@ -303,6 +305,18 @@ vercel --prod          # 本番環境へデプロイ
 ```
 
 `vercel.json` がビルドコマンドと出力先を定義しています。デモはブラウザ内で動作し、編集内容・履歴・スキルポリシーはそのブラウザの localStorage に保存されます。サーバーへは送信しません。
+
+### PWA（ブラウザデモ）
+
+ブラウザデモは PWA としてインストールできます。`public/manifest.webmanifest`、`public/sw.js`、`public/offline.html`、`public/icons/` を Vite が `/app/` 配下へコピーし、`src/main.tsx` が本番ビルドかつ Tauri 外のときだけ service worker を登録します。
+
+| 対象 | 戦略 |
+|---|---|
+| ナビゲーション（`/app/`） | network-first。成功時にキャッシュし、失敗時はキャッシュ → オフラインページの順にフォールバック |
+| ハッシュ付きアセット、アイコン、manifest | cache-first。初回取得後にキャッシュ |
+| 更新 | 新しい service worker は待機し、既存タブを閉じた後に有効化。キャッシュ名はバージョン付きで、古いキャッシュは activate 時に削除 |
+
+Tauri 版はカスタムプロトコルから読み込むため、service worker を登録しません。オフラインで使えるのは、一度読み込んだブラウザデモの静的アセットだけです。LLM・Git・ターミナル・OS 操作は Tauri 版のみで、ブラウザデモでは動作しません。
 
 ## 既知の制約
 

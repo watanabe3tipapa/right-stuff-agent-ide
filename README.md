@@ -4,11 +4,11 @@
 
 **書く、任せる、確かめる。エージェントとワークスペースを、ひとつの画面へ。**
 
+![Right-Stuff Agent IDE — AI Agent IDE](./public/social-preview.jpg)
+
 right-stuff-agent-ide は、エージェントとワークスペースを同じ画面に置くために作っている、macOS 専用のデスクトップ IDE です。Tauri 2.0 + React 18 で構築し、[Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) の執筆体験と [Agent Desktop](https://github.com/vercel-labs/agent-desktop) の OS レベル操作を統合しています。
 
 > **位置付け:** 個人が自分用に作っている **Hobby project（Early Access）** です。商用サポートや SLA はありません。開発の主力は Tauri 2.0 のネイティブアプリで、GitHub Releases の DMG からインストールできます。Vercel の LP とブラウザデモは、インストールせずに UI を試すためのものです。
-
-> **リポジトリは非公開です。** ソース、Releases、DMG、Issue の閲覧には GitHub のアクセス権が必要です。公開している LP とブラウザデモは、どなたでも利用できます。
 
 > **ファイルは手元に、操作は見える形で。** 原稿は選んだフォルダのファイルに残り、エージェントが実行したコマンドと結果は UI に表示されます。アカウント登録、テレメトリ、クラウド同期はありません。
 
@@ -25,7 +25,7 @@ right-stuff-agent-ide は、エージェントとワークスペースを同じ�
 
 ## ダウンロード
 
-v0.4.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。リポジトリと Releases は非公開のため、DMG とソースの入手には GitHub のアクセス権が必要です。ソースからビルドする手順は「インストールとビルド」を参照してください。
+v0.4.0 は [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) の DMG（Apple Silicon / Intel）またはソースからのビルドで利用できます。ソースからビルドする手順は「インストールとビルド」を参照してください。
 
 - Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.4.0_aarch64.dmg`
 - Intel (x86_64): `Right-Stuff.Agent.IDE_0.4.0_x64.dmg`

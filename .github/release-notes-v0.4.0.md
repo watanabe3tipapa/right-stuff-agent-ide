@@ -43,12 +43,12 @@
   cache-first。オフライン時は `offline.html` を表示
 - service worker は本番ビルドかつ Tauri 外のときだけ登録。Tauri 版の動作は変わりません
 
-### 非公開リポジトリの案内
+### 公開リポジトリ
 
-- リポジトリ、Releases、DMG、Issue は非公開のままです
-- LP、README、このリリースノートで、DMG の入手に GitHub のアクセス権が
-  必要であることを明記
-- 公開している LP とブラウザデモは、どなたでも利用できます
+- v0.4.0 の公開に合わせて、リポジトリ、Releases、DMG、Issue を公開
+- LP と README からアクセス権の注記を外し、GitHub と Releases へ直接リンク
+- LP とブラウザデモは、どなたでも利用できます
+- GitHub のソーシャルプレビューを README と LP の OGP 画像に採用
 
 ## ダウンロード
 

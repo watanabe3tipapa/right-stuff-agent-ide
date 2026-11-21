@@ -41,7 +41,7 @@ await cp(path.join(root, "public", "screenshots"), path.join(outDir, "screenshot
   recursive: true,
 });
 
-for (const file of ["robots.txt", "sitemap.xml", "404.html", "og-image.png"]) {
+for (const file of ["robots.txt", "sitemap.xml", "404.html", "og-image.png", "social-preview.jpg"]) {
   await cp(path.join(root, "public", file), path.join(outDir, file));
 }
 

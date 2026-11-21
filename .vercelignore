@@ -1,0 +1,11 @@
+.git
+.vercel
+node_modules
+dist
+dist-vercel
+src-tauri/target
+src-tauri/gen
+*.dmg
+.env
+.env.*
+!.env.example

@@ -4,11 +4,11 @@
 
 **Write, delegate, verify. An IDE where agents and your workspace share one screen.**
 
+![Right-Stuff Agent IDE — AI Agent IDE](./public/social-preview.jpg)
+
 right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the workspace on one screen. It is built with Tauri 2.0 and React 18, combining the writing experience of [Right-Stuff Editor](https://github.com/watanabe3tipapa/right-stuff-editor-desktop) with the OS-level control of [Agent Desktop](https://github.com/vercel-labs/agent-desktop).
 
 > **Status:** This is a personal **hobby project (Early Access)**, not a commercial product. There is no commercial support or SLA. The Tauri 2.0 native app is the main development target and is available as a DMG on GitHub Releases. The landing page and browser demo on Vercel are for trying the UI without installing the app.
-
-> **The repository is private.** GitHub access is required to view the source, Releases, DMGs, and Issues. The landing page and browser demo are public.
 
 > **Files stay local. Actions stay visible.** Drafts remain in the folder you choose, and every command an agent runs is shown with its output in the UI. No accounts, telemetry, or cloud sync.
 
@@ -25,7 +25,7 @@ right-stuff-agent-ide is a macOS-only desktop IDE built to keep agents and the w
 
 ## Download
 
-v0.4.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. The repository and Releases are private, so GitHub access is required to obtain the DMG or the source. See "Install and build" for build instructions.
+v0.4.0 is available as a DMG on [GitHub Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) (Apple Silicon and Intel) or as a build from source. See "Install and build" for build instructions.
 
 - Apple Silicon (arm64): `Right-Stuff.Agent.IDE_0.4.0_aarch64.dmg`
 - Intel (x86_64): `Right-Stuff.Agent.IDE_0.4.0_x64.dmg`

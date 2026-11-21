@@ -32,3 +32,4 @@ dist-vercel
 *.db-shm
 .env
 .env.local
+.env*

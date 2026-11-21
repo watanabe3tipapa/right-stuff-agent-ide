@@ -16,7 +16,7 @@
 - [x] テンプレート — `templates/open-vibecoding-ja/` に AGENTS.md、PRD、テストレポート、`.gitattributes` を追加
 - [x] ドキュメント — `docs/OPEN-VIBECODING-JA.md` に提案との対応と対象外を記録。README / API / SKILLS / リリースノートを更新
 - [x] PWA — ブラウザデモに manifest、192 / 512 / maskable アイコン、オフラインページ、service worker を追加。ナビゲーションは network-first、静的アセットは cache-first。Tauri 版では登録しない。Chrome headless で service worker の登録と CacheStorage の生成を確認
-- [x] 非公開リポジトリの案内 — LP / README / リリースノートで、Releases と DMG の入手に GitHub のアクセス権が必要であることを明記
+- [x] 公開リポジトリ — v0.4.0 の公開に合わせて、LP / README / リリースノートからアクセス権の注記を外し、GitHub と Releases への直接リンクに戻した。GitHub のソーシャルプレビューを README と LP の OGP 画像に採用
 
 ### v0.3.9
 

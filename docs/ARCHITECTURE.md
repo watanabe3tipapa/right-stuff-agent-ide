@@ -250,6 +250,8 @@ v0.4.0 では、失敗した検証から修正案を作る自動修正ループ�
 
 インタラクティブ版: [diagrams/openship-local-first.html](diagrams/openship-local-first.html)
 
+採用理由と代替案の比較は [OPENSHIP.md](./OPENSHIP.md) を参照。
+
 ```
 Agent Panel (Deploy タブ / /deploy / /logs / /rollback)
   → api.openship_* (Tauri invoke)

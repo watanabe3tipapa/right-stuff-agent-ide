@@ -5,6 +5,17 @@
 
 ## リリース履歴
 
+### v0.4.1
+
+- [x] README 再構成 — 価値提案、対象ユーザー、できないこと、ダウンロード、3 分クイックスタートを先頭へ。詳細を docs へ分離し、バージョンバッジを Releases 連動に変更
+- [x] ドキュメント分離 — `docs/FEATURES.md`、`docs/LIMITATIONS.md`、`docs/DEVELOPMENT.md`、`docs/OPENSHIP.md` を追加
+- [x] Openship の採用理由 — セルフホスト、CLI と REST、履歴・ログ・ロールバック、認証の観点と、GitHub Actions / rsync / Docker / SaaS を採用しなかった理由を記録
+- [x] 外部接続の明示 — LLM と Openship に送るもの・送らないものを README に記載し、可視化とマスクを見直し中であることを明記
+- [x] スナップショット確認 — `/snapshot` はポリシーにかかわらずネイティブ確認を表示。機密情報の可能性と自動マスク未実装を明示し、キャンセルを監査ログへ記録
+- [x] リリース自動化 — `v*` タグで arm64 / x64 の DMG をビルドし、SHA-256 とともに GitHub Release へ添付する `.github/workflows/release.yml` を追加
+- [x] 検証環境の修正 — 実測値（macOS 15.8.4 / Node.js 22.17 / Rust 1.94.1）と CI（Node.js 24 / Rust stable）を分けて記載
+- [x] バージョン更新 — `0.4.1` へ更新し、リリースノート `.github/release-notes-v0.4.1.md` を追加
+
 ### v0.4.0
 
 - [x] 検証の自動修正 — Skills タブと Plan タブのスキル手順で、失敗した検証から `editor.replaceText` だけの修正案を生成。文脈は変更ファイルと失敗出力に限定し、8 ファイル / 60,000 文字で打ち切る
@@ -194,22 +205,35 @@ README / README.en / LP / 実装設計書 / docs のバージョン表記と DMG
 
 ## リリース手順
 
+v0.4.1 以降は GitHub Actions で自動化している。
+
 1. バージョンを更新し、テスト・lint・build・clippy・typos を通す
 2. `main` へ commit / push し、`vX.Y.Z` タグを作成して push する
-3. DMG をビルドする
+3. `release.yml` が arm64（`macos-15`）と x64（`macos-15-intel`）の DMG をビルドし、
+   `Right-Stuff.Agent.IDE_X.Y.Z_aarch64.dmg` / `Right-Stuff.Agent.IDE_X.Y.Z_x64.dmg`
+   として SHA-256 とともに GitHub Release へ添付する
+4. リリースノートは `.github/release-notes-vX.Y.Z.md` があればそれを使い、
+   なければ自動生成する
 
-   ```bash
-   export PATH="$HOME/.cargo/bin:$PATH"
-   npm run tauri build -- --target aarch64-apple-darwin
-   npm run tauri build -- --target x86_64-apple-darwin
-   ```
+タグ push 前に DMG を確認したい場合は、手動でビルドする。
 
-4. DMG を `Right-Stuff.Agent.IDE_X.Y.Z_aarch64.dmg` / `Right-Stuff.Agent.IDE_X.Y.Z_x64.dmg` にリネームする
-5. SHA-256 とサイズを `.github/release-notes-vX.Y.Z.md` に追記する
-6. `gh release create vX.Y.Z --notes-file ...` で DMG をアップロードする
+```bash
+export PATH="$HOME/.cargo/bin:$PATH"
+npm run tauri build -- --target aarch64-apple-darwin
+npm run tauri build -- --target x86_64-apple-darwin
+```
 
 x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 ツールチェーンは `PATH="$HOME/.cargo/bin:$PATH"` で実行する。
+
+CI を使わずにリリースする場合のフォールバック:
+
+1. DMG を `Right-Stuff.Agent.IDE_X.Y.Z_aarch64.dmg` / `Right-Stuff.Agent.IDE_X.Y.Z_x64.dmg` にリネームする
+2. SHA-256 とサイズを `.github/release-notes-vX.Y.Z.md` に追記する
+3. `gh release create vX.Y.Z --notes-file .github/release-notes-vX.Y.Z.md` でアップロードする
+
+署名と公証は Apple Developer Program 加入後に CI へ追加する。手順は
+[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) を参照。
 
 ### 実機検証（v0.3.7 / Intel）
 
@@ -222,6 +246,18 @@ x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 - 起動: `/Applications` へコピー後に起動し、ファイルツリー、Monaco エディタ、Agent パネルの各タブ、ステータスバーの `v0.3.7` を確認
 - 注意: 検証では `curl` で DMG を取得したため quarantine 属性が付かず、Gatekeeper の「開く」操作は不要だった。ブラウザから取得した DMG では警告が出る
 - 初回起動時にウィンドウがプライマリモニタ以外の位置（`position: 45, -1086`）に開いたため、起動位置をプライマリモニタ中央に固定し、画面外なら補正する仕組みを追加した（v0.3.8）
+
+### 実機検証（v0.4.1 / Intel）
+
+2026-11-21 に Intel Core i7-1068NG7 / macOS 15.8.4（x86_64）で確認した。
+
+- DMG: `Right-Stuff.Agent.IDE_0.4.1_x64.dmg`（10,014,742 bytes、9.55 MiB）
+- SHA-256: `510aa36153b1c8962ede61d8789d6cb7f61ff817c92310eb2b8ed2906080eabc`
+- 実行ファイル: `Mach-O 64-bit executable x86_64`、`CFBundleShortVersionString` は `0.4.1`、最低 OS は `11.0`
+- 署名: 未署名（`codesign` は "code object is not signed at all"）
+- 起動: DMG をマウントして `/Applications` へコピー後に起動し、ワークスペース、Monaco エディタ、Agent パネル、ステータスバーの `v0.4.1` を確認
+- スナップショット確認: 実行ファイルに「スナップショットの取得はキャンセルされました」「機密ウィンドウの自動マスクを行いません」の文字列が含まれることを確認。UI からのダイアログ操作は未確認
+- arm64 DMG: GitHub Actions の `release.yml` で生成する（ローカルでは x64 のみ確認）
 
 ### 実機検証（v0.3.9 / Intel）
 
@@ -278,6 +314,10 @@ x86_64 ビルドには `rustup target add x86_64-apple-darwin` が必要。
 ## 関連ドキュメント
 
 - [README.md](./README.md) — ユーザー向け概要
+- [docs/FEATURES.md](./docs/FEATURES.md) — 機能詳細
+- [docs/LIMITATIONS.md](./docs/LIMITATIONS.md) — 既知の制約
+- [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) — ビルド・ツール導入・リリース
+- [docs/OPENSHIP.md](./docs/OPENSHIP.md) — Openship 連携の採用理由
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) — レイヤーとフロー
 - [docs/SKILLS.md](./docs/SKILLS.md) — スキル設計
 - [docs/API.md](./docs/API.md) — Tauri コマンド

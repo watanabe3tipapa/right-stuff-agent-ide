@@ -249,6 +249,27 @@ fn confirm_action(app: &tauri::AppHandle, args: &[String]) -> bool {
         .blocking_show()
 }
 
+/// Snapshots can contain whatever is on screen, including mail, banking, and
+/// password managers. Automatic masking is not implemented yet, so always show
+/// a native confirmation that names the risk instead of relying on policy.
+fn confirm_snapshot(app: &tauri::AppHandle) -> bool {
+    app.dialog()
+        .message(
+            "デスクトップのスナップショットを取得します。\n\n\
+             画面には、メール・銀行・パスワード管理などの機密情報が含まれる可能性があります。\
+             現時点では機密ウィンドウの自動マスクを行いません。\
+             取得した内容はメモリ上にのみ保持され、外部へは送信されません。\n\n\
+             取得してよろしいですか？",
+        )
+        .title("デスクトップスナップショットの取得")
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            "取得".to_string(),
+            "キャンセル".to_string(),
+        ))
+        .blocking_show()
+}
+
 fn log_action(
     state: &State<'_, AppState>,
     policy: &policy::AgentPolicy,
@@ -430,16 +451,18 @@ pub async fn agent_snapshot(
                 "ポリシーにより snapshot の実行はブロックされています".into(),
             ));
         }
-        "ask" if !confirm_action(&app_handle, &args) => {
+        _ if !confirm_snapshot(&app_handle) => {
             log_action(
                 &state,
                 &policy,
                 None,
                 &args,
                 "cancelled",
-                Some("ユーザーが承認をキャンセルしました"),
+                Some("ユーザーがスナップショットの取得をキャンセルしました"),
             );
-            return Err(AppError::Other("操作はキャンセルされました".into()));
+            return Err(AppError::Other(
+                "スナップショットの取得はキャンセルされました".into(),
+            ));
         }
         _ => {}
     }

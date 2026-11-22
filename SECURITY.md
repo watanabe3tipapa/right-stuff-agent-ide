@@ -6,8 +6,8 @@ Right-Stuff Agent IDE は、デスクトップ（Tauri）、ブラウザデモ�
 
 | バージョン | サポート |
 | --- | --- |
-| 0.3.x | サポート中 |
-| 0.2.x 以前 | アップグレードを推奨 |
+| 0.4.x | サポート中 |
+| 0.3.x 以前 | アップグレードを推奨 |
 
 最新リリースは [Releases](https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases) を参照してください。
 

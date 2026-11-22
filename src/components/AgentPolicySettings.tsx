@@ -221,7 +221,7 @@ export function AgentPolicySettings() {
 
             <PolicyActions
               title="読み取り専用アクション"
-              description="snapshot や一覧取得など、状態を変更しない操作です。許可・確認・禁止を選べます。"
+              description="snapshot や一覧取得など、状態を変更しない操作です。許可・確認・禁止を選べます。snapshot は設定にかかわらず取得前に毎回確認します。"
               actions={readOnlyActions}
               draft={draft}
               disabled={demo || saving || policyLoading}

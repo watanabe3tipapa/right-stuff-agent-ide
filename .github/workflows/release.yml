@@ -1,0 +1,116 @@
+# cspell:ignore dtolnay Swatinem aarch64
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish (for example v0.4.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  prepare:
+    name: Prepare release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - name: Create the release if it does not exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists."
+            exit 0
+          fi
+          notes=".github/release-notes-${TAG}.md"
+          if [ -f "$notes" ]; then
+            gh release create "$TAG" \
+              --title "Right-Stuff Agent IDE ${TAG#v}" \
+              --notes-file "$notes" \
+              --verify-tag
+          else
+            gh release create "$TAG" \
+              --title "Right-Stuff Agent IDE ${TAG#v}" \
+              --generate-notes \
+              --verify-tag
+          fi
+
+  build:
+    name: Build ${{ matrix.arch }}
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            arch: aarch64
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            arch: x64
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+      - run: npm ci
+      - name: Build the app and DMG
+        run: npm run tauri build -- --target ${{ matrix.target }}
+      - name: Package the DMG and checksum
+        id: package
+        run: |
+          set -euo pipefail
+          version="${TAG#v}"
+          src="src-tauri/target/${{ matrix.target }}/release/bundle/dmg"
+          dmg="$(find "$src" -maxdepth 1 -name '*.dmg' -print -quit)"
+          if [ -z "$dmg" ]; then
+            echo "No DMG found in $src" >&2
+            exit 1
+          fi
+          out="Right-Stuff.Agent.IDE_${version}_${{ matrix.arch }}.dmg"
+          cp "$dmg" "$out"
+          shasum -a 256 "$out" > "$out.sha256"
+          echo "dmg=$out" >> "$GITHUB_OUTPUT"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmg-${{ matrix.arch }}
+          path: |
+            ${{ steps.package.outputs.dmg }}
+            ${{ steps.package.outputs.dmg }}.sha256
+      - name: Attach the DMG to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$TAG" \
+            "${{ steps.package.outputs.dmg }}" \
+            "${{ steps.package.outputs.dmg }}.sha256" \
+            --clobber

@@ -964,7 +964,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   <span class="item">Early Access</span>
   <span class="item">macOS 11+</span>
   <span class="item">MIT</span>
-  <span class="item right">最新リリース <strong>v0.4.0</strong></span>
+  <span class="item right">最新リリース <strong>v0.4.1</strong></span>
 </div>
 
 <nav>
@@ -991,7 +991,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   </p>
   <div class="cta-group">
     <a href="/app/" class="cta-btn cta-primary">ブラウザで試す</a>
-    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">DMG をダウンロード <small>v0.4.0</small></a>
+    <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide/releases/latest" class="cta-btn cta-secondary" target="_blank" rel="noreferrer">DMG をダウンロード <small>v0.4.1</small></a>
     <a href="https://github.com/watanabe3tipapa/right-stuff-agent-ide" class="cta-btn cta-tertiary" target="_blank" rel="noreferrer">GitHub</a>
   </div>
   <p class="honest-note">
@@ -1472,7 +1472,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
       <h3>DMG を入れる</h3>
       <p>GitHub Releases から Apple Silicon / Intel の DMG を入手します。未署名のため、初回は右クリック →「開く」で起動してください。対応 OS は macOS 11 以降です。</p>
       <pre><span class="prompt">→</span> releases/latest
-<span class="comment"># v0.4.0 / aarch64 または x64</span></pre>
+<span class="comment"># v0.4.1 / aarch64 または x64</span></pre>
     </article>
     <article class="start-card">
       <div class="num">STEP 03</div>
@@ -1520,6 +1520,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
         <li><strong>LSP はシグネチャヘルプ、セマンティックトークン、フォーマット、ファイル作成 / 削除を伴うリファクタリングが未対応。</strong>補完・定義・ホバー・診断・名前変更・参照検索・コードアクションまでです。</li>
         <li><strong>Git はマージ・リベース・プッシュが未対応。</strong>状態・差分・ステージ・コミット・履歴までです。</li>
         <li><strong>計画とスナップショットは再起動で消えます。</strong>監査ログとレポートは残ります。</li>
+        <li><strong>スナップショットは取得前に毎回確認しますが、機密ウィンドウの自動マスクは未実装です。</strong>画面に映ったメール・銀行・パスワード管理などの情報はそのまま含まれます。</li>
         <li><strong>共同編集・クラウド同期・自動更新はありません。</strong></li>
         <li><strong>DMG は Apple Developer ID の署名・公証を受けていません。</strong>Gatekeeper の警告が出ます。</li>
       </ul>
@@ -1638,7 +1639,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   <details class="faq-item">
     <summary>データはどこに保存されますか？</summary>
     <div class="faq-answer">
-      <p>原稿とコードは、選んだフォルダのファイルに保存されます。バージョン履歴・設定・監査ログは端末内の SQLite、API キーと Openship PAT は OS キーチェーンです。アカウント、テレメトリ、クラウド同期はありません。LLM と Openship へのリクエストだけは、設定した API へ Rust から送信します。</p>
+      <p>原稿とコードは、選んだフォルダのファイルに保存されます。バージョン履歴・設定・監査ログは端末内の SQLite、API キーと Openship PAT は OS キーチェーンです。アカウント、テレメトリ、クラウド同期はありません。LLM と Openship へのリクエストだけは、設定した API へ Rust から送信します。LLM に送るのはチャットの会話、計画の意図、自動修正で選んだ変更ファイルと失敗出力だけで、スナップショットや監査ログは送りません。外部接続の範囲、送信内容の可視化、機密情報のマスクは現在も見直しを進めています。</p>
     </div>
   </details>
 

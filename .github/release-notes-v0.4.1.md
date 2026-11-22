@@ -6,10 +6,10 @@
 
 - README を約 40 KB から読み切りやすい長さへ削減し、価値提案、対象ユーザー、
   できないこと、ダウンロード、3 分クイックスタートを先頭に置いた
-- 詳細は [docs/FEATURES.md](../docs/FEATURES.md)、制約は
-  [docs/LIMITATIONS.md](../docs/LIMITATIONS.md)、開発手順は
-  [docs/DEVELOPMENT.md](../docs/DEVELOPMENT.md) へ移動
-- Openship の採用理由と代替案の比較を [docs/OPENSHIP.md](../docs/OPENSHIP.md) に追加
+- 詳細は [docs/FEATURES.md](https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/v0.4.1/docs/FEATURES.md)、制約は
+  [docs/LIMITATIONS.md](https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/v0.4.1/docs/LIMITATIONS.md)、開発手順は
+  [docs/DEVELOPMENT.md](https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/v0.4.1/docs/DEVELOPMENT.md) へ移動
+- Openship の採用理由と代替案の比較を [docs/OPENSHIP.md](https://github.com/watanabe3tipapa/right-stuff-agent-ide/blob/v0.4.1/docs/OPENSHIP.md) に追加
 - README.en も同じ構成へ更新
 
 ### スナップショット取得前の確認

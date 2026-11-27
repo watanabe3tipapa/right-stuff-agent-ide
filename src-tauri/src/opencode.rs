@@ -13,6 +13,7 @@ use tokio::process::{Child, ChildStdin, Command};
 use tokio::sync::oneshot;
 
 use crate::commands::policy::{self, AuditInput};
+use crate::db;
 use crate::error::{AppError, AppResult};
 use crate::mcp_server;
 use crate::paths;
@@ -20,6 +21,7 @@ use crate::state::AppState;
 
 pub const MIN_VERSION: &str = "1.2.0";
 pub const OPENCODE_EVENT: &str = "opencode://event";
+pub const PATH_SETTING: &str = "opencode_path";
 const MAX_LINE_BYTES: usize = 4 * 1024 * 1024;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const PROMPT_TIMEOUT: Duration = Duration::from_secs(600);
@@ -98,7 +100,9 @@ impl OpencodeManager {
             .ok()
             .and_then(|value| value.clone())
             .unwrap_or_default();
-        (binary.is_some(), binary, version, error)
+        let available =
+            binary.is_some() && version.as_deref().map(version_supported).unwrap_or(false);
+        (available, binary, version, error)
     }
 }
 
@@ -135,6 +139,19 @@ fn version_supported(version: &str) -> bool {
     parsed >= parse_version(MIN_VERSION).unwrap_or((1, 2, 0))
 }
 
+async fn probe_version(binary: &Path, timeout: Duration) -> Result<(u64, u64, u64), String> {
+    let output = tokio::time::timeout(timeout, Command::new(binary).arg("--version").output())
+        .await
+        .map_err(|_| "OpenCode のバージョン確認がタイムアウトしました。".to_string())?
+        .map_err(|error| format!("OpenCode のバージョンを確認できませんでした: {error}"))?;
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    parse_version(&text).ok_or_else(|| "OpenCode のバージョンを解析できませんでした。".to_string())
+}
+
 fn which(binary: &str) -> Option<PathBuf> {
     let candidate = PathBuf::from(binary);
     if candidate.components().count() > 1 {
@@ -146,9 +163,13 @@ fn which(binary: &str) -> Option<PathBuf> {
         .find(|path| path.is_file())
 }
 
-fn detect_binary(explicit: Option<String>) -> Option<PathBuf> {
-    if let Some(value) = explicit.filter(|value| !value.trim().is_empty()) {
-        let path = PathBuf::from(value.trim());
+fn detect_binary(explicit: Option<String>, stored: Option<String>) -> Option<PathBuf> {
+    for value in [explicit, stored].into_iter().flatten() {
+        let value = value.trim();
+        if value.is_empty() {
+            continue;
+        }
+        let path = PathBuf::from(value);
         if path.is_file() {
             return Some(path);
         }
@@ -160,6 +181,39 @@ fn detect_binary(explicit: Option<String>) -> Option<PathBuf> {
         }
     }
     which("opencode")
+}
+
+pub fn configured_path(state: &AppState) -> AppResult<Option<String>> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
+    Ok(db::get_setting(&conn, PATH_SETTING)?
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty()))
+}
+
+pub fn set_configured_path(state: &AppState, path: &str) -> AppResult<()> {
+    let trimmed = path.trim();
+    if !trimmed.is_empty() {
+        let candidate = Path::new(trimmed);
+        if !candidate.is_absolute() {
+            return Err(AppError::Other(
+                "OpenCode のパスは絶対パスで指定してください。".into(),
+            ));
+        }
+        if !candidate.is_file() {
+            return Err(AppError::Other(
+                "指定した OpenCode の実行ファイルが見つかりません。".into(),
+            ));
+        }
+    }
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
+    db::set_setting(&conn, PATH_SETTING, trimmed)?;
+    Ok(())
 }
 
 fn random_token() -> AppResult<String> {
@@ -550,6 +604,46 @@ pub async fn status(state: &AppState) -> OpencodeStatus {
                 .filter(|value| !value.is_empty())
         })
     };
+    if !running {
+        let stored = configured_path(state).ok().flatten();
+        match detect_binary(None, stored) {
+            Some(path) => {
+                let label = path.to_string_lossy().to_string();
+                if let Ok(mut value) = state.opencode.binary.lock() {
+                    *value = Some(label);
+                }
+                match probe_version(&path, Duration::from_secs(5)).await {
+                    Ok((major, minor, patch)) => {
+                        let version = format!("{major}.{minor}.{patch}");
+                        if let Ok(mut value) = state.opencode.version.lock() {
+                            *value = Some(version.clone());
+                        }
+                        if version_supported(&version) {
+                            if let Ok(mut value) = state.opencode.last_error.lock() {
+                                *value = None;
+                            }
+                        } else {
+                            state.opencode.record_error(&format!(
+                                "OpenCode {version} は古すぎます。{MIN_VERSION} 以上が必要です。"
+                            ));
+                        }
+                    }
+                    Err(error) => state.opencode.record_error(&error),
+                }
+            }
+            None => {
+                if let Ok(mut value) = state.opencode.binary.lock() {
+                    *value = None;
+                }
+                if let Ok(mut value) = state.opencode.version.lock() {
+                    *value = None;
+                }
+                if let Ok(mut value) = state.opencode.last_error.lock() {
+                    *value = None;
+                }
+            }
+        }
+    }
     let (available, binary, version, error) = state.opencode.status_snapshot();
     let message = if running {
         "OpenCode の ACP セッションが動作しています。".to_string()
@@ -561,7 +655,7 @@ pub async fn status(state: &AppState) -> OpencodeStatus {
             version.clone().unwrap_or_default()
         )
     } else {
-        "OpenCode が見つかりません。`opencode` を PATH に追加するか、`RIGHT_STUFF_OPENCODE` にパスを指定してください。".into()
+        "OpenCode が見つかりません。`opencode` を PATH に追加するか、設定の「OpenCode」で実行ファイルを指定してください。".into()
     };
     OpencodeStatus {
         available,
@@ -593,31 +687,17 @@ pub async fn start(
     let root = state.root()?;
     stop(state).await;
 
-    let binary = detect_binary(explicit_path).ok_or_else(|| {
+    let stored = configured_path(state).ok().flatten();
+    let binary = detect_binary(explicit_path, stored).ok_or_else(|| {
         AppError::Other(
-            "OpenCode が見つかりません。`opencode` を PATH に追加するか、`RIGHT_STUFF_OPENCODE` にパスを指定してください。"
+            "OpenCode が見つかりません。`opencode` を PATH に追加するか、設定の「OpenCode」で実行ファイルを指定してください。"
                 .into(),
         )
     })?;
 
-    let version_output = tokio::time::timeout(
-        Duration::from_secs(10),
-        Command::new(&binary).arg("--version").output(),
-    )
-    .await
-    .map_err(|_| AppError::Other("OpenCode のバージョン確認がタイムアウトしました。".into()))?
-    .map_err(|error| {
-        AppError::Other(format!(
-            "OpenCode のバージョンを確認できませんでした: {error}"
-        ))
-    })?;
-    let version_text = format!(
-        "{}{}",
-        String::from_utf8_lossy(&version_output.stdout),
-        String::from_utf8_lossy(&version_output.stderr)
-    );
-    let version = parse_version(&version_text)
-        .ok_or_else(|| AppError::Other("OpenCode のバージョンを解析できませんでした。".into()))?;
+    let version = probe_version(&binary, Duration::from_secs(10))
+        .await
+        .map_err(AppError::Other)?;
     let version_label = format!("{}.{}.{}", version.0, version.1, version.2);
     if !version_supported(&version_label) {
         return Err(AppError::Other(format!(
@@ -933,6 +1013,46 @@ mod tests {
         assert!(!version_supported("1.1.9"));
         assert!(version_supported("1.2.0"));
         assert!(version_supported("1.19.6"));
+    }
+
+    #[test]
+    fn detect_binary_prefers_explicit_then_stored() {
+        let base = std::env::temp_dir().join(format!("rs-oc-{}", random_token().unwrap()));
+        std::fs::create_dir_all(&base).expect("temp dir");
+        let explicit = base.join("explicit");
+        let stored = base.join("stored");
+        std::fs::write(&explicit, b"").expect("write explicit");
+        std::fs::write(&stored, b"").expect("write stored");
+
+        let explicit_label = explicit.to_string_lossy().to_string();
+        let stored_label = stored.to_string_lossy().to_string();
+        assert_eq!(
+            detect_binary(Some(explicit_label.clone()), Some(stored_label.clone())),
+            Some(explicit.clone())
+        );
+        assert_eq!(
+            detect_binary(None, Some(stored_label.clone())),
+            Some(stored.clone())
+        );
+        assert_eq!(
+            detect_binary(
+                Some(base.join("missing").to_string_lossy().to_string()),
+                Some(stored_label)
+            ),
+            Some(stored)
+        );
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn status_requires_a_supported_version() {
+        let manager = OpencodeManager::default();
+        *manager.binary.lock().expect("binary") = Some("/tmp/opencode".into());
+        *manager.version.lock().expect("version") = Some("1.1.0".into());
+        assert!(!manager.status_snapshot().0);
+        *manager.version.lock().expect("version") = Some("1.2.0".into());
+        assert!(manager.status_snapshot().0);
     }
 
     #[test]

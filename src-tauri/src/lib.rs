@@ -139,6 +139,8 @@ pub fn run() {
             commands::opencode::opencode_set_mode,
             commands::opencode::opencode_prompt,
             commands::opencode::opencode_cancel,
+            commands::opencode::opencode_config_get,
+            commands::opencode::opencode_config_set,
             commands::llm::llm_config_get,
             commands::llm::llm_config_set,
             commands::llm::llm_key_set,

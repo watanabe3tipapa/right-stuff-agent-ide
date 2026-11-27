@@ -81,7 +81,7 @@ IDE 機能（LSP / DAP / Git / 統合ターミナル）は搭載済みです。�
 3. ツリーからファイルを開いて編集し、`⌘S` で保存します
 4. 必要に応じて設定を開きます
    - **LLM**: OpenAI 互換 API の Base URL・モデル・API キー（OpenCode 未接続時のフォールバック）
-   - **OpenCode**: 自然言語デプロイを使う場合は `opencode`（1.2.0 以上）を別途インストールして PATH に追加
+   - **OpenCode**: 自然言語デプロイを使う場合は `opencode`（1.2.0 以上）を別途インストールし、PATH に追加（または設定 > OpenCode で実行ファイルを指定）
    - **Agent Desktop**: `agent-desktop` CLI（未同梱）
    - **LSP / DAP**: 使う言語の言語サーバー / デバッグアダプター（未同梱）
 

@@ -81,7 +81,7 @@ Supports **macOS 11 or later (Apple Silicon and Intel)**.
 3. Open a file from the tree, edit it, and press `⌘S` to save
 4. Open Settings when you need more
    - **LLM**: Base URL, model, and API key for an OpenAI-compatible API (fallback when OpenCode is not connected)
-   - **OpenCode**: install `opencode` (1.2.0 or newer) separately and add it to `PATH` for natural-language deployment
+   - **OpenCode**: install `opencode` (1.2.0 or newer) separately and add it to `PATH`, or set the binary under Settings > OpenCode, for natural-language deployment
    - **Agent Desktop**: the `agent-desktop` CLI (not bundled)
    - **LSP / DAP**: language servers and debug adapters for your languages (not bundled)
 

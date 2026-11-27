@@ -430,6 +430,22 @@ export const api = {
     return isTauri ? call<void>("opencode_cancel") : Promise.resolve();
   },
 
+  opencodeConfig(): Promise<string> {
+    if (!isTauri) return Promise.resolve("");
+    return call<string | null>("opencode_config_get").then(
+      (value) => value ?? "",
+    );
+  },
+
+  opencodeConfigSet(path: string): Promise<void> {
+    if (!isTauri) {
+      return Promise.reject(
+        new Error("OpenCode 連携は Tauri 版でのみ利用できます。"),
+      );
+    }
+    return call<void>("opencode_config_set", { path });
+  },
+
   onOpencodeEvent(handler: (payload: unknown) => void): Promise<() => void> {
     if (!isTauri) return Promise.resolve(() => {});
     return listen<unknown>("opencode://event", (event) => handler(event.payload));

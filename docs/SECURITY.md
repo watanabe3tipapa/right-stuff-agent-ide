@@ -102,7 +102,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 
 ## OpenCode 連携
 
-- `opencode` は同梱せず、利用者が別途インストールした実行ファイルを `acp` 引数だけで起動する。シェルを介さず、ユーザー入力をコマンド文字列へ連結しない。起動前に `--version` を確認し、1.2.0 未満や設定注入の失敗時は起動しない（fail-closed）。
+- `opencode` は同梱せず、利用者が別途インストールした実行ファイルを `acp` 引数だけで起動する。実行ファイルは設定の「OpenCode」、`RIGHT_STUFF_OPENCODE`、`PATH` の順に検出する。シェルを介さず、ユーザー入力をコマンド文字列へ連結しない。起動前に `--version` を確認し、1.2.0 未満や設定注入の失敗時は起動しない（fail-closed）。
 - ACP の通信は子プロセスの stdin / stdout だけで行う。IDE MCP サーバーは `127.0.0.1` の一時ポートにだけ bind し、起動ごとに `/dev/urandom` から生成した 32 バイト（64 桁 hex）の Bearer トークンで認証する。トークンはセッションの `mcpServers` にだけ渡し、ログ・監査・UI には出さない。
 - OpenCode に Openship の PAT を渡さない。OpenCode から Openship へ到達できるのは、IDE MCP サーバーが公開する `openship_status` / `openship_projects` / `openship_deployments` / `openship_logs` / `openship_deploy` / `openship_rollback` だけとする。
 - MCP の `deploy` / `rollback` は既存の Rust 実装へ委譲し、Passive モードでは全ツールを拒否する。Assistive / Autonomous でもネイティブ承認ダイアログを必ず表示し、OpenCode 側の設定では省略できない。

@@ -16,7 +16,7 @@
 - 言語サーバーとデバッグアダプターは同梱していません。使う言語に応じて別途インストールしてください。導入例は [DEVELOPMENT.md](./DEVELOPMENT.md) にあります
 - Git パネルと Git スキルはローカルの `git` CLI を利用します。`git` がインストールされていない場合はエラーを表示します
 - Openship の履歴・ログ・ロールバックはセルフホスト REST API 経由です。CLI のみで使用する場合は Base URL と PAT を設定しないと履歴系は使えません。CLI のデプロイは設定した Project ID / Branch を明示的に渡します
-- `opencode` は同梱していません。自然言語デプロイを使う場合は 1.2.0 以上を別途インストールし、PATH に追加するか `RIGHT_STUFF_OPENCODE` でパスを指定してください。OpenCode の LLM 認証は OpenCode 側で設定します
+- `opencode` は同梱していません。自然言語デプロイを使う場合は 1.2.0 以上を別途インストールし、PATH に追加するか、設定の「OpenCode」または `RIGHT_STUFF_OPENCODE` で実行ファイルのパスを指定してください。OpenCode の LLM 認証は OpenCode 側で設定します
 
 ## エージェントと LLM
 

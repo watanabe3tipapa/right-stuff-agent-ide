@@ -50,3 +50,13 @@ pub async fn opencode_prompt(
 pub async fn opencode_cancel(state: State<'_, AppState>) -> AppResult<()> {
     opencode::cancel(&state).await
 }
+
+#[tauri::command]
+pub async fn opencode_config_get(state: State<'_, AppState>) -> AppResult<Option<String>> {
+    opencode::configured_path(&state)
+}
+
+#[tauri::command]
+pub async fn opencode_config_set(path: String, state: State<'_, AppState>) -> AppResult<()> {
+    opencode::set_configured_path(&state, &path)
+}

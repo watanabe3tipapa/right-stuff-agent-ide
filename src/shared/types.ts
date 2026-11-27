@@ -68,6 +68,14 @@ export interface AppInfo {
 
 export type AgentMode = "passive" | "assistive" | "autonomous";
 
+export type SettingsSection =
+  | "llm"
+  | "agent"
+  | "skills"
+  | "openship"
+  | "opencode"
+  | "tools";
+
 export type AgentPanelTab =
   | "chat"
   | "plan"

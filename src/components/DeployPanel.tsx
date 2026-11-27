@@ -164,7 +164,7 @@ export function DeployPanel() {
             <button
               type="button"
               className="btn small ghost"
-              onClick={openSettings}
+              onClick={() => openSettings()}
             >
               <Icon name="gear" size={12} />
               設定
@@ -200,7 +200,7 @@ export function DeployPanel() {
             Openship CLI を PATH に配置するか、設定画面で Base URL と PAT
             を登録してください。
           </span>
-          <button type="button" className="btn small" onClick={openSettings}>
+          <button type="button" className="btn small" onClick={() => openSettings()}>
             設定を開く
           </button>
         </div>

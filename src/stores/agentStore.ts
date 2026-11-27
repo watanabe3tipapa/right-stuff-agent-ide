@@ -18,6 +18,7 @@ import type {
   OpenShipLogs,
   OpenShipSettings,
   OpenShipStatus,
+  SettingsSection,
   SkillCatalog,
   SkillPolicy,
   VerificationResult,
@@ -74,6 +75,7 @@ interface AgentState {
   llmLoading: boolean;
   streaming: boolean;
   settingsOpen: boolean;
+  settingsSection: SettingsSection | null;
   plan: AgentPlan | null;
   planLoading: boolean;
   planRaw: string;
@@ -111,7 +113,7 @@ interface AgentState {
   stopStreaming: () => Promise<void>;
   takeSnapshot: () => Promise<void>;
   clearMessages: () => void;
-  openSettings: () => void;
+  openSettings: (section?: SettingsSection) => void;
   closeSettings: () => void;
   generatePlan: (intent: string) => Promise<void>;
   cancelPlanGeneration: () => Promise<void>;
@@ -177,6 +179,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   llmLoading: false,
   streaming: false,
   settingsOpen: false,
+  settingsSection: null,
   plan: null,
   planLoading: false,
   planRaw: "",
@@ -1342,11 +1345,11 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     set({ messages: [] });
   },
 
-  openSettings() {
-    set({ settingsOpen: true });
+  openSettings(section) {
+    set({ settingsOpen: true, settingsSection: section ?? null });
   },
 
   closeSettings() {
-    set({ settingsOpen: false });
+    set({ settingsOpen: false, settingsSection: null });
   },
 }));

@@ -18,6 +18,7 @@ function eventUpdate(payload: unknown): OpencodeUpdate | null {
 
 export function OpenCodePanel() {
   const mode = useAgentStore((state) => state.mode);
+  const openSettings = useAgentStore((state) => state.openSettings);
   const [status, setStatus] = useState<OpencodeStatus | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -182,6 +183,15 @@ export function OpenCodePanel() {
 
       {status && !status.running && (
         <p className="opencode-note">{status.message}</p>
+      )}
+      {status && !status.running && !status.available && (
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => openSettings("opencode")}
+        >
+          OpenCode の設定を開く
+        </button>
       )}
       {disabled && (
         <p className="opencode-note">

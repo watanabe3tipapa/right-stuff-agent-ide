@@ -418,7 +418,7 @@ export function AgentPanel() {
             <button
               type="button"
               className="icon-btn"
-              onClick={openSettings}
+              onClick={() => openSettings()}
               aria-label="LLM 設定"
               title="LLM 設定"
             >

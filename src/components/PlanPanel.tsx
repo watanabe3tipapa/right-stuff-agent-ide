@@ -309,7 +309,7 @@ export function PlanPanel() {
       {!llm?.configured && (
         <div className="plan-notice">
           <span>LLM が未設定です。計画立案には接続設定が必要です。</span>
-          <button type="button" className="btn small" onClick={openSettings}>
+          <button type="button" className="btn small" onClick={() => openSettings()}>
             <Icon name="gear" size={12} />
             設定
           </button>

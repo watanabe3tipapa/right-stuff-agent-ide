@@ -5,6 +5,7 @@ import type {
   LlmProvider,
   LlmSettings,
   LlmTestResult,
+  SettingsSection,
 } from "../shared/types";
 import { api, errorMessage } from "../lib/api";
 import { DEFAULT_LLM_CONFIG, PROVIDER_ORDER, PROVIDER_PRESETS } from "../lib/llm";
@@ -38,12 +39,11 @@ function sameConfig(a: LlmConfig, b: LlmConfig): boolean {
 
 export function SettingsDialog() {
   const open = useAgentStore((state) => state.settingsOpen);
+  const requestedSection = useAgentStore((state) => state.settingsSection);
   const closeSettings = useAgentStore((state) => state.closeSettings);
   const refreshLlm = useAgentStore((state) => state.refreshLlm);
 
-  const [section, setSection] = useState<
-    "llm" | "agent" | "skills" | "openship" | "opencode" | "tools"
-  >("llm");
+  const [section, setSection] = useState<SettingsSection>("llm");
   const [config, setConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
   const [configured, setConfigured] = useState(false);
   const [savedConfig, setSavedConfig] = useState<LlmConfig>(DEFAULT_LLM_CONFIG);
@@ -91,6 +91,11 @@ export function SettingsDialog() {
       cancelled = true;
     };
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (requestedSection) setSection(requestedSection);
+  }, [open, requestedSection]);
 
   useEffect(() => {
     if (!open) return;

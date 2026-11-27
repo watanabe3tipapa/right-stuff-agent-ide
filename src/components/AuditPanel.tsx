@@ -101,7 +101,7 @@ export function AuditPanel() {
           <button
             type="button"
             className="btn small ghost"
-            onClick={openSettings}
+            onClick={() => openSettings()}
           >
             <Icon name="gear" size={12} />
             設定

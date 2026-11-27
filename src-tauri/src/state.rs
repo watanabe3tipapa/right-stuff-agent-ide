@@ -54,6 +54,7 @@ pub struct AppState {
     pub lsp_sessions: Mutex<HashMap<String, RpcSession>>,
     pub dap_sessions: Mutex<HashMap<String, RpcSession>>,
     pub opencode: crate::opencode::OpencodeManager,
+    pub applefm: crate::applefm::AppleFmManager,
 }
 
 impl AppState {
@@ -81,6 +82,7 @@ impl AppState {
             lsp_sessions: Mutex::new(HashMap::new()),
             dap_sessions: Mutex::new(HashMap::new()),
             opencode: crate::opencode::OpencodeManager::default(),
+            applefm: crate::applefm::AppleFmManager::default(),
         })
     }
 

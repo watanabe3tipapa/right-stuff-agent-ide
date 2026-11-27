@@ -80,12 +80,30 @@ Supports **macOS 11 or later (Apple Silicon and Intel)**.
 2. Choose a workspace from the folder name in the sidebar
 3. Open a file from the tree, edit it, and press `⌘S` to save
 4. Open Settings when you need more
+   - **Apple FM**: the default LLM on Apple Silicon. Detect, start, and stop `fm serve`, then apply it to the LLM from Settings > Apple FM (see below)
    - **LLM**: Base URL, model, and API key for an OpenAI-compatible API (fallback when OpenCode is not connected)
    - **OpenCode**: install `opencode` (1.2.0 or newer) separately and add it to `PATH`, or set the binary under Settings > OpenCode, for natural-language deployment
    - **Agent Desktop**: the `agent-desktop` CLI (not bundled)
    - **LSP / DAP**: language servers and debug adapters for your languages (not bundled)
 
 To try the UI without installing, open the [browser demo](https://right-stuff-agent-ide.vercel.app/app/).
+
+### Using Apple FM (Apple Silicon / macOS 27 or later)
+
+On Apple Silicon, Apple Foundation Models can be the default LLM. The app can start the OpenAI-compatible `fm serve` for you, so no API key is required and your input never leaves the device.
+
+1. Enable Apple Intelligence in System Settings
+2. Once, run `sudo fm license` in Terminal and accept the license
+3. Open Settings > **Apple FM**, choose **Start server**, then **Apply and test connection**
+4. Select the on-device `system` model (`pcc` is only available where Private Cloud Compute is usable)
+
+To start it manually:
+
+```sh
+fm serve --host 127.0.0.1 --port 1976
+```
+
+The base URL is `http://127.0.0.1:1976/v1` and the model is `system`. On Intel Macs or macOS 26 and earlier, `fm` is not available; choose OpenAI, Ollama, LM Studio, or another provider under Settings > LLM.
 
 ## Highlights
 

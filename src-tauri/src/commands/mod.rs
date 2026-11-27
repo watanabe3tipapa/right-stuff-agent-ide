@@ -1,5 +1,6 @@
 pub mod agent;
 pub mod app;
+pub mod applefm;
 pub mod dap;
 pub mod editor;
 pub mod git;

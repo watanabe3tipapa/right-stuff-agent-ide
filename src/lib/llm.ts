@@ -14,6 +14,7 @@ export interface ProviderPreset {
 }
 
 export const PROVIDER_ORDER: LlmProvider[] = [
+  "applefm",
   "openai",
   "ollama",
   "lmstudio",
@@ -22,6 +23,13 @@ export const PROVIDER_ORDER: LlmProvider[] = [
 ];
 
 export const PROVIDER_PRESETS: Record<LlmProvider, ProviderPreset> = {
+  applefm: {
+    label: "Apple FM",
+    description: "macOS 27 の Foundation Models（fm serve / Apple Silicon 専用）",
+    baseUrl: "http://127.0.0.1:1976/v1",
+    model: "system",
+    keyRequired: false,
+  },
   openai: {
     label: "OpenAI",
     description: "OpenAI 公式 API",
@@ -60,9 +68,9 @@ export const PROVIDER_PRESETS: Record<LlmProvider, ProviderPreset> = {
 };
 
 export const DEFAULT_LLM_CONFIG: LlmConfig = {
-  provider: "openai",
-  baseUrl: PROVIDER_PRESETS.openai.baseUrl,
-  model: PROVIDER_PRESETS.openai.model,
+  provider: "applefm",
+  baseUrl: PROVIDER_PRESETS.applefm.baseUrl,
+  model: PROVIDER_PRESETS.applefm.model,
   temperature: 0.7,
   maxTokens: 2048,
 };

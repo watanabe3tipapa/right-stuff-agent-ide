@@ -8,6 +8,7 @@ import type {
   AgentPolicy,
   AgentRunResult,
   AgentStatus,
+  AppleFmStatus,
   AppInfo,
   AuditEntry,
   AuditInput,
@@ -444,6 +445,49 @@ export const api = {
       );
     }
     return call<void>("opencode_config_set", { path });
+  },
+
+  appleFmStatus(): Promise<AppleFmStatus> {
+    if (!isTauri) {
+      return Promise.resolve({
+        supported: false,
+        binary: null,
+        serverRunning: false,
+        managed: false,
+        host: "127.0.0.1",
+        port: 1976,
+        baseUrl: "http://127.0.0.1:1976/v1",
+        models: [],
+        message: "Apple FM は Tauri 版の Apple Silicon で利用できます。",
+      });
+    }
+    return call<AppleFmStatus>("apple_fm_status");
+  },
+
+  appleFmStart(host: string, port: number): Promise<AppleFmStatus> {
+    if (!isTauri) {
+      return Promise.reject(
+        new Error("Apple FM は Tauri 版の Apple Silicon で利用できます。"),
+      );
+    }
+    return call<AppleFmStatus>("apple_fm_start", { host, port });
+  },
+
+  appleFmStop(): Promise<AppleFmStatus> {
+    if (!isTauri) {
+      return Promise.resolve({
+        supported: false,
+        binary: null,
+        serverRunning: false,
+        managed: false,
+        host: "127.0.0.1",
+        port: 1976,
+        baseUrl: "http://127.0.0.1:1976/v1",
+        models: [],
+        message: "Apple FM は Tauri 版の Apple Silicon で利用できます。",
+      });
+    }
+    return call<AppleFmStatus>("apple_fm_stop");
   },
 
   onOpencodeEvent(handler: (payload: unknown) => void): Promise<() => void> {

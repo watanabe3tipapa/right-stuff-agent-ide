@@ -70,6 +70,7 @@ export type AgentMode = "passive" | "assistive" | "autonomous";
 
 export type SettingsSection =
   | "llm"
+  | "applefm"
   | "agent"
   | "skills"
   | "openship"
@@ -419,7 +420,31 @@ export interface OpencodeUpdate {
   };
 }
 
-export type LlmProvider = "openai" | "ollama" | "lmstudio" | "openrouter" | "custom";
+export type LlmProvider =
+  | "applefm"
+  | "openai"
+  | "ollama"
+  | "lmstudio"
+  | "openrouter"
+  | "custom";
+
+export interface AppleFmModel {
+  id: string;
+  available: boolean;
+  reason: string | null;
+}
+
+export interface AppleFmStatus {
+  supported: boolean;
+  binary: string | null;
+  serverRunning: boolean;
+  managed: boolean;
+  host: string;
+  port: number;
+  baseUrl: string;
+  models: AppleFmModel[];
+  message: string;
+}
 
 export interface LlmConfig {
   provider: LlmProvider;

@@ -30,5 +30,7 @@ pub fn app_quit(app: tauri::AppHandle) {
     crate::commands::terminal::shutdown_terminals(&state.terminals);
     crate::commands::lsp::shutdown_lsp(&state);
     crate::commands::dap::shutdown_dap(&state);
+    // Only stop the child we own; do not probe the network while quitting.
+    tauri::async_runtime::block_on(state.applefm.stop());
     app.exit(0);
 }

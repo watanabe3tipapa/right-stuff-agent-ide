@@ -480,7 +480,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           ...state.messages,
           message(
             "agent",
-            "LLM がまだ設定されていません。右上の歯車アイコンからプロバイダー・モデル・API キーを設定してください。",
+            "LLM がまだ設定されていません。右上の歯車アイコンからプロバイダー・モデル・API キーを設定してください（Apple Silicon では設定 > Apple FM から `fm serve` を起動できます）。",
             { local: true },
           ),
         ],

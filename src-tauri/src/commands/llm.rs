@@ -25,7 +25,14 @@ const MAX_SSE_LINE_CHARS: usize = 1_048_576;
 const MAX_STREAM_CHARS: usize = 2_000_000;
 const MAX_HTTP_BODY_BYTES: usize = 1_048_576;
 
-const PROVIDERS: &[&str] = &["openai", "ollama", "lmstudio", "openrouter", "custom"];
+const PROVIDERS: &[&str] = &[
+    "applefm",
+    "openai",
+    "ollama",
+    "lmstudio",
+    "openrouter",
+    "custom",
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,12 +46,22 @@ pub struct LlmConfig {
 
 impl Default for LlmConfig {
     fn default() -> Self {
-        Self {
-            provider: "openai".into(),
-            base_url: "https://api.openai.com/v1".into(),
-            model: "gpt-4o-mini".into(),
-            temperature: 0.7,
-            max_tokens: 2_048,
+        if crate::applefm::available() {
+            Self {
+                provider: crate::applefm::PROVIDER_ID.into(),
+                base_url: crate::applefm::default_base_url(),
+                model: "system".into(),
+                temperature: 0.7,
+                max_tokens: 2_048,
+            }
+        } else {
+            Self {
+                provider: "openai".into(),
+                base_url: "https://api.openai.com/v1".into(),
+                model: "gpt-4o-mini".into(),
+                temperature: 0.7,
+                max_tokens: 2_048,
+            }
         }
     }
 }
@@ -109,7 +126,9 @@ fn load_config(state: &State<'_, AppState>) -> AppResult<(LlmConfig, bool)> {
     };
 
     let Some(raw) = raw else {
-        return Ok((LlmConfig::default(), false));
+        let default = LlmConfig::default();
+        let configured = default.provider == crate::applefm::PROVIDER_ID;
+        return Ok((default, configured));
     };
 
     match serde_json::from_str::<LlmConfig>(&raw) {
@@ -126,7 +145,13 @@ fn load_config(state: &State<'_, AppState>) -> AppResult<(LlmConfig, bool)> {
 fn validate_config(config: &mut LlmConfig) -> AppResult<()> {
     if !PROVIDERS.contains(&config.provider.as_str()) {
         return Err(AppError::Other(
-            "未対応のプロバイダーです。OpenAI / Ollama / LM Studio / OpenRouter / カスタムから選択してください。".into(),
+            "未対応のプロバイダーです。Apple FM / OpenAI / Ollama / LM Studio / OpenRouter / カスタムから選択してください。".into(),
+        ));
+    }
+
+    if config.provider == crate::applefm::PROVIDER_ID && !crate::applefm::supported() {
+        return Err(AppError::Other(
+            "Apple FM は Apple Silicon（arm64）専用です。".into(),
         ));
     }
 
@@ -907,7 +932,13 @@ mod tests {
     #[test]
     fn serializes_settings_in_camel_case() {
         let settings = LlmSettings {
-            config: LlmConfig::default(),
+            config: LlmConfig {
+                provider: "openai".into(),
+                base_url: "https://api.openai.com/v1".into(),
+                model: "gpt-4o-mini".into(),
+                temperature: 0.7,
+                max_tokens: 2_048,
+            },
             configured: true,
             key_configured: true,
         };

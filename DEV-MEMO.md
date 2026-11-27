@@ -5,6 +5,15 @@
 
 ## リリース履歴
 
+### v0.4.2
+
+- [x] Apple FM 設定 UI — 設定に Apple FM タブを追加。`fm` の検出、`fm serve` の起動・停止、ホスト / ポート指定、モデル検出、LLM への反映、接続テストを GUI から操作可能にした
+- [x] 既定プロバイダー — Apple Silicon かつ `fm` が存在する環境では Apple FM（`http://127.0.0.1:1976/v1` / `system`）を既定に。`fm` がない環境は OpenAI のまま
+- [x] プロセス管理 — アプリが起動した `fm serve` を終了時に停止。外部で起動済みのサーバーは検出して再利用し、停止操作の対象外にした
+- [x] ドキュメント — README に Apple Intelligence、`sudo fm license`、手動起動コマンド、既定の Base URL / モデルを追記
+- [x] 検証 — `npm run typecheck` / `lint` / `test` / `build`、`cargo clippy` / `test`、用語集チェックに合格。実際の `fm serve` に対して `/v1/models` と `/v1/chat/completions` を確認
+- [x] バージョン更新 — `0.4.2` へ更新し、リリースノート `.github/release-notes-v0.4.2.md` を追加
+
 ### v0.4.1
 
 - [x] README 再構成 — 価値提案、対象ユーザー、できないこと、ダウンロード、3 分クイックスタートを先頭へ。詳細を docs へ分離し、バージョンバッジを Releases 連動に変更

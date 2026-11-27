@@ -1,3 +1,4 @@
+mod applefm;
 mod commands;
 mod db;
 mod error;
@@ -141,6 +142,9 @@ pub fn run() {
             commands::opencode::opencode_cancel,
             commands::opencode::opencode_config_get,
             commands::opencode::opencode_config_set,
+            commands::applefm::apple_fm_status,
+            commands::applefm::apple_fm_start,
+            commands::applefm::apple_fm_stop,
             commands::llm::llm_config_get,
             commands::llm::llm_config_set,
             commands::llm::llm_key_set,

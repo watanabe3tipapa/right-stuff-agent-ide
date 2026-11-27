@@ -11,6 +11,7 @@ import { api, errorMessage } from "../lib/api";
 import { DEFAULT_LLM_CONFIG, PROVIDER_ORDER, PROVIDER_PRESETS } from "../lib/llm";
 import { useAgentStore } from "../stores/agentStore";
 import { AgentPolicySettings } from "./AgentPolicySettings";
+import { AppleFmSettings } from "./AppleFmSettings";
 import { Icon } from "./Icon";
 import { OpenCodeSettings } from "./OpenCodeSettings";
 import { OpenShipSettings } from "./OpenShipSettings";
@@ -269,6 +270,15 @@ export function SettingsDialog() {
           <button
             type="button"
             role="tab"
+            aria-selected={section === "applefm"}
+            className={section === "applefm" ? "active" : ""}
+            onClick={() => setSection("applefm")}
+          >
+            Apple FM
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={section === "agent"}
             className={section === "agent" ? "active" : ""}
             onClick={() => setSection("agent")}
@@ -320,6 +330,7 @@ export function SettingsDialog() {
         )}
 
         {section === "agent" && <AgentPolicySettings />}
+        {section === "applefm" && <AppleFmSettings />}
         {section === "skills" && <SkillPolicySettings />}
         {section === "openship" && <OpenShipSettings />}
         {section === "opencode" && <OpenCodeSettings />}

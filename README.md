@@ -80,12 +80,30 @@ IDE 機能（LSP / DAP / Git / 統合ターミナル）は搭載済みです。�
 2. サイドバーのフォルダ名からワークスペースを選びます
 3. ツリーからファイルを開いて編集し、`⌘S` で保存します
 4. 必要に応じて設定を開きます
+   - **Apple FM**: Apple Silicon では既定の LLM。設定 > Apple FM から `fm serve` の検出・起動・停止と LLM への反映ができます（後述）
    - **LLM**: OpenAI 互換 API の Base URL・モデル・API キー（OpenCode 未接続時のフォールバック）
    - **OpenCode**: 自然言語デプロイを使う場合は `opencode`（1.2.0 以上）を別途インストールし、PATH に追加（または設定 > OpenCode で実行ファイルを指定）
    - **Agent Desktop**: `agent-desktop` CLI（未同梱）
    - **LSP / DAP**: 使う言語の言語サーバー / デバッグアダプター（未同梱）
 
 インストールせずに UI だけ試す場合は [ブラウザデモ](https://right-stuff-agent-ide.vercel.app/app/) を開いてください。
+
+### Apple FM を使う（Apple Silicon / macOS 27 以降）
+
+Apple Silicon では Apple Foundation Models を既定の LLM として使えます。OpenAI 互換の `fm serve` をアプリから起動できるため、API キーは不要で入力が端末外へ送信されることはありません。
+
+1. システム設定で Apple Intelligence を有効にします
+2. 初回のみターミナルで `sudo fm license` を実行してライセンスに同意します
+3. 設定 > **Apple FM** を開き、**サーバーを起動** → **設定して接続テスト** を押します
+4. モデルはオンデバイスの `system` を選びます（`pcc` は Private Cloud Compute が使える環境のみ）
+
+手動で起動する場合は次のコマンドを使います。
+
+```sh
+fm serve --host 127.0.0.1 --port 1976
+```
+
+Base URL は `http://127.0.0.1:1976/v1`、モデルは `system` です。Intel Mac や macOS 26 以前では `fm` が存在しないため、設定 > LLM から OpenAI / Ollama / LM Studio などを選んでください。
 
 ## 主な機能
 

@@ -2625,6 +2625,7 @@ html[data-shot="true"] .demo-banner {
 
 .settings-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   margin-bottom: 12px;
   padding: 2px;
@@ -2634,7 +2635,8 @@ html[data-shot="true"] .demo-banner {
 }
 
 .settings-tabs button {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 68px;
   border: none;
   border-radius: 4px;
   background: transparent;
@@ -2810,6 +2812,20 @@ html[data-shot="true"] .demo-banner {
   height: 1px;
   margin: 16px 0 2px;
   background: var(--line);
+}
+
+.settings-command {
+  margin-top: 6px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .key-row {

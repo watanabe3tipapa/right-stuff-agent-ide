@@ -113,7 +113,8 @@ export type AuditKind =
   | "opencode_session_created"
   | "opencode_session_prompted"
   | "opencode_tool_called"
-  | "opencode_agent_switched";
+  | "opencode_agent_switched"
+  | "opencode_permission_requested";
 
 export type AuditOutcome = "ok" | "error" | "blocked" | "cancelled";
 

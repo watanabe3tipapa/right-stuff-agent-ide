@@ -165,19 +165,32 @@ fn which(binary: &str) -> Option<PathBuf> {
         .find(|path| path.is_file())
 }
 
+fn expand_home(value: &str) -> PathBuf {
+    let trimmed = value.trim();
+    if trimmed == "~" {
+        if let Some(home) = std::env::var_os("HOME") {
+            return PathBuf::from(home);
+        }
+    } else if let Some(rest) = trimmed.strip_prefix("~/")
+        && let Some(home) = std::env::var_os("HOME")
+    {
+        return PathBuf::from(home).join(rest);
+    }
+    PathBuf::from(trimmed)
+}
+
 fn detect_binary(explicit: Option<String>, stored: Option<String>) -> Option<PathBuf> {
     for value in [explicit, stored].into_iter().flatten() {
-        let value = value.trim();
-        if value.is_empty() {
+        if value.trim().is_empty() {
             continue;
         }
-        let path = PathBuf::from(value);
+        let path = expand_home(&value);
         if path.is_file() {
             return Some(path);
         }
     }
     if let Ok(explicit) = std::env::var("RIGHT_STUFF_OPENCODE") {
-        let path = PathBuf::from(explicit);
+        let path = expand_home(&explicit);
         if path.is_file() {
             return Some(path);
         }
@@ -197,8 +210,10 @@ pub fn configured_path(state: &AppState) -> AppResult<Option<String>> {
 
 pub fn set_configured_path(state: &AppState, path: &str) -> AppResult<()> {
     let trimmed = path.trim();
-    if !trimmed.is_empty() {
-        let candidate = Path::new(trimmed);
+    let stored = if trimmed.is_empty() {
+        String::new()
+    } else {
+        let candidate = expand_home(trimmed);
         if !candidate.is_absolute() {
             return Err(AppError::Other(
                 "OpenCode のパスは絶対パスで指定してください。".into(),
@@ -209,12 +224,13 @@ pub fn set_configured_path(state: &AppState, path: &str) -> AppResult<()> {
                 "指定した OpenCode の実行ファイルが見つかりません。".into(),
             ));
         }
-    }
+        candidate.to_string_lossy().to_string()
+    };
     let conn = state
         .db
         .lock()
         .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
-    db::set_setting(&conn, PATH_SETTING, trimmed)?;
+    db::set_setting(&conn, PATH_SETTING, &stored)?;
     Ok(())
 }
 
@@ -404,7 +420,7 @@ fn fs_read_text(root: &Path, params: &Value) -> AppResult<Value> {
     Ok(json!({ "content": content }))
 }
 
-fn handle_agent_request(root: &Path, method: &str, params: &Value) -> Value {
+fn handle_agent_request(state: &AppState, root: &Path, method: &str, params: &Value) -> Value {
     match method {
         "session/request_permission" => {
             let options = params
@@ -414,36 +430,38 @@ fn handle_agent_request(root: &Path, method: &str, params: &Value) -> Value {
                 .unwrap_or_default();
             let selected = options
                 .iter()
-                .find(|option| {
-                    let id = option
+                .min_by_key(|option| permission_rank(option))
+                .filter(|option| permission_rank(option) < 4);
+            match selected {
+                Some(option) => {
+                    let option_id = option
                         .get("optionId")
                         .or_else(|| option.get("id"))
                         .and_then(Value::as_str)
-                        .unwrap_or_default()
-                        .to_ascii_lowercase();
-                    let kind = option
-                        .get("kind")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                        .to_ascii_lowercase();
-                    id.contains("allow") || kind == "allow_once" || kind == "allow_always"
-                })
-                .or_else(|| options.first());
-            if let Some(option) = selected {
-                let option_id = option
-                    .get("optionId")
-                    .or_else(|| option.get("id"))
-                    .and_then(Value::as_str)
-                    .unwrap_or("allow");
-                json!({
-                    "jsonrpc": "2.0",
-                    "result": { "outcome": { "outcome": "selected", "optionId": option_id } }
-                })
-            } else {
-                json!({
-                    "jsonrpc": "2.0",
-                    "result": { "outcome": { "outcome": "cancelled" } }
-                })
+                        .unwrap_or("allow");
+                    audit(
+                        state,
+                        "opencode_permission_requested",
+                        "ok",
+                        permission_detail(params, Some(option_id)),
+                    );
+                    json!({
+                        "jsonrpc": "2.0",
+                        "result": { "outcome": { "outcome": "selected", "optionId": option_id } }
+                    })
+                }
+                None => {
+                    audit(
+                        state,
+                        "opencode_permission_requested",
+                        "blocked",
+                        permission_detail(params, None),
+                    );
+                    json!({
+                        "jsonrpc": "2.0",
+                        "result": { "outcome": { "outcome": "cancelled" } }
+                    })
+                }
             }
         }
         "fs/read_text_file" => match fs_read_text(root, params) {
@@ -451,6 +469,60 @@ fn handle_agent_request(root: &Path, method: &str, params: &Value) -> Value {
             Err(error) => error_response(error.to_string()),
         },
         _ => error_response(format!("未対応の ACP リクエストです: {method}")),
+    }
+}
+
+/// Ranks the ACP permission options so a one-off allow is preferred over a
+/// persistent one. Anything that is not an allow option ranks last.
+fn permission_rank(option: &Value) -> u8 {
+    let kind = option
+        .get("kind")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let id = option
+        .get("optionId")
+        .or_else(|| option.get("id"))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    if kind == "allow_once" || id.contains("allow_once") {
+        0
+    } else if kind == "allow_always" || id.contains("allow_always") {
+        1
+    } else if id.contains("allow") {
+        2
+    } else {
+        4
+    }
+}
+
+fn permission_detail(params: &Value, option_id: Option<&str>) -> String {
+    let tool = params.get("toolCall");
+    let title = tool
+        .and_then(|value| value.get("title"))
+        .and_then(Value::as_str)
+        .or_else(|| {
+            tool.and_then(|value| value.get("toolCallId"))
+                .and_then(Value::as_str)
+        })
+        .unwrap_or("(不明なツール)");
+    let kind = tool
+        .and_then(|value| value.get("kind"))
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let label = if kind.is_empty() {
+        truncate_chars(title, 200)
+    } else {
+        format!(
+            "{} ({})",
+            truncate_chars(title, 200),
+            truncate_chars(kind, 40)
+        )
+    };
+    match option_id {
+        Some(option_id) => format!("{label} → {}", truncate_chars(option_id, 80)),
+        None => format!("{label} → 許可できる選択肢なし"),
     }
 }
 
@@ -489,6 +561,7 @@ fn spawn_reader(
                         let response = match root {
                             Ok(root) => {
                                 let mut response = handle_agent_request(
+                                    &state,
                                     &root,
                                     method,
                                     value.get("params").unwrap_or(&Value::Null),
@@ -1055,6 +1128,42 @@ mod tests {
         assert!(!manager.status_snapshot().0);
         *manager.version.lock().expect("version") = Some("1.2.0".into());
         assert!(manager.status_snapshot().0);
+    }
+
+    #[test]
+    fn permission_options_prefer_one_off_allow() {
+        let once = json!({ "optionId": "allow_once", "kind": "allow_once" });
+        let always = json!({ "optionId": "allow_always", "kind": "allow_always" });
+        let reject = json!({ "optionId": "reject_once", "kind": "reject_once" });
+        assert!(permission_rank(&once) < permission_rank(&always));
+        assert!(permission_rank(&always) < permission_rank(&reject));
+
+        let options = [reject, always, once];
+        let selected = options
+            .iter()
+            .min_by_key(|option| permission_rank(option))
+            .expect("selected");
+        assert_eq!(selected["optionId"], "allow_once");
+        assert_eq!(
+            options
+                .iter()
+                .filter(|option| permission_rank(option) < 4)
+                .count(),
+            2
+        );
+    }
+
+    #[test]
+    fn expands_a_leading_home_prefix() {
+        let Some(home) = std::env::var_os("HOME").map(PathBuf::from) else {
+            return;
+        };
+        assert_eq!(expand_home("~"), home);
+        assert_eq!(expand_home("~/bin/opencode"), home.join("bin/opencode"));
+        assert_eq!(
+            expand_home("/usr/local/bin/opencode"),
+            PathBuf::from("/usr/local/bin/opencode")
+        );
     }
 
     #[test]

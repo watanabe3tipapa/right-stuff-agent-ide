@@ -277,7 +277,8 @@ OpenCode → IDE MCP (HTTP / 127.0.0.1)
   → 既存の Rust 実装 (openship_*_impl) を呼ぶ
       deploy / rollback はネイティブ承認ダイアログを必ず表示
       Passive モードはすべて拒否
-  → 監査ログ opencode_session_* / opencode_tool_called / opencode_agent_switched
+  → 監査ログ opencode_session_* / opencode_tool_called / opencode_agent_switched /
+      opencode_permission_requested
 ```
 
 OpenCode に Openship の PAT は渡さない。PAT は OS キーチェーンから Rust だけが読み、

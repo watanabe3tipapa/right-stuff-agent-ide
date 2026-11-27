@@ -39,6 +39,7 @@ export const AUDIT_KIND_LABELS: Record<AuditKind, string> = {
   opencode_session_prompted: "OpenCode プロンプト",
   opencode_tool_called: "OpenCode ツール実行",
   opencode_agent_switched: "OpenCode エージェント切替",
+  opencode_permission_requested: "OpenCode 承認要求",
 };
 
 export const AUDIT_OUTCOME_LABELS: Record<AuditOutcome, string> = {

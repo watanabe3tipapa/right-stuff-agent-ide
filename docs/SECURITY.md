@@ -107,6 +107,7 @@ CLI はシェルを介さず `Command::new(binary).args(args)` で直接起動�
 - OpenCode に Openship の PAT を渡さない。OpenCode から Openship へ到達できるのは、IDE MCP サーバーが公開する `openship_status` / `openship_projects` / `openship_deployments` / `openship_logs` / `openship_deploy` / `openship_rollback` だけとする。
 - MCP の `deploy` / `rollback` は既存の Rust 実装へ委譲し、Passive モードでは全ツールを拒否する。Assistive / Autonomous でもネイティブ承認ダイアログを必ず表示し、OpenCode 側の設定では省略できない。
 - OpenCode の設定で `edit` / `bash`（V2 は `shell`）/ `webfetch` / `external_directory` を拒否し、ACP のファイル書き込み能力は公開しない。読み取りはワークスペース内のパス検証と 4 MiB の上限を通す。
+- ACP の `session/request_permission` は許可系の選択肢だけを自動選択し、一度だけの許可（allow_once）を優先する。許可できる選択肢がない場合はキャンセルし、要求内容と結果を `opencode_permission_requested` として監査ログに記録する。
 - ツール呼び出し、セッション開始、プロンプト、モード切替は監査ログに記録する。プロンプトは 1,000 文字、ツール引数は 1,200 文字で打ち切り、モデルの応答全文や PAT は記録しない。
 - OpenCode 自身の LLM 認証・送信先・送信内容は OpenCode の設定に従い、このアプリの管理外である。ACP の読み取り要求に応じてワークスペースのファイル内容が OpenCode とそのモデルへ渡る可能性があるため、機密ファイルを含むワークスペースでは OpenCode の設定と送信先を確認する。
 

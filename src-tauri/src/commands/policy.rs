@@ -33,6 +33,7 @@ const AUDIT_KINDS: &[&str] = &[
     "opencode_session_prompted",
     "opencode_tool_called",
     "opencode_agent_switched",
+    "opencode_permission_requested",
 ];
 
 const AUDIT_OUTCOMES: &[&str] = &["ok", "error", "blocked", "cancelled"];

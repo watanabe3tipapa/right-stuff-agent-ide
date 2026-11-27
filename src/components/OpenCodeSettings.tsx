@@ -122,7 +122,8 @@ export function OpenCodeSettings() {
         />
         <p className="field-help">
           空にすると環境変数 <code>RIGHT_STUFF_OPENCODE</code> と{" "}
-          <code>PATH</code> から検出します。指定する場合は絶対パスで入力してください。
+          <code>PATH</code> から検出します。絶対パスで入力してください。
+          先頭の <code>~/</code> はホームディレクトリに展開します。
         </p>
 
         <div className="openship-status">

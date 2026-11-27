@@ -140,7 +140,9 @@ fn version_supported(version: &str) -> bool {
 }
 
 async fn probe_version(binary: &Path, timeout: Duration) -> Result<(u64, u64, u64), String> {
-    let output = tokio::time::timeout(timeout, Command::new(binary).arg("--version").output())
+    let mut command = Command::new(binary);
+    command.arg("--version").kill_on_drop(true);
+    let output = tokio::time::timeout(timeout, command.output())
         .await
         .map_err(|_| "OpenCode のバージョン確認がタイムアウトしました。".to_string())?
         .map_err(|error| format!("OpenCode のバージョンを確認できませんでした: {error}"))?;

@@ -80,7 +80,8 @@ Supports **macOS 11 or later (Apple Silicon and Intel)**.
 2. Choose a workspace from the folder name in the sidebar
 3. Open a file from the tree, edit it, and press `⌘S` to save
 4. Open Settings when you need more
-   - **LLM**: Base URL, model, and API key for an OpenAI-compatible API
+   - **LLM**: Base URL, model, and API key for an OpenAI-compatible API (fallback when OpenCode is not connected)
+   - **OpenCode**: install `opencode` (1.2.0 or newer) separately and add it to `PATH` for natural-language deployment
    - **Agent Desktop**: the `agent-desktop` CLI (not bundled)
    - **LSP / DAP**: language servers and debug adapters for your languages (not bundled)
 
@@ -90,7 +91,7 @@ To try the UI without installing, open the [browser demo](https://right-stuff-ag
 
 - **Write** — Monaco editor, tabs, dirty tracking, GFM preview, `⌘P` Quick Open, `⌘K` command palette
 - **Keep** — direct saves into the workspace, with up to the latest 100 versions per file in SQLite
-- **Delegate** — OpenAI-compatible LLM chat, plan generation, skill execution (editor / Git / terminal / debug)
+- **Delegate** — natural-language deployment through OpenCode (ACP), OpenAI-compatible LLM chat (fallback), plan generation, skill execution (editor / Git / terminal / debug)
 - **Verify** — typecheck / lint / test verification loop, auto-fix for failures, Japanese text checks, self-contained HTML reports
 - **Connect** — Agent Desktop CLI detection, snapshots, allowlisted actions
 - **IDE** — Git panel, integrated terminal (PTY), LSP, DAP; expanding in future releases
@@ -116,6 +117,7 @@ Editing, saving, history, Git, the terminal, and LSP / DAP work without external
 | Path | Sent | Not sent |
 |---|---|---|
 | LLM chat | Chat messages, planning intent, and the changed files plus failure output selected for auto-fix | The whole workspace, snapshots, the audit log, settings other than credentials |
+| OpenCode | Prompts and workspace files (over ACP). Authentication is handled by OpenCode's own store | The Openship PAT (held only by the IDE MCP server), the audit log |
 | Openship | Deployment metadata and operation requests | The PAT in plaintext (read from the keychain in Rust), drafts |
 
 The scope of external connections, visibility into what is sent, and masking of sensitive data are under review. Share concerns in [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues). Details are in [SECURITY.md](./SECURITY.md) and [docs/SECURITY.md](./docs/SECURITY.md) (Japanese).
@@ -133,13 +135,15 @@ It was chosen because it can be self-hosted without a mandatory external account
 - The `openship` CLI is preferred when detected; the REST API is used only as a fallback
 - Connection settings live in SQLite, the PAT lives in the OS keychain, and all requests are made from Rust
 - Deploy and rollback are disabled in Passive mode and always require native approval in other modes
+- OpenCode can request these actions only through the IDE MCP server; the PAT is never passed to OpenCode
 
 See the [architecture diagram](./docs/diagrams/openship-local-first.html).
 
 ## Known limitations
 
 - macOS only; no Windows or Linux builds
-- The `agent-desktop` CLI, language servers, and debug adapters are not bundled
+- The `agent-desktop` CLI, `opencode`, language servers, and debug adapters are not bundled
+- OpenCode integration requires `opencode` 1.2.0 or newer; the IDE does not ship it
 - LLM support covers OpenAI-compatible APIs only (Anthropic-specific APIs are not supported)
 - Git uses the local `git` CLI; merge, rebase, and push are not implemented
 - DAP supports `lldb-dap` and `debugpy` only; attach and conditional breakpoints are not implemented

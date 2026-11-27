@@ -121,9 +121,7 @@ pub struct OpenShipLogs {
     pub logs: String,
 }
 
-fn lock_db<'a>(
-    state: &'a State<'_, AppState>,
-) -> AppResult<std::sync::MutexGuard<'a, rusqlite::Connection>> {
+fn lock_db(state: &AppState) -> AppResult<std::sync::MutexGuard<'_, rusqlite::Connection>> {
     state
         .db
         .lock()
@@ -418,7 +416,7 @@ fn cli_version(binary: &Path) -> Option<String> {
 }
 
 fn api_request(
-    state: &State<'_, AppState>,
+    state: &AppState,
     method: Method,
     url: &str,
     token: Option<&str>,
@@ -609,7 +607,7 @@ fn require_server(config: &OpenShipConfig, token: Option<&str>) -> AppResult<(St
     Ok((config.base_url.clone(), token.to_string()))
 }
 
-fn audit(state: &State<'_, AppState>, outcome: &str, command: Vec<String>, detail: Option<String>) {
+fn audit(state: &AppState, outcome: &str, command: Vec<String>, detail: Option<String>) {
     let kind = match outcome {
         "blocked" => "action_blocked",
         "cancelled" => "action_cancelled",
@@ -695,7 +693,7 @@ fn cli_deploy(
 }
 
 async fn rest_deploy(
-    state: &State<'_, AppState>,
+    state: &AppState,
     config: &OpenShipConfig,
     token: Option<&str>,
     project_id: &str,
@@ -802,8 +800,12 @@ pub async fn openship_token_delete() -> AppResult<()> {
 
 #[tauri::command]
 pub async fn openship_status(state: State<'_, AppState>) -> AppResult<OpenShipStatus> {
+    openship_status_impl(&state).await
+}
+
+pub(crate) async fn openship_status_impl(state: &AppState) -> AppResult<OpenShipStatus> {
     let config = {
-        let conn = lock_db(&state)?;
+        let conn = lock_db(state)?;
         load_config(&conn)?
     };
     let token = read_token()?;
@@ -843,7 +845,7 @@ pub async fn openship_status(state: State<'_, AppState>) -> AppResult<OpenShipSt
         let url = format!("{base_url}/api/health");
         let token_value = token.as_deref();
         match api_request(
-            &state,
+            state,
             Method::GET,
             &url,
             token_value,
@@ -890,8 +892,12 @@ pub async fn openship_status(state: State<'_, AppState>) -> AppResult<OpenShipSt
 
 #[tauri::command]
 pub async fn openship_projects(state: State<'_, AppState>) -> AppResult<Vec<OpenShipProject>> {
+    openship_projects_impl(&state).await
+}
+
+pub(crate) async fn openship_projects_impl(state: &AppState) -> AppResult<Vec<OpenShipProject>> {
     let config = {
-        let conn = lock_db(&state)?;
+        let conn = lock_db(state)?;
         load_config(&conn)?
     };
     let token = read_token()?;
@@ -899,7 +905,7 @@ pub async fn openship_projects(state: State<'_, AppState>) -> AppResult<Vec<Open
     let url = format!("{base_url}/api/projects");
 
     let response = api_request(
-        &state,
+        state,
         Method::GET,
         &url,
         Some(&token),
@@ -932,8 +938,16 @@ pub async fn openship_deployments(
     limit: Option<i64>,
     state: State<'_, AppState>,
 ) -> AppResult<Vec<OpenShipDeployment>> {
+    openship_deployments_impl(project_id, limit, &state).await
+}
+
+pub(crate) async fn openship_deployments_impl(
+    project_id: Option<String>,
+    limit: Option<i64>,
+    state: &AppState,
+) -> AppResult<Vec<OpenShipDeployment>> {
     let config = {
-        let conn = lock_db(&state)?;
+        let conn = lock_db(state)?;
         load_config(&conn)?
     };
     let token = read_token()?;
@@ -953,7 +967,7 @@ pub async fn openship_deployments(
     }
 
     let response = api_request(
-        &state,
+        state,
         Method::GET,
         parsed.as_str(),
         Some(&token),
@@ -985,8 +999,16 @@ pub async fn openship_deploy(
     project_id: Option<String>,
     state: State<'_, AppState>,
 ) -> AppResult<OpenShipDeployResult> {
+    openship_deploy_impl(&app, project_id, &state).await
+}
+
+pub(crate) async fn openship_deploy_impl(
+    app: &tauri::AppHandle,
+    project_id: Option<String>,
+    state: &AppState,
+) -> AppResult<OpenShipDeployResult> {
     let config = {
-        let conn = lock_db(&state)?;
+        let conn = lock_db(state)?;
         load_config(&conn)?
     };
     let token = read_token()?;
@@ -1006,13 +1028,13 @@ pub async fn openship_deploy(
         format!("Openship API POST /api/deployments / project: {project_id} / branch: {branch}")
     };
     let confirmed = confirm(
-        &app,
+        app,
         "Openship デプロイを承認",
         format!("{target}\n\n本番環境へデプロイします。内容を確認して承認してください。"),
     );
     if !confirmed {
         audit(
-            &state,
+            state,
             "cancelled",
             vec!["openship".into(), "deploy".into()],
             Some("ユーザーが承認をキャンセルしました".into()),
@@ -1026,7 +1048,7 @@ pub async fn openship_deploy(
     } else {
         if project_id.trim().is_empty() {
             audit(
-                &state,
+                state,
                 "blocked",
                 vec!["openship".into(), "deploy".into()],
                 Some("Project ID が未設定です".into()),
@@ -1035,7 +1057,7 @@ pub async fn openship_deploy(
                 "Project ID を入力するか、設定画面で既定のプロジェクトを登録してください。".into(),
             ));
         }
-        rest_deploy(&state, &config, token.as_deref(), &project_id, &branch).await?
+        rest_deploy(state, &config, token.as_deref(), &project_id, &branch).await?
     };
 
     let outcome = if result.ok { "ok" } else { "error" };
@@ -1047,7 +1069,7 @@ pub async fn openship_deploy(
     } else {
         Some(failure_detail(&result))
     };
-    audit(&state, outcome, result.command.clone(), detail);
+    audit(state, outcome, result.command.clone(), detail);
     Ok(result)
 }
 
@@ -1056,8 +1078,15 @@ pub async fn openship_logs(
     deployment_id: String,
     state: State<'_, AppState>,
 ) -> AppResult<OpenShipLogs> {
+    openship_logs_impl(deployment_id, &state).await
+}
+
+pub(crate) async fn openship_logs_impl(
+    deployment_id: String,
+    state: &AppState,
+) -> AppResult<OpenShipLogs> {
     let config = {
-        let conn = lock_db(&state)?;
+        let conn = lock_db(state)?;
         load_config(&conn)?
     };
     let token = read_token()?;
@@ -1066,7 +1095,7 @@ pub async fn openship_logs(
     let url = format!("{base_url}/api/deployments/{deployment_id}/logs");
 
     let response = api_request(
-        &state,
+        state,
         Method::GET,
         &url,
         Some(&token),
@@ -1102,15 +1131,23 @@ pub async fn openship_rollback(
     deployment_id: String,
     state: State<'_, AppState>,
 ) -> AppResult<OpenShipDeployResult> {
+    openship_rollback_impl(&app, deployment_id, &state).await
+}
+
+pub(crate) async fn openship_rollback_impl(
+    app: &tauri::AppHandle,
+    deployment_id: String,
+    state: &AppState,
+) -> AppResult<OpenShipDeployResult> {
     let config = {
-        let conn = lock_db(&state)?;
+        let conn = lock_db(state)?;
         load_config(&conn)?
     };
     let token = read_token()?;
     let deployment_id = validate_id(&deployment_id, "Deployment ID")?;
 
     let confirmed = confirm(
-        &app,
+        app,
         "Openship ロールバックを承認",
         format!(
             "デプロイ {deployment_id} へロールバックします。\n\n現在の本番環境が置き換わります。内容を確認して承認してください。"
@@ -1118,7 +1155,7 @@ pub async fn openship_rollback(
     );
     if !confirmed {
         audit(
-            &state,
+            state,
             "cancelled",
             vec!["openship".into(), "rollback".into(), deployment_id.clone()],
             Some("ユーザーが承認をキャンセルしました".into()),
@@ -1129,7 +1166,7 @@ pub async fn openship_rollback(
     let (base_url, token) = require_server(&config, token.as_deref())?;
     let url = format!("{base_url}/api/deployments/{deployment_id}/rollback");
     let response = api_request(
-        &state,
+        state,
         Method::POST,
         &url,
         Some(&token),
@@ -1169,7 +1206,7 @@ pub async fn openship_rollback(
     };
 
     audit(
-        &state,
+        state,
         if ok { "ok" } else { "error" },
         result.command.clone(),
         if ok {

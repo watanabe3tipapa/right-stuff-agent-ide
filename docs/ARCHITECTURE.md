@@ -119,7 +119,10 @@ macOS では `RunEvent::ExitRequested` が `⌘Q` で発火しないため、既
 Quit 項目を `app:quit` に置き換えて `app://quit-requested` を送る。Dock メニューの
 「終了」やログアウトは OS が直接終了するため対象外。
 
-## LLM チャットフロー
+## LLM チャットフロー（レガシー / OpenCode 未接続時）
+
+OpenCode タブが既定の対話経路になった。以下の LLM 経路は、OpenCode を
+インストールしていない環境とブラウザデモ向けに残している。
 
 ```
 ユーザー入力
@@ -243,6 +246,46 @@ v0.4.0 では、失敗した検証から修正案を作る自動修正ループ�
 スキーマ、承認フロー、パス・コマンドの制限、監査項目、API、テスト計画は
 [SKILLS.md](./SKILLS.md) を参照。機械可読スキーマは
 [skills.schema.json](./skills.schema.json)。
+
+## OpenCode 連携（自然言語デプロイ）
+
+![OpenCode 統合の構成図](diagrams/opencode-integration.png)
+
+インタラクティブ版: [diagrams/opencode-integration.html](diagrams/opencode-integration.html)
+
+OpenCode はアプリに同梱せず、利用者が別途インストールした `opencode` を
+子プロセスとして起動する。IDE は ACP（Agent Client Protocol）のクライアントになり、
+OpenCode は IDE が公開する MCP サーバーを通してだけ Openship に到達する。
+
+```
+Agent Panel (OpenCode タブ)
+  → api.opencodeStart(mode)
+  → Rust: opencode を検出し `opencode --version` を確認（1.2.0 未満は起動しない）
+  → OPENCODE_CONFIG_CONTENT を注入（V1 では OPENCODE_PERMISSION も）
+      V1: permission オブジェクト（edit / bash / webfetch / external_directory を deny）
+      V2: permissions 配列（2.x。同じ操作を deny）
+  → `opencode acp` をワークスペースで起動（ACP の通信は stdio のみ）
+  → initialize → session/new
+      mcpServers に 127.0.0.1 の一時ポート + セッション限りの Bearer トークンを渡す
+  → session/prompt で自然言語を送信
+  → session/update を opencode://event で UI へ流す
+
+OpenCode → IDE MCP (HTTP / 127.0.0.1)
+  → tools/call: openship_status / projects / deployments / logs / deploy / rollback
+  → 既存の Rust 実装 (openship_*_impl) を呼ぶ
+      deploy / rollback はネイティブ承認ダイアログを必ず表示
+      Passive モードはすべて拒否
+  → 監査ログ opencode_session_* / opencode_tool_called / opencode_agent_switched
+```
+
+OpenCode に Openship の PAT は渡さない。PAT は OS キーチェーンから Rust だけが読み、
+MCP の応答・ログ・監査詳細には含めない。OpenCode の編集・シェル・外部ディレクトリ・
+Web 取得は設定で拒否し、ACP では読み取りだけを許可する。
+
+`src-tauri/src/opencode.rs` が ACP セッション、`src-tauri/src/mcp_server.rs` が
+IDE MCP サーバー、`src-tauri/src/commands/opencode.rs` が Tauri コマンドを担当する。
+OpenCode のバージョン差で設定形状が変わるため、起動時のバージョン確認と
+設定注入の失敗時中止（fail-closed）を必須にしている。
 
 ## Openship 連携（ローカルファースト）
 
@@ -380,15 +423,17 @@ Skills タブの実行結果
 
 ```
 src/
-├── components/ (AgentPanel, PlanPanel, SkillsPanel, SkillLibrary, AutoFixCard, VerificationDetails, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
+├── components/ (AgentPanel, OpenCodePanel, PlanPanel, SkillsPanel, SkillLibrary, AutoFixCard, VerificationDetails, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
 ├── lib/{api,autofix,demo,llm,plan,policy,monaco,lsp,lspMapping,dap,skillLibrary,skillWindow,report}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent,git,lsp,dap}Store.ts
 src-tauri/src/
-├── commands/{workspace,editor,agent,policy,llm,openship,git,terminal,lsp,dap,skills,report,settings,app}.rs
+├── commands/{workspace,editor,agent,policy,llm,openship,opencode,git,terminal,lsp,dap,skills,report,settings,app}.rs
 ├── skills/{mod,editor,git,japanese,terminal,debug,exec,params,policy,verify}.rs
 ├── db.rs
 ├── error.rs
+├── mcp_server.rs
+├── opencode.rs
 ├── paths.rs
 ├── rpc.rs
 └── state.rs

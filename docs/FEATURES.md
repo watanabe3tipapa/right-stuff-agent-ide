@@ -49,6 +49,7 @@ IDE 機能は搭載済みですが、競合製品と同等の完成度を目指�
 ## 連携と配布
 
 - **Openship 連携（ローカルファースト）** — Deploy タブからデプロイ履歴・ログ・ロールバックを操作します。`openship` CLI を検出できれば CLI を優先し、未検出のときのみセルフホスト REST API にフォールバックします。接続設定は SQLite、PAT は OS キーチェーンに保存し、変更操作は必ずネイティブ承認ダイアログを通ります。構成図は [Openship 構成図](./diagrams/openship-local-first.html) を参照してください
+- **OpenCode 連携（自然言語デプロイ）** — 別途インストールした `opencode` を ACP（stdio）で起動し、OpenCode タブから自然言語でデプロイ・ログ・ロールバックを依頼できます。OpenCode には Openship の PAT を渡さず、IDE が MCP サーバーとして公開するツールだけを見せます。`deploy` / `rollback` は IDE 側のネイティブ承認と監査ログを必ず通ります。構成図は [OpenCode 構成図](./diagrams/opencode-integration.html) を参照してください
 - **ブラウザデモ** — Tauri なしでも `npm run dev` でデモ用ワークスペースを操作できます。編集内容・履歴・スキルポリシーはそのブラウザの localStorage に保存され、デモバーの「初期状態に戻す」で削除できます
 - **PWA** — ブラウザデモは manifest、service worker、オフラインページを持つ PWA としてインストールできます。Tauri 版では service worker を登録しません
 
@@ -58,7 +59,8 @@ IDE 機能は搭載済みですが、競合製品と同等の完成度を目指�
 - **エディタ**: Monaco Editor 0.52（`@monaco-editor/react`）
 - **状態管理**: Zustand 5（workspace / editor / agent / git / lsp / dap）
 - **デスクトップ基盤**: Tauri 2.0（Rust 2024 edition）
-- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / openship / git / terminal / lsp / dap / skills / report / settings / app）、パス検証、atomic write
+- **バックエンド**: Tauri コマンド（workspace / editor / agent / policy / llm / openship / opencode / git / terminal / lsp / dap / skills / report / settings / app）、パス検証、atomic write
+- **OpenCode**: `opencode acp` を子プロセスで起動し、改行区切り JSON-RPC で接続します。IDE MCP サーバーは `127.0.0.1` の一時ポートとセッション限りの Bearer トークンで保護し、Openship の変更操作は既存の Rust 実装へ委譲します
 - **Git / ターミナル**: `git` CLI を `std::process::Command` 経由で実行し、シェル文字列を組み立てません。ターミナルは `portable-pty` で PTY を確保し、出力を Tauri イベントで xterm.js へストリーミングします
 - **LSP / DAP**: Content-Length フレーミングの JSON-RPC トランスポート（`src-tauri/src/rpc.rs`）を共用します。サーバー / アダプターは固定レジストリのみで、WebView から任意のコマンドは起動できません
 - **データベース**: SQLite（WAL、`rusqlite` bundled）。バージョン履歴、設定、監査ログを保存します

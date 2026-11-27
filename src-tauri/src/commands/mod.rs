@@ -5,6 +5,7 @@ pub mod editor;
 pub mod git;
 pub mod llm;
 pub mod lsp;
+pub mod opencode;
 pub mod openship;
 pub mod policy;
 pub mod report;

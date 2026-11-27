@@ -57,6 +57,25 @@ Deploy タブ / /deploy / /logs / /rollback
 - REST を使うには Base URL と PAT が必要です。CLI だけでデプロイする場合は不要ですが、
   その場合は履歴・ログ・ロールバックをアプリから操作できません
 
+### OpenCode からの操作
+
+OpenCode タブでは、自然言語の指示が ACP で `opencode` に渡ります。OpenCode から
+Openship に到達する手段は、IDE の MCP サーバーが公開する `openship_status` /
+`openship_projects` / `openship_deployments` / `openship_logs` /
+`openship_deploy` / `openship_rollback` だけです。OpenCode に Openship の PAT は
+渡しません。
+
+```text
+opencode (ACP / stdio)
+  → MCP (HTTP / 127.0.0.1 + セッション限りの Bearer)
+  → IDE MCP サーバー
+  → 既存の openship_*_impl
+  → ネイティブ承認 → CLI / REST → 監査ログ
+```
+
+`deploy` / `rollback` は OpenCode 側の設定に関係なく、IDE のネイティブ承認を
+毎回表示します。Passive モードでは MCP ツール自体を実行しません。
+
 ## セキュリティ
 
 - 接続設定は SQLite、PAT は OS キーチェーン（`com.rightstuff.agentide.openship`）に保存し、
@@ -85,6 +104,8 @@ Deploy タブ / /deploy / /logs / /rollback
 3. アプリの「設定 > Openship」に Base URL・Project ID・Branch を入力します
 4. REST で履歴・ログ・ロールバックも使う場合は PAT を保存します
 5. Deploy タブ、または `/deploy`・`/logs`・`/rollback` から操作します
+6. 自然言語で操作する場合は `opencode`（1.2.0 以上）をインストールし、
+   OpenCode タブでセッションを開始します
 
 CLI の導入は <https://openship.io/docs/cli>、デプロイの手順は
 <https://openship.io/docs/cli/deploy> を参照してください。

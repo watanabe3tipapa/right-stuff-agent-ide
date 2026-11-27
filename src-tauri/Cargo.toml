@@ -29,7 +29,8 @@ thiserror = "2.0.21"
 tauri-plugin-dialog = "2"
 reqwest = { version = "0.13", features = ["json", "stream"] }
 futures-util = "0.3"
-tokio = { version = "1", features = ["macros", "sync", "time"] }
+tokio = { version = "1", features = ["macros", "sync", "time", "process", "io-util", "net", "rt-multi-thread"] }
+axum = "0.8"
 portable-pty = "0.9"
 libc = "0.2"
 

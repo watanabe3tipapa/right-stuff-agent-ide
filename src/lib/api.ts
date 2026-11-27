@@ -37,6 +37,8 @@ import type {
   OpenShipProject,
   OpenShipSettings,
   OpenShipStatus,
+  OpencodePromptResult,
+  OpencodeStatus,
   SaveResult,
   SkillCatalog,
   SkillDecisionResult,
@@ -375,6 +377,62 @@ export const api = {
     return isTauri
       ? call<OpenShipDeployResult>("openship_rollback", { deploymentId })
       : demoApi.openshipRollback();
+  },
+
+  opencodeStatus(): Promise<OpencodeStatus> {
+    if (!isTauri) {
+      return Promise.resolve({
+        available: false,
+        binary: null,
+        version: null,
+        running: false,
+        sessionId: null,
+        mode: "assistive",
+        minVersion: "1.2.0",
+        message: "OpenCode 連携は Tauri 版でのみ利用できます。",
+      });
+    }
+    return call<OpencodeStatus>("opencode_status");
+  },
+
+  opencodeStart(mode: string, path?: string): Promise<OpencodeStatus> {
+    if (!isTauri) {
+      return Promise.reject(new Error("OpenCode 連携は Tauri 版でのみ利用できます。"));
+    }
+    return call<OpencodeStatus>("opencode_start", { mode, path: path ?? null });
+  },
+
+  opencodeStop(): Promise<void> {
+    return isTauri ? call<void>("opencode_stop") : Promise.resolve();
+  },
+
+  opencodeSetMode(mode: string): Promise<void> {
+    if (!isTauri) return Promise.resolve();
+    return call<void>("opencode_set_mode", { mode });
+  },
+
+  opencodePrompt(
+    text: string,
+    mode: string,
+    promptId?: string,
+  ): Promise<OpencodePromptResult> {
+    if (!isTauri) {
+      return Promise.reject(new Error("OpenCode 連携は Tauri 版でのみ利用できます。"));
+    }
+    return call<OpencodePromptResult>("opencode_prompt", {
+      text,
+      mode,
+      promptId: promptId ?? null,
+    });
+  },
+
+  opencodeCancel(): Promise<void> {
+    return isTauri ? call<void>("opencode_cancel") : Promise.resolve();
+  },
+
+  onOpencodeEvent(handler: (payload: unknown) => void): Promise<() => void> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<unknown>("opencode://event", (event) => handler(event.payload));
   },
 
   gitStatus(): Promise<GitStatus> {

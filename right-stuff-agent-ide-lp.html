@@ -699,6 +699,25 @@ td strong { color: var(--ink); }
   gap: 1em;
 }
 @media (max-width: 820px) { .mode-grid { grid-template-columns: 1fr; } }
+.mechanism-figure {
+  margin: 0 0 1em;
+  padding: 0.6em;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.mechanism-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.mechanism-figure figcaption {
+  padding: 0.55em 0.4em 0.1em;
+  color: var(--ink-dim);
+  font-size: 0.78rem;
+}
+.mechanism-grid { margin-top: 0.2em; }
 .mode-card {
   position: relative;
   padding: calc(var(--space) * 0.95);
@@ -1315,12 +1334,12 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   <div class="section-header">
     <p class="section-label">Workflow</p>
     <h2>計画 → 承認 → 実行 → 検証 → 記録。</h2>
-    <p class="section-desc">エージェントに任せる部分と、人間が決める部分を分けています。計画の承認と変更操作の承認は、別々のタイミングで入ります。</p>
+    <p class="section-desc">エージェントに任せる部分と、人間が決める部分を分けています。OpenCode が意図を解釈し、計画の承認と変更操作の承認は、別々のタイミングで入ります。</p>
   </div>
   <div class="flow" aria-label="実行の流れ">
-    <div class="flow-step human"><b>意図を書く</b><span>Chat または Plan に入力</span></div>
+    <div class="flow-step human"><b>意図を書く</b><span>OpenCode タブ または Chat / Plan</span></div>
     <span class="flow-arrow">→</span>
-    <div class="flow-step auto"><b>計画を作る</b><span>許可アクションだけで構成</span></div>
+    <div class="flow-step auto"><b>計画を作る</b><span>OpenCode または LLM が構成</span></div>
     <span class="flow-arrow">→</span>
     <div class="flow-step human"><b>計画を承認</b><span>引数とリスクを確認</span></div>
     <span class="flow-arrow">→</span>
@@ -1329,6 +1348,37 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
     <div class="flow-step auto"><b>検証する</b><span>失敗時は修正案 → 承認 → 再検証</span></div>
     <span class="flow-arrow">→</span>
     <div class="flow-step record"><b>記録する</b><span>監査ログ / HTML レポート</span></div>
+  </div>
+</section>
+
+<section id="mechanism">
+  <div class="section-header">
+    <p class="section-label">How it works</p>
+    <h2>考えるのは OpenCode。決めるのは IDE。</h2>
+    <p class="section-desc">自然言語のデプロイは、別途インストールした OpenCode と、IDE の内側にある承認・監査を組み合わせて動きます。OpenCode にデプロイの認証情報は渡しません。</p>
+  </div>
+  <figure class="mechanism-figure">
+    <img src="/app/opencode-integration.png" alt="Agent Panel から Tauri / Rust が ACP で OpenCode と対話し、OpenCode は IDE MCP サーバー経由でだけ Openship Bridge に到達する構成図。PAT と監査ログは端末内に閉じる。" width="1368" height="756" loading="lazy" decoding="async">
+    <figcaption>
+      構成図: <a href="/app/diagrams/opencode-integration.html" target="_blank" rel="noreferrer">インタラクティブ版を開く →</a>
+    </figcaption>
+  </figure>
+  <div class="mode-grid mechanism-grid">
+    <article class="mode-card assistive">
+      <span class="mode-tag">ACP / stdio</span>
+      <h3>対話は OpenCode に任せる</h3>
+      <p>IDE は <code>opencode acp</code> を子プロセスで起動し、stdin / stdout の JSON-RPC でセッションを作ります。ACP の通信は外部に公開せず、MCP だけが <code>127.0.0.1</code> の一時ポートを使います。</p>
+    </article>
+    <article class="mode-card passive">
+      <span class="mode-tag">IDE MCP</span>
+      <h3>デプロイは IDE を通す</h3>
+      <p>OpenCode が見えるのは IDE が公開する <code>openship_deploy</code> などのツールだけです。呼び出しは既存の Rust ブリッジ、ポリシー、ネイティブ承認を必ず通ります。</p>
+    </article>
+    <article class="mode-card autonomous">
+      <span class="mode-tag">Local first</span>
+      <h3>認証情報は渡さない</h3>
+      <p>Openship の PAT は OS キーチェーンから Rust だけが読みます。OpenCode の設定にもログにも出さず、実行結果は端末内の監査ログに記録します。</p>
+    </article>
   </div>
 </section>
 
@@ -1387,6 +1437,7 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
         <tr><td><strong>原稿・コード</strong></td><td>選んだフォルダのファイル</td><td class="yes">なし</td></tr>
         <tr><td><strong>バージョン履歴・設定・監査ログ</strong></td><td>端末内の SQLite（WAL）</td><td class="yes">なし</td></tr>
         <tr><td><strong>API キー・Openship PAT</strong></td><td>OS キーチェーン</td><td class="yes">なし</td></tr>
+        <tr><td><strong>OpenCode のセッション / 認証</strong></td><td>OpenCode 自身のストア（端末内）</td><td class="maybe">モデル提供元のみ</td></tr>
         <tr><td><strong>画面スナップショット</strong></td><td>メモリ上のみ（再起動で消える）</td><td class="yes">なし</td></tr>
         <tr><td><strong>ブラウザデモの編集内容</strong></td><td>このブラウザの localStorage</td><td class="yes">なし</td></tr>
         <tr><td><strong>LLM / Openship へのリクエスト</strong></td><td>設定した API へ Rust から送信</td><td class="maybe">設定先のみ</td></tr>
@@ -1402,23 +1453,23 @@ footer .fine { margin-top: 0.45em; font-size: 0.74rem; }
   <div class="section-header">
     <p class="section-label">Agent modes</p>
     <h2>自律性は、段階的に。</h2>
-    <p class="section-desc">モードは「どこまで任せるか」の切り替えです。どのモードでも、変更操作のネイティブ承認は省略できません。</p>
+    <p class="section-desc">モードは「どこまで任せるか」の切り替えです。どのモードでも、変更操作のネイティブ承認は省略できません。Autonomous の一括承認は目標として残し、現状は実行のたびに承認します。</p>
   </div>
   <div class="mode-grid">
     <article class="mode-card passive">
       <span class="mode-tag">Passive</span>
       <h3>見るだけ</h3>
-      <p>読み取り専用。チャット入力とエージェントによる操作は無効です。実装の確認や、誤操作を避けたいときに使います。</p>
+      <p>読み取り専用。チャット入力、OpenCode セッション、エージェントによる操作は無効です。実装の確認や、誤操作を避けたいときに使います。</p>
     </article>
     <article class="mode-card assistive">
       <span class="mode-tag">Assistive</span>
       <h3>手順ごとに任せる</h3>
-      <p>チャットとファイル編集が使えます。計画は手順ごとに実行し、変更操作のたびに承認ダイアログを表示します。</p>
+      <p>OpenCode とチャット、ファイル編集が使えます。計画は手順ごとに実行し、変更操作のたびに承認ダイアログを表示します。</p>
     </article>
     <article class="mode-card autonomous">
       <span class="mode-tag">Autonomous</span>
-      <h3>承認済みの計画を連続実行</h3>
-      <p>承認した計画を複数ステップで実行します。失敗した時点で停止し、変更操作には実行のたびに承認ダイアログを表示します。</p>
+      <h3>承認済みの計画を連続実行（目標）</h3>
+      <p>承認した計画を複数ステップで実行する構想です。現状は失敗した時点で停止し、変更操作には実行のたびに承認ダイアログを表示します。</p>
     </article>
   </div>
 </section>

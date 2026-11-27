@@ -161,7 +161,7 @@ function logAudit(input: AuditInput) {
 
 export const useAgentStore = create<AgentState>((set, get) => ({
   mode: loadMode(),
-  panelTab: "chat",
+  panelTab: "opencode",
   status: null,
   statusLoading: false,
   messages: [

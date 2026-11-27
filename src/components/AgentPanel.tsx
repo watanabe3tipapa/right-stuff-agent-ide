@@ -9,6 +9,7 @@ import { DeployPanel } from "./DeployPanel";
 import { GitPanel } from "./GitPanel";
 import { Icon } from "./Icon";
 import { PlanPanel } from "./PlanPanel";
+import { OpenCodePanel } from "./OpenCodePanel";
 import { SkillsPanel } from "./SkillsPanel";
 
 const modeCopy: Record<AgentMode, { label: string; description: string }> = {
@@ -347,6 +348,13 @@ export function AgentPanel() {
             <div className="agent-tabs">
               <button
                 type="button"
+                className={tab === "opencode" ? "active" : ""}
+                onClick={() => setTab("opencode")}
+              >
+                OpenCode
+              </button>
+              <button
+                type="button"
                 className={tab === "chat" ? "active" : ""}
                 onClick={() => setTab("chat")}
               >
@@ -425,7 +433,9 @@ export function AgentPanel() {
         </div>
       </div>
 
-      {tab === "chat" ? (
+      {tab === "opencode" ? (
+        <OpenCodePanel />
+      ) : tab === "chat" ? (
         <ChatView />
       ) : tab === "plan" ? (
         <PlanPanel />

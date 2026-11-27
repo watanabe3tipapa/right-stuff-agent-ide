@@ -1,0 +1,242 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "right-stuff-agent-ide × OpenCode × Openship — 自然言語デプロイの構成",
+    "subtitle": "OpenCode は ACP で対話し、Openship へは IDE の MCP サーバー経由でだけ到達する",
+    "quality_profile": "showcase",
+    "visual_preset": "signal-flow",
+    "output": "opencode-integration.html",
+    "viewBox": [1320, 720],
+    "views": [
+      {
+        "id": "deploy-path",
+        "label": "デプロイ経路",
+        "focus": ["agent", "rust", "acp", "mcp", "bridge", "server", "target"],
+        "note": "ユーザーの意図が ACP で OpenCode に届き、デプロイは IDE MCP → Rust → Openship の順に実行される。"
+      },
+      {
+        "id": "trust-boundary",
+        "label": "信頼境界",
+        "focus": ["acp", "mcp", "policy", "audit", "local"],
+        "note": "OpenCode に PAT を渡さない。承認と監査は IDE の内側だけで完結する。"
+      },
+      {
+        "id": "local-state",
+        "label": "端末内の状態",
+        "focus": ["rust", "local", "audit"],
+        "note": "設定・PAT・監査ログは端末内に閉じ、Rust だけが読み書きする。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "agent",
+      "type": "frontend",
+      "label": "Agent Panel",
+      "sublabel": "自然言語の意図",
+      "pos": [40, 100],
+      "size": [160, 70]
+    },
+    {
+      "id": "rust",
+      "type": "backend",
+      "label": "Tauri / Rust",
+      "sublabel": "ACP client",
+      "pos": [260, 100],
+      "size": [170, 70],
+      "tag": "唯一のゲート"
+    },
+    {
+      "id": "acp",
+      "type": "external",
+      "label": "OpenCode",
+      "sublabel": "opencode acp (stdio)",
+      "pos": [500, 100],
+      "size": [180, 70],
+      "tag": "別途インストール"
+    },
+    {
+      "id": "policy",
+      "type": "security",
+      "label": "Policy Engine",
+      "sublabel": "Passive / Assistive",
+      "pos": [260, 300],
+      "size": [170, 70]
+    },
+    {
+      "id": "mcp",
+      "type": "security",
+      "label": "IDE MCP Server",
+      "sublabel": "deploy / logs / rollback",
+      "pos": [500, 300],
+      "size": [190, 70],
+      "tag": "127.0.0.1 + token"
+    },
+    {
+      "id": "bridge",
+      "type": "backend",
+      "label": "Openship Bridge",
+      "sublabel": "CLI 優先 / REST fallback",
+      "pos": [760, 300],
+      "size": [180, 70]
+    },
+    {
+      "id": "server",
+      "type": "cloud",
+      "label": "Openship Server",
+      "sublabel": "self-hosted / cloud",
+      "pos": [1010, 100],
+      "size": [170, 70],
+      "tag": "user-owned"
+    },
+    {
+      "id": "target",
+      "type": "cloud",
+      "label": "Target Runtime",
+      "sublabel": "OpenResty / containers",
+      "pos": [1010, 300],
+      "size": [170, 70]
+    },
+    {
+      "id": "audit",
+      "type": "database",
+      "label": "Audit Log",
+      "sublabel": "SQLite / local only",
+      "pos": [260, 520],
+      "size": [170, 70]
+    },
+    {
+      "id": "local",
+      "type": "database",
+      "label": "Local State",
+      "sublabel": "SQLite + Keychain",
+      "pos": [500, 520],
+      "size": [190, 70],
+      "tag": "config / PAT"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Local machine — OpenCode は子プロセス、PAT はキーチェーン",
+      "wraps": ["agent", "rust", "acp", "policy", "mcp", "audit", "local"],
+      "pad": 26
+    },
+    {
+      "kind": "security-group",
+      "label": "変更操作は必ず承認",
+      "wraps": ["policy", "mcp"],
+      "pad": 18
+    },
+    {
+      "kind": "region",
+      "label": "Self-hosted, user-owned",
+      "wraps": ["server", "target"],
+      "pad": 24
+    }
+  ],
+  "connections": [
+    {
+      "id": "agent-to-rust",
+      "from": "agent",
+      "to": "rust",
+      "label": "意図",
+      "variant": "emphasis"
+    },
+    {
+      "id": "rust-to-acp",
+      "from": "rust",
+      "to": "acp",
+      "label": "ACP (stdio)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "acp-to-mcp",
+      "from": "acp",
+      "to": "mcp",
+      "label": "MCP (HTTP + token)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "mcp-to-bridge",
+      "from": "mcp",
+      "to": "bridge",
+      "label": "deploy / logs / rollback",
+      "variant": "emphasis"
+    },
+    {
+      "id": "bridge-to-server",
+      "from": "bridge",
+      "to": "server",
+      "label": "CLI / REST",
+      "variant": "emphasis"
+    },
+    {
+      "id": "server-to-target",
+      "from": "server",
+      "to": "target",
+      "label": "build / TLS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "rust-to-policy",
+      "from": "rust",
+      "to": "policy",
+      "label": "許可 / 確認 / 禁止",
+      "variant": "security"
+    },
+    {
+      "id": "policy-to-mcp",
+      "from": "policy",
+      "to": "mcp",
+      "label": "実行を承認",
+      "variant": "security",
+      "labelDx": -24,
+      "labelDy": -42
+    },
+    {
+      "id": "rust-to-audit",
+      "from": "rust",
+      "to": "audit",
+      "label": "結果を記録",
+      "variant": "dashed"
+    },
+    {
+      "id": "rust-to-local",
+      "from": "rust",
+      "to": "local",
+      "label": "設定 / PAT",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "役割の分離",
+      "items": [
+        "OpenCode は意図を解釈してツールを選ぶ",
+        "IDE は承認・監査・ファイル安全を担う",
+        "Openship はデプロイの実行先に徹する"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "実行経路",
+      "items": [
+        "ACP は stdio の JSON-RPC、ポートを開かない",
+        "デプロイは IDE MCP のツールだけ",
+        "CLI 優先、未検出時のみ REST"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "守るもの",
+      "items": [
+        "OpenCode に Openship の PAT を渡さない",
+        "deploy / rollback は毎回ネイティブ承認",
+        "全実行をローカルの監査ログに記録"
+      ]
+    }
+  ]
+}

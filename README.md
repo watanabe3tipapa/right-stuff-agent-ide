@@ -80,7 +80,8 @@ IDE 機能（LSP / DAP / Git / 統合ターミナル）は搭載済みです。�
 2. サイドバーのフォルダ名からワークスペースを選びます
 3. ツリーからファイルを開いて編集し、`⌘S` で保存します
 4. 必要に応じて設定を開きます
-   - **LLM**: OpenAI 互換 API の Base URL・モデル・API キー
+   - **LLM**: OpenAI 互換 API の Base URL・モデル・API キー（OpenCode 未接続時のフォールバック）
+   - **OpenCode**: 自然言語デプロイを使う場合は `opencode`（1.2.0 以上）を別途インストールして PATH に追加
    - **Agent Desktop**: `agent-desktop` CLI（未同梱）
    - **LSP / DAP**: 使う言語の言語サーバー / デバッグアダプター（未同梱）
 
@@ -90,7 +91,7 @@ IDE 機能（LSP / DAP / Git / 統合ターミナル）は搭載済みです。�
 
 - **書く** — Monaco エディタ、タブ、未保存管理、GFM プレビュー、`⌘P` クイックオープン、`⌘K` コマンドパレット
 - **残す** — ワークスペースへ直接保存。保存ごとに SQLite へ履歴を記録し、ファイルあたり最新 100 版を保持
-- **任せる** — OpenAI 互換 API の LLM チャット、計画立案、スキル実行（エディタ / Git / ターミナル / デバッグ）
+- **任せる** — OpenCode による自然言語のデプロイ操作（ACP）、OpenAI 互換 API の LLM チャット（フォールバック）、計画立案、スキル実行（エディタ / Git / ターミナル / デバッグ）
 - **確かめる** — typecheck / lint / test の検証ループ、失敗時の自動修正、日本語表記チェック、自己完結 HTML レポート
 - **つなぐ** — Agent Desktop CLI の検出、スナップショット、許可アクションの実行
 - **IDE** — Git パネル、統合ターミナル (PTY)、LSP、DAP。今後のバージョンで拡張
@@ -116,6 +117,7 @@ IDE 機能（LSP / DAP / Git / 統合ターミナル）は搭載済みです。�
 | 経路 | 送るもの | 送らないもの |
 |---|---|---|
 | LLM チャット | チャットの会話、計画立案の意図、自動修正で選んだ変更ファイルと失敗出力 | ワークスペース全体、スナップショット、監査ログ、API キー以外の設定 |
+| OpenCode | プロンプトとワークスペースのファイル（ACP 経由）。認証は OpenCode 側のストア | Openship の PAT（IDE の MCP サーバーだけが保持）、監査ログ |
 | Openship | デプロイ対象のメタデータと操作指示 | PAT の平文（キーチェーンから Rust 側で読み出す）、原稿 |
 
 外部接続の範囲、送信内容の可視化、機密情報のマスクは現在も見直しを進めています。懸念点は [Issues](https://github.com/watanabe3tipapa/right-stuff-agent-ide/issues) で共有してください。詳細は [SECURITY.md](./SECURITY.md) と [docs/SECURITY.md](./docs/SECURITY.md) にまとめています。

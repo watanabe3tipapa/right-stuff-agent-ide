@@ -76,7 +76,8 @@ export type AgentPanelTab =
   | "debug"
   | "deploy"
   | "audit"
-  | "runtime";
+  | "runtime"
+  | "opencode";
 
 export type AgentPolicyDecision = "allow" | "ask" | "block";
 
@@ -100,7 +101,11 @@ export type AuditKind =
   | "skill_cancelled"
   | "verification_run"
   | "verification_fix"
-  | "skill_policy_updated";
+  | "skill_policy_updated"
+  | "opencode_session_created"
+  | "opencode_session_prompted"
+  | "opencode_tool_called"
+  | "opencode_agent_switched";
 
 export type AuditOutcome = "ok" | "error" | "blocked" | "cancelled";
 
@@ -376,6 +381,33 @@ export interface ChatMessage {
   command?: string;
   /** Local UI notice that must not be sent back to the LLM. */
   local?: boolean;
+}
+
+export interface OpencodeStatus {
+  available: boolean;
+  binary: string | null;
+  version: string | null;
+  running: boolean;
+  sessionId: string | null;
+  mode: AgentMode;
+  minVersion: string;
+  message: string;
+}
+
+export interface OpencodePromptResult {
+  stopReason: string | null;
+  text: string;
+}
+
+export interface OpencodeUpdate {
+  sessionId?: string;
+  update?: {
+    sessionUpdate?: string;
+    content?: { type?: string; text?: string };
+    toolName?: string;
+    title?: string;
+    status?: string;
+  };
 }
 
 export type LlmProvider = "openai" | "ollama" | "lmstudio" | "openrouter" | "custom";

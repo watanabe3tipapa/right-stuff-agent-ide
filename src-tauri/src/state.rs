@@ -53,6 +53,7 @@ pub struct AppState {
     pub terminals: Mutex<HashMap<String, TerminalHandle>>,
     pub lsp_sessions: Mutex<HashMap<String, RpcSession>>,
     pub dap_sessions: Mutex<HashMap<String, RpcSession>>,
+    pub opencode: crate::opencode::OpencodeManager,
 }
 
 impl AppState {
@@ -79,6 +80,7 @@ impl AppState {
             terminals: Mutex::new(HashMap::new()),
             lsp_sessions: Mutex::new(HashMap::new()),
             dap_sessions: Mutex::new(HashMap::new()),
+            opencode: crate::opencode::OpencodeManager::default(),
         })
     }
 

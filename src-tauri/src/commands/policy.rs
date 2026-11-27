@@ -29,6 +29,10 @@ const AUDIT_KINDS: &[&str] = &[
     "verification_run",
     "verification_fix",
     "skill_policy_updated",
+    "opencode_session_created",
+    "opencode_session_prompted",
+    "opencode_tool_called",
+    "opencode_agent_switched",
 ];
 
 const AUDIT_OUTCOMES: &[&str] = &["ok", "error", "blocked", "cancelled"];

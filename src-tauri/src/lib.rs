@@ -2,6 +2,8 @@ mod commands;
 mod db;
 mod error;
 mod fsutil;
+mod mcp_server;
+mod opencode;
 mod paths;
 mod rpc;
 mod skills;
@@ -131,6 +133,12 @@ pub fn run() {
             commands::openship::openship_deploy,
             commands::openship::openship_logs,
             commands::openship::openship_rollback,
+            commands::opencode::opencode_status,
+            commands::opencode::opencode_start,
+            commands::opencode::opencode_stop,
+            commands::opencode::opencode_set_mode,
+            commands::opencode::opencode_prompt,
+            commands::opencode::opencode_cancel,
             commands::llm::llm_config_get,
             commands::llm::llm_config_set,
             commands::llm::llm_key_set,

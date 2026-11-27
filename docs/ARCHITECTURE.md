@@ -254,8 +254,10 @@ v0.4.0 では、失敗した検証から修正案を作る自動修正ループ�
 インタラクティブ版: [diagrams/opencode-integration.html](diagrams/opencode-integration.html)
 
 OpenCode はアプリに同梱せず、利用者が別途インストールした `opencode` を
-子プロセスとして起動する。IDE は ACP（Agent Client Protocol）のクライアントになり、
-OpenCode は IDE が公開する MCP サーバーを通してだけ Openship に到達する。
+子プロセスとして起動する。実行ファイルは設定の「OpenCode」、`RIGHT_STUFF_OPENCODE`、
+`PATH` の順に検出し、設定画面から絶対パスを保存できる。IDE は ACP（Agent Client
+Protocol）のクライアントになり、OpenCode は IDE が公開する MCP サーバーを通してだけ
+Openship に到達する。
 
 ```
 Agent Panel (OpenCode タブ)
@@ -423,7 +425,7 @@ Skills タブの実行結果
 
 ```
 src/
-├── components/ (AgentPanel, OpenCodePanel, PlanPanel, SkillsPanel, SkillLibrary, AutoFixCard, VerificationDetails, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
+├── components/ (AgentPanel, OpenCodePanel, OpenCodeSettings, PlanPanel, SkillsPanel, SkillLibrary, AutoFixCard, VerificationDetails, GitPanel, DebugPanel, QuickOpen, TerminalDock, DeployPanel, AuditPanel, AgentPolicySettings, ToolsSettings, OpenShipSettings, SettingsDialog, ...)
 ├── lib/{api,autofix,demo,llm,plan,policy,monaco,lsp,lspMapping,dap,skillLibrary,skillWindow,report}.ts
 ├── shared/types.ts
 └── stores/{workspace,editor,agent,git,lsp,dap}Store.ts

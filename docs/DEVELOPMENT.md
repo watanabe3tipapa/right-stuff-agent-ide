@@ -180,6 +180,7 @@ src/
 │   ├── FileTree.tsx                # ワークスペースツリーとファイル操作
 │   ├── AgentPanel.tsx              # OpenCode / Chat / Plan / Skills / Git / Debug / Deploy / Audit / Runtime
 │   ├── OpenCodePanel.tsx           # OpenCode (ACP) の起動・対話・ストリーミング
+│   ├── OpenCodeSettings.tsx        # OpenCode 実行ファイルのパス設定と検出結果
 │   ├── PlanPanel.tsx               # 計画の生成・承認・実行
 │   ├── SkillsPanel.tsx             # スキル実行・検証・HTML レポート
 │   ├── AutoFixCard.tsx             # 検証失敗からの自動修正

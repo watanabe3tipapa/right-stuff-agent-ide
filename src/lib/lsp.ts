@@ -125,7 +125,7 @@ class LspClient {
     const rootUri = fileUri(this.root, "").replace(/\/$/, "");
     await this.request("initialize", {
       processId: null,
-      clientInfo: { name: "right-stuff-agent-ide", version: "0.4.2" },
+      clientInfo: { name: "right-stuff-agent-ide", version: "0.4.3" },
       rootUri,
       workspaceFolders: [{ uri: rootUri, name: rootUri.split("/").pop() ?? "workspace" }],
       capabilities: {

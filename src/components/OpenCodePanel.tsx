@@ -24,6 +24,7 @@ export function OpenCodePanel() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [modelSaving, setModelSaving] = useState(false);
   const [error, setError] = useState("");
   const [streamingText, setStreamingText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -104,6 +105,20 @@ export function OpenCodePanel() {
     }
   }
 
+  async function changeModel(value: string) {
+    if (!value || value === status?.model) return;
+    setModelSaving(true);
+    setError("");
+    try {
+      setStatus(await api.opencodeSetModel(value));
+    } catch (cause) {
+      setError(errorMessage(cause));
+      await refresh();
+    } finally {
+      setModelSaving(false);
+    }
+  }
+
   async function stop() {
     try {
       await api.opencodeStop();
@@ -159,7 +174,7 @@ export function OpenCodePanel() {
           <strong>OpenCode</strong>
           <span>
             {status?.running
-              ? `${status.version ?? ""} / session ${status.sessionId?.slice(0, 8) ?? ""}`
+              ? `${status.model ? `${status.model} / ` : ""}${status.version ?? ""} / session ${status.sessionId?.slice(0, 8) ?? ""}`
               : status?.available
                 ? `${status.version ?? ""} を検出`
                 : "未検出"}
@@ -180,6 +195,24 @@ export function OpenCodePanel() {
           </button>
         )}
       </div>
+
+      {status?.running && status.models.length > 0 && (
+        <label className="opencode-model">
+          <span>モデル</span>
+          <select
+            value={status.model ?? ""}
+            disabled={modelSaving || disabled}
+            onChange={(event) => void changeModel(event.target.value)}
+          >
+            {status.models.map((model) => (
+              <option key={model.value} value={model.value}>
+                {model.name}
+              </option>
+            ))}
+          </select>
+          {modelSaving && <em>切替中…</em>}
+        </label>
+      )}
 
       {status && !status.running && (
         <p className="opencode-note">{status.message}</p>

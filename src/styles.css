@@ -1233,6 +1233,36 @@ html[data-shot="true"] .demo-banner {
   background: var(--accent);
   vertical-align: middle;
 }
+.opencode-model {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+}
+.opencode-model > span {
+  flex: none;
+}
+.opencode-model select {
+  min-width: 0;
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+.opencode-model em {
+  flex: none;
+  font-style: normal;
+  color: var(--ink-dim);
+}
+
 .opencode-note,
 .opencode-error {
   margin: 8px 12px 0;

@@ -138,6 +138,7 @@ pub fn run() {
             commands::opencode::opencode_start,
             commands::opencode::opencode_stop,
             commands::opencode::opencode_set_mode,
+            commands::opencode::opencode_set_model,
             commands::opencode::opencode_prompt,
             commands::opencode::opencode_cancel,
             commands::opencode::opencode_config_get,

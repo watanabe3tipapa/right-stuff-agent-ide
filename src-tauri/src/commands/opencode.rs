@@ -37,6 +37,15 @@ pub async fn opencode_set_mode(mode: String, state: State<'_, AppState>) -> AppR
 }
 
 #[tauri::command]
+pub async fn opencode_set_model(
+    model: String,
+    state: State<'_, AppState>,
+) -> AppResult<opencode::OpencodeStatus> {
+    opencode::set_model(&state, &model).await?;
+    Ok(opencode::status(&state).await)
+}
+
+#[tauri::command]
 pub async fn opencode_prompt(
     text: String,
     mode: String,

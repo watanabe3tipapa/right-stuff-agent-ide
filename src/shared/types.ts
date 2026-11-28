@@ -393,6 +393,11 @@ export interface ChatMessage {
   local?: boolean;
 }
 
+export interface OpencodeModel {
+  value: string;
+  name: string;
+}
+
 export interface OpencodeStatus {
   available: boolean;
   binary: string | null;
@@ -400,6 +405,8 @@ export interface OpencodeStatus {
   running: boolean;
   sessionId: string | null;
   mode: AgentMode;
+  model: string | null;
+  models: OpencodeModel[];
   minVersion: string;
   message: string;
 }

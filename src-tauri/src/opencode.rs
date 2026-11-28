@@ -22,9 +22,17 @@ use crate::state::AppState;
 pub const MIN_VERSION: &str = "1.2.0";
 pub const OPENCODE_EVENT: &str = "opencode://event";
 pub const PATH_SETTING: &str = "opencode_path";
+pub const MODEL_SETTING: &str = "opencode_model";
 const MAX_LINE_BYTES: usize = 4 * 1024 * 1024;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const PROMPT_TIMEOUT: Duration = Duration::from_secs(600);
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OpencodeModel {
+    pub value: String,
+    pub name: String,
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,6 +43,8 @@ pub struct OpencodeStatus {
     pub running: bool,
     pub session_id: Option<String>,
     pub mode: String,
+    pub model: Option<String>,
+    pub models: Vec<OpencodeModel>,
     pub min_version: String,
     pub message: String,
 }
@@ -52,6 +62,8 @@ struct AcpSession {
     pending: Arc<Mutex<HashMap<i64, oneshot::Sender<Value>>>>,
     next_id: AtomicI64,
     session_id: Mutex<String>,
+    model: Mutex<Option<String>>,
+    models: Mutex<Vec<OpencodeModel>>,
     transcript: Arc<Mutex<String>>,
     shutdown: Mutex<Option<oneshot::Sender<()>>>,
 }
@@ -196,6 +208,116 @@ fn detect_binary(explicit: Option<String>, stored: Option<String>) -> Option<Pat
         }
     }
     which("opencode")
+}
+
+pub fn configured_model(state: &AppState) -> AppResult<Option<String>> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
+    Ok(db::get_setting(&conn, MODEL_SETTING)?
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty()))
+}
+
+fn save_configured_model(state: &AppState, model: &str) -> AppResult<()> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| AppError::Other("DB ロックの取得に失敗しました".into()))?;
+    db::set_setting(&conn, MODEL_SETTING, model)?;
+    Ok(())
+}
+
+fn parse_model_options(value: &Value) -> (Option<String>, Vec<OpencodeModel>) {
+    let Some(options) = value.get("configOptions").and_then(Value::as_array) else {
+        return (None, Vec::new());
+    };
+    let Some(model) = options
+        .iter()
+        .find(|option| option.get("id").and_then(Value::as_str) == Some("model"))
+    else {
+        return (None, Vec::new());
+    };
+    let current = model
+        .get("currentValue")
+        .and_then(Value::as_str)
+        .map(str::to_string);
+    let models = model
+        .get("options")
+        .and_then(Value::as_array)
+        .map(|items| {
+            items
+                .iter()
+                .filter_map(|item| {
+                    let value = item.get("value").and_then(Value::as_str)?;
+                    let name = item.get("name").and_then(Value::as_str).unwrap_or(value);
+                    Some(OpencodeModel {
+                        value: value.to_string(),
+                        name: name.to_string(),
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    (current, models)
+}
+
+async fn apply_model(session: &AcpSession, model: &str) -> AppResult<()> {
+    let session_id = session
+        .session_id
+        .lock()
+        .map(|value| value.clone())
+        .unwrap_or_default();
+    if session_id.is_empty() {
+        return Err(AppError::Other(
+            "OpenCode セッションが開始されていません。".into(),
+        ));
+    }
+    let result = send_request(
+        session,
+        "session/set_config_option",
+        json!({
+            "sessionId": session_id,
+            "configId": "model",
+            "value": model
+        }),
+        REQUEST_TIMEOUT,
+    )
+    .await?;
+    let (current, models) = parse_model_options(&result);
+    if let Ok(mut value) = session.model.lock() {
+        *value = current.or_else(|| Some(model.to_string()));
+    }
+    if !models.is_empty()
+        && let Ok(mut value) = session.models.lock()
+    {
+        *value = models;
+    }
+    Ok(())
+}
+
+pub async fn set_model(state: &AppState, model: &str) -> AppResult<()> {
+    let trimmed = model.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Other("モデルを指定してください。".into()));
+    }
+    let session = {
+        let guard = state.opencode.session.lock().await;
+        guard
+            .as_ref()
+            .cloned()
+            .ok_or_else(|| AppError::Other("OpenCode セッションが開始されていません。".into()))?
+    };
+    apply_model(&session, trimmed).await?;
+    save_configured_model(state, trimmed)?;
+    audit(
+        state,
+        "opencode_model_switched",
+        "ok",
+        format!("model {trimmed}"),
+    );
+    Ok(())
 }
 
 pub fn configured_path(state: &AppState) -> AppResult<Option<String>> {
@@ -533,14 +655,7 @@ fn error_response(message: String) -> Value {
     })
 }
 
-fn spawn_reader(
-    app: AppHandle,
-    stdout: tokio::process::ChildStdout,
-    stdin: Arc<tokio::sync::Mutex<ChildStdin>>,
-    session_id: String,
-    pending: Arc<Mutex<HashMap<i64, oneshot::Sender<Value>>>>,
-    transcript: Arc<Mutex<String>>,
-) {
+fn spawn_reader(app: AppHandle, stdout: tokio::process::ChildStdout, session: Arc<AcpSession>) {
     tauri::async_runtime::spawn(async move {
         let mut lines = BufReader::new(stdout).lines();
         loop {
@@ -578,7 +693,7 @@ fn spawn_reader(
                         let _ = app.emit(OPENCODE_EVENT, &value);
                         // Requests from the agent must be answered on the same
                         // stdin the session writes to.
-                        let _ = write_message(&stdin, &response).await;
+                        let _ = write_message(&session.stdin, &response).await;
                         continue;
                     }
 
@@ -592,7 +707,7 @@ fn spawn_reader(
                                 .get("content")
                                 .and_then(|content| content.get("text"))
                                 .and_then(Value::as_str)
-                            && let Ok(mut transcript) = transcript.lock()
+                            && let Ok(mut transcript) = session.transcript.lock()
                         {
                             transcript.push_str(text);
                         }
@@ -601,7 +716,7 @@ fn spawn_reader(
                     }
 
                     if let Some(id) = id
-                        && let Ok(mut pending) = pending.lock()
+                        && let Ok(mut pending) = session.pending.lock()
                         && let Some(sender) = pending.remove(&id)
                     {
                         let _ = sender.send(value);
@@ -612,6 +727,16 @@ fn spawn_reader(
             }
         }
 
+        // Wake any request that was still waiting when the agent exited.
+        if let Ok(mut pending) = session.pending.lock() {
+            pending.clear();
+        }
+
+        let session_id = session
+            .session_id
+            .lock()
+            .map(|value| value.clone())
+            .unwrap_or_default();
         let _ = app.emit(
             OPENCODE_EVENT,
             json!({
@@ -620,7 +745,9 @@ fn spawn_reader(
                 "params": { "sessionId": session_id }
             }),
         );
-        clear_session_if_current(&app, &session_id).await;
+        if !session_id.is_empty() {
+            clear_session_if_current(&app, &session_id).await;
+        }
     });
 }
 
@@ -667,18 +794,24 @@ async fn abort_session(session: &AcpSession) {
 }
 
 pub async fn status(state: &AppState) -> OpencodeStatus {
-    let running = state.opencode.session.lock().await.is_some();
-    let session_id = {
-        let guard = state.opencode.session.lock().await;
-        guard.as_ref().and_then(|session| {
-            session
-                .session_id
-                .lock()
-                .ok()
-                .map(|value| value.clone())
-                .filter(|value| !value.is_empty())
-        })
-    };
+    let session = { state.opencode.session.lock().await.clone() };
+    let running = session.is_some();
+    let session_id = session.as_ref().and_then(|session| {
+        session
+            .session_id
+            .lock()
+            .ok()
+            .map(|value| value.clone())
+            .filter(|value| !value.is_empty())
+    });
+    let model = session
+        .as_ref()
+        .and_then(|session| session.model.lock().ok().and_then(|value| value.clone()))
+        .or_else(|| configured_model(state).ok().flatten());
+    let models = session
+        .as_ref()
+        .and_then(|session| session.models.lock().ok().map(|value| value.clone()))
+        .unwrap_or_default();
     if !running {
         let stored = configured_path(state).ok().flatten();
         match detect_binary(None, stored) {
@@ -739,6 +872,8 @@ pub async fn status(state: &AppState) -> OpencodeStatus {
         running,
         session_id,
         mode: state.opencode.mode(),
+        model,
+        models,
         min_version: MIN_VERSION.into(),
         message,
     }
@@ -823,9 +958,16 @@ pub async fn start(
         pending: pending.clone(),
         next_id: AtomicI64::new(1),
         session_id: Mutex::new(String::new()),
+        model: Mutex::new(None),
+        models: Mutex::new(Vec::new()),
         transcript: transcript.clone(),
         shutdown: Mutex::new(Some(shutdown)),
     });
+
+    // The reader must be running before the first request: `initialize` and
+    // `session/new` responses arrive on stdout.
+    spawn_reader(app.clone(), stdout, session.clone());
+    spawn_stderr(app.clone(), stderr);
 
     let initialize = send_request(
         &session,
@@ -882,6 +1024,13 @@ pub async fn start(
     if let Ok(mut value) = session.session_id.lock() {
         *value = session_id.clone();
     }
+    let (current_model, models) = parse_model_options(&created);
+    if let Ok(mut value) = session.model.lock() {
+        *value = current_model;
+    }
+    if let Ok(mut value) = session.models.lock() {
+        *value = models;
+    }
 
     {
         let mut guard = state.opencode.session.lock().await;
@@ -898,15 +1047,26 @@ pub async fn start(
         *value = None;
     }
 
-    spawn_reader(
-        app.clone(),
-        stdout,
-        session.stdin.clone(),
-        session_id.clone(),
-        pending,
-        transcript,
-    );
-    spawn_stderr(app.clone(), stderr);
+    // Re-apply the model chosen in the UI so a restart keeps the selection.
+    if let Ok(Some(saved)) = configured_model(state) {
+        let available = session
+            .models
+            .lock()
+            .map(|models| models.iter().any(|model| model.value == saved))
+            .unwrap_or(false);
+        if available && let Err(error) = apply_model(&session, &saved).await {
+            state
+                .opencode
+                .record_error(&format!("モデル {saved} を適用できませんでした: {error}"));
+        }
+    }
+
+    let model = session.model.lock().ok().and_then(|value| value.clone());
+    let models = session
+        .models
+        .lock()
+        .map(|value| value.clone())
+        .unwrap_or_default();
 
     audit(
         state,
@@ -922,6 +1082,8 @@ pub async fn start(
         running: true,
         session_id: Some(session_id),
         mode: mode.to_string(),
+        model,
+        models,
         min_version: MIN_VERSION.into(),
         message: "OpenCode の ACP セッションを開始しました。".into(),
     })
@@ -1065,6 +1227,36 @@ pub fn record_tool_call(state: &AppState, tool: &str, args: &Value) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_model_options_from_session_new() {
+        let value = json!({
+            "sessionId": "ses_1",
+            "configOptions": [
+                { "id": "mode", "currentValue": "build", "options": [] },
+                {
+                    "id": "model",
+                    "currentValue": "fm-serve/system",
+                    "options": [
+                        { "value": "fm-serve/system", "name": "FM Serve (Apple local)" },
+                        { "value": "opencode/deepseek-v4.1-flash-free" }
+                    ]
+                }
+            ]
+        });
+        let (current, models) = parse_model_options(&value);
+        assert_eq!(current.as_deref(), Some("fm-serve/system"));
+        assert_eq!(models.len(), 2);
+        assert_eq!(models[0].name, "FM Serve (Apple local)");
+        assert_eq!(models[1].name, "opencode/deepseek-v4.1-flash-free");
+    }
+
+    #[test]
+    fn misses_model_options_gracefully() {
+        let (current, models) = parse_model_options(&json!({ "sessionId": "ses_1" }));
+        assert!(current.is_none());
+        assert!(models.is_empty());
+    }
 
     #[test]
     fn token_is_64_hex_characters() {

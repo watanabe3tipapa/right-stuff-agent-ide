@@ -5,6 +5,15 @@
 
 ## リリース履歴
 
+### v0.4.3
+
+- [x] セッション開始の修正 — ACP の stdout を読む処理を `initialize` / `session/new` より先に開始。応答を取りこぼしてタイムアウトしていた問題を解消
+- [x] 終了処理 — リーダー終了時に保留中のリクエストを解放し、`session/closed` の通知と現在のセッションだけを対象にしたクリアを行うよう改善
+- [x] モデル選択 — Agent パネルの OpenCode タブにモデル選択を追加。`session/new` の `configOptions` から一覧を取得し、`session/set_config_option` で切り替える
+- [x] モデルの保存 — 選択したモデルを `opencode_model` 設定へ保存し、次回セッション開始時に自動で再適用
+- [x] 検証 — `npm run typecheck` / `lint` / `test` / `build`、`cargo fmt` / `clippy` / `test`、用語集チェックに合格。実際の `opencode acp` に対してセッション作成とモデル切り替えを確認
+- [x] バージョン更新 — `0.4.3` へ更新し、リリースノート `.github/release-notes-v0.4.3.md` を追加
+
 ### v0.4.2
 
 - [x] Apple FM 設定 UI — 設定に Apple FM タブを追加。`fm` の検出、`fm serve` の起動・停止、ホスト / ポート指定、モデル検出、LLM への反映、接続テストを GUI から操作可能にした

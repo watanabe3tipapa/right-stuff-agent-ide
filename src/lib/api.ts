@@ -389,6 +389,8 @@ export const api = {
         running: false,
         sessionId: null,
         mode: "assistive",
+        model: null,
+        models: [],
         minVersion: "1.2.0",
         message: "OpenCode 連携は Tauri 版でのみ利用できます。",
       });
@@ -410,6 +412,13 @@ export const api = {
   opencodeSetMode(mode: string): Promise<void> {
     if (!isTauri) return Promise.resolve();
     return call<void>("opencode_set_mode", { mode });
+  },
+
+  opencodeSetModel(model: string): Promise<OpencodeStatus> {
+    if (!isTauri) {
+      return Promise.reject(new Error("OpenCode 連携は Tauri 版でのみ利用できます。"));
+    }
+    return call<OpencodeStatus>("opencode_set_model", { model });
   },
 
   opencodePrompt(

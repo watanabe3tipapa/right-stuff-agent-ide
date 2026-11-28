@@ -6,7 +6,7 @@
  * network-first so a new Vercel deployment is picked up immediately, and
  * fall back to the offline page when the network is unavailable.
  */
-const VERSION = "0.4.3";
+const VERSION = "0.4.4";
 const CACHE_PREFIX = "right-stuff-agent-ide-";
 const CACHE = `${CACHE_PREFIX}${VERSION}`;
 const BASE = new URL("./", self.location.href).pathname;

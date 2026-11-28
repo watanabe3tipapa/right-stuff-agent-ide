@@ -5,6 +5,16 @@
 
 ## リリース履歴
 
+### v0.4.4
+
+- [x] ツールの有効化 — OpenCode の `edit` / `bash`（V2 は `shell`）/ `webfetch` / `external_directory` を既定で許可し、CLI と同じようにファイル編集・コマンド実行・Web 取得を行えるようにした
+- [x] 権限の扱い — `session/request_permission` は引き続きアプリが応答し、要求内容と結果を監査。OpenCode 自身のツールはアプリのネイティブ承認を通らないことを SECURITY / README に明記
+- [x] モデルの既定 — モデル未選択のときは `opencode/*-free` を優先し、クレジットなしでも動くモデルで開始。クレジット切れ・認証エラー時はモデル切替を UI で案内
+- [x] 実測 — `opencode acp` に対して許可設定でプロンプトを送り、`write` と `shell` ツールが実行されファイルが作成されることを確認
+- [x] v0.4.3 の修正を含む — ACP リーダーの先行起動によるセッション開始修正と、モデル選択・保存
+- [x] 検証 — `npm run typecheck` / `lint` / `test` / `build`、`cargo fmt` / `clippy` / `test`、用語集チェックに合格
+- [x] バージョン更新 — `0.4.4` へ更新し、リリースノート `.github/release-notes-v0.4.4.md` を追加
+
 ### v0.4.3
 
 - [x] セッション開始の修正 — ACP の stdout を読む処理を `initialize` / `session/new` より先に開始。応答を取りこぼしてタイムアウトしていた問題を解消

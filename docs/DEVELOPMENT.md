@@ -264,8 +264,8 @@ README / README.en / LP / 実装設計書 / docs のバージョン表記と DMG
 arm64 と x64 の DMG をビルドして SHA-256 とともに GitHub Release へ添付します。
 
 ```bash
-git tag v0.4.3
-git push origin v0.4.3
+git tag v0.4.4
+git push origin v0.4.4
 ```
 
 リリースノートは `.github/release-notes-vX.Y.Z.md` があればそれを使い、なければ自動生成します。

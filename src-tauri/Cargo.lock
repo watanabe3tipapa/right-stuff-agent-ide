@@ -3274,7 +3274,7 @@ dependencies = [
 
 [[package]]
 name = "right-stuff-agent-ide"
-version = "0.4.3"
+version = "0.4.4"
 dependencies = [
  "axum",
  "chrono",

@@ -229,6 +229,17 @@ fn save_configured_model(state: &AppState, model: &str) -> AppResult<()> {
     Ok(())
 }
 
+/// Picks a model that works without paid credentials when the user has not
+/// chosen one yet. OpenCode's free tier is preferred; otherwise the current
+/// model is kept.
+fn default_model(current: Option<&str>, models: &[OpencodeModel]) -> Option<String> {
+    models
+        .iter()
+        .find(|model| model.value.starts_with("opencode/") && model.value.contains("free"))
+        .map(|model| model.value.clone())
+        .or_else(|| current.map(str::to_string))
+}
+
 fn parse_model_options(value: &Value) -> (Option<String>, Vec<OpencodeModel>) {
     let Some(options) = value.get("configOptions").and_then(Value::as_array) else {
         return (None, Vec::new());
@@ -375,24 +386,18 @@ fn injected_config(major: u64, _minor: u64) -> AppResult<(String, Option<String>
     // OpenCode 2.x (V2) uses the `permissions` array and rejects the older
     // `permission` object as an unknown key. OpenCode 1.x does the opposite and
     // rejects `permissions` outright, so the shape has to follow the detected
-    // major version. Either way, editing and shell access are denied and the
-    // IDE MCP server remains the only path to Openship.
+    // major version. Tools are allowed so the agent can work in the workspace
+    // like the CLI: restricting them makes the panel effectively read-only.
+    // ACP permission requests are still answered and audited by the app.
     let v2 = major >= 2;
     let permission = if v2 {
-        json!([
-            { "action": "*", "resource": "*", "effect": "allow" },
-            { "action": "edit", "resource": "*", "effect": "deny" },
-            { "action": "shell", "resource": "*", "effect": "deny" },
-            { "action": "external_directory", "resource": "*", "effect": "deny" },
-            { "action": "webfetch", "resource": "*", "effect": "deny" },
-            { "action": "websearch", "resource": "*", "effect": "deny" }
-        ])
+        json!([{ "action": "*", "resource": "*", "effect": "allow" }])
     } else {
         json!({
-            "edit": "deny",
-            "bash": "deny",
-            "webfetch": "deny",
-            "external_directory": "deny"
+            "edit": "allow",
+            "bash": "allow",
+            "webfetch": "allow",
+            "external_directory": "allow"
         })
     };
 
@@ -1048,17 +1053,26 @@ pub async fn start(
     }
 
     // Re-apply the model chosen in the UI so a restart keeps the selection.
-    if let Ok(Some(saved)) = configured_model(state) {
-        let available = session
-            .models
-            .lock()
-            .map(|models| models.iter().any(|model| model.value == saved))
-            .unwrap_or(false);
-        if available && let Err(error) = apply_model(&session, &saved).await {
-            state
-                .opencode
-                .record_error(&format!("モデル {saved} を適用できませんでした: {error}"));
-        }
+    // Without a saved choice, prefer a free model that works without paid
+    // credentials instead of whatever OpenCode used last.
+    let saved = configured_model(state).ok().flatten();
+    let current_model = session.model.lock().ok().and_then(|value| value.clone());
+    let model_list = session
+        .models
+        .lock()
+        .map(|value| value.clone())
+        .unwrap_or_default();
+    let target = match saved {
+        Some(saved) if model_list.iter().any(|model| model.value == saved) => Some(saved),
+        Some(_) => None,
+        None => default_model(current_model.as_deref(), &model_list),
+    };
+    if let Some(target) = target
+        && let Err(error) = apply_model(&session, &target).await
+    {
+        state
+            .opencode
+            .record_error(&format!("モデル {target} を適用できませんでした: {error}"));
     }
 
     let model = session.model.lock().ok().and_then(|value| value.clone());
@@ -1252,6 +1266,28 @@ mod tests {
     }
 
     #[test]
+    fn prefers_a_free_model_when_nothing_is_saved() {
+        let models = vec![
+            OpencodeModel {
+                value: "anthropic/claude-opus-5-5".into(),
+                name: "Claude Opus 5.5".into(),
+            },
+            OpencodeModel {
+                value: "opencode/seaglass-alpha-free".into(),
+                name: "Seaglass".into(),
+            },
+        ];
+        assert_eq!(
+            default_model(Some("anthropic/claude-opus-5-5"), &models).as_deref(),
+            Some("opencode/seaglass-alpha-free")
+        );
+        assert_eq!(
+            default_model(Some("anthropic/claude-opus-5-5"), &models[..1]).as_deref(),
+            Some("anthropic/claude-opus-5-5")
+        );
+    }
+
+    #[test]
     fn misses_model_options_gracefully() {
         let (current, models) = parse_model_options(&json!({ "sessionId": "ses_1" }));
         assert!(current.is_none());
@@ -1366,8 +1402,8 @@ mod tests {
         assert!(value.get("permissions").is_none());
         let permission: Value =
             serde_json::from_str(&permission.expect("permission env")).expect("json");
-        assert_eq!(permission["bash"], "deny");
-        assert_eq!(permission["edit"], "deny");
+        assert_eq!(permission["bash"], "allow");
+        assert_eq!(permission["edit"], "allow");
     }
 
     #[test]
@@ -1385,11 +1421,18 @@ mod tests {
         assert!(value["permissions"].is_array());
         assert!(value.get("permission").is_none());
         assert!(permission.is_none());
-        let denied = value["permissions"]
+        let allowed = value["permissions"]
             .as_array()
             .expect("array")
             .iter()
-            .any(|entry| entry["action"] == "shell" && entry["effect"] == "deny");
-        assert!(denied);
+            .any(|entry| entry["action"] == "*" && entry["effect"] == "allow");
+        assert!(allowed);
+        assert!(
+            value["permissions"]
+                .as_array()
+                .expect("array")
+                .iter()
+                .all(|entry| entry["effect"] != "deny")
+        );
     }
 }

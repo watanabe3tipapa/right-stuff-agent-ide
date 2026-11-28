@@ -16,6 +16,14 @@ function eventUpdate(payload: unknown): OpencodeUpdate | null {
   return value.params ?? null;
 }
 
+function errorUpdate(cause: unknown): string {
+  const message = errorMessage(cause);
+  if (/credit|billing|api key|authenticat|unauthori[sz]ed|401|403/i.test(message)) {
+    return `${message}（上のモデル選択で、無料モデルなど利用可能なモデルに切り替えてください）`;
+  }
+  return message;
+}
+
 export function OpenCodePanel() {
   const mode = useAgentStore((state) => state.mode);
   const openSettings = useAgentStore((state) => state.openSettings);
@@ -112,7 +120,7 @@ export function OpenCodePanel() {
     try {
       setStatus(await api.opencodeSetModel(value));
     } catch (cause) {
-      setError(errorMessage(cause));
+      setError(errorUpdate(cause));
       await refresh();
     } finally {
       setModelSaving(false);
@@ -158,7 +166,7 @@ export function OpenCodePanel() {
       }
       setStreamingText("");
     } catch (cause) {
-      setError(errorMessage(cause));
+      setError(errorUpdate(cause));
       setStreamingText("");
     } finally {
       setBusy(false);
